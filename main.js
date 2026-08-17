@@ -951,7 +951,10 @@ function registerAppHandlers() {
   })
 
   // ===== UTILISATEURS =====
-  ipcMain.handle('utilisateurs:getAll', async () => UtilisateursDAO.getAll(await getOrganisationIdActive()))
+  ipcMain.handle('utilisateurs:getAll', async () => {
+    verifierPermission('utilisateurs:getAll', utilisateurConnecte)
+    return UtilisateursDAO.getAll(await getOrganisationIdActive())
+  })
   ipcMain.handle('utilisateurs:create', async (_, u) => {
     try {
       verifierPermission('utilisateurs:create', utilisateurConnecte)
@@ -1003,7 +1006,10 @@ function registerAppHandlers() {
 
   // ===== DOMAINE =====
   ipcMain.handle('domaine:get', () => DomaineDAO.get())
-  ipcMain.handle('domaine:save', (_, d) => DomaineDAO.save(d))
+  ipcMain.handle('domaine:save', (_, d) => {
+    verifierPermission('domaine:save', utilisateurConnecte)
+    return DomaineDAO.save(d)
+  })
 
   // ===== AVOIRS / COMPTES PRÉPAYÉS =====
   ipcMain.handle('avoirs:getAll',           async ()       => avoirsService.getAll(await getOrganisationIdActive()))
@@ -1025,6 +1031,7 @@ function registerAppHandlers() {
 
   // ===== BASE DE DONNÉES =====
   ipcMain.handle('db:getStats', async () => {
+    verifierPermission('db:getStats', utilisateurConnecte)
     const pool = require('./db/pool')
     const config = require(getDbConfigPath())
     const tables = [

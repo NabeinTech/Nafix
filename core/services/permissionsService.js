@@ -15,7 +15,14 @@ const CANAUX_RESTREINTS = {
   'parametres:save': ['administrateur'],
   'parametres:exporterSauvegarde': ['administrateur'],
   'organisations:update': ['administrateur'],
-  'organisations:setStatut': ['administrateur']
+  'organisations:setStatut': ['administrateur'],
+  // Sprint 6, Partie A — les 3 canaux suivants n'avaient aucune vérification
+  // RBAC côté IPC alors que leur seul appelant légitime (l'onglet Paramètres)
+  // est déjà réservé à l'administrateur côté UI. Défense en profondeur :
+  // un appel IPC direct depuis un autre rôle était jusqu'ici possible.
+  'domaine:save': ['administrateur'],
+  'utilisateurs:getAll': ['administrateur'],
+  'db:getStats': ['administrateur']
 }
 
 function verifierPermission(canal, utilisateurConnecte) {
