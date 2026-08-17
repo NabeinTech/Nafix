@@ -13,7 +13,8 @@ import {
   ReloadOutlined, CheckCircleOutlined, TableOutlined,
   BgColorsOutlined, CheckOutlined, EditOutlined,
   CloseOutlined, LockOutlined, WarningOutlined,
-  ExclamationCircleOutlined, CloudDownloadOutlined
+  ExclamationCircleOutlined, CloudDownloadOutlined,
+  ApartmentOutlined, PoweroffOutlined
 } from '@ant-design/icons'
 import { getTousDomaines, getDomaine } from '../utils/domainConfig'
 import { PERMISSIONS_DEFAUT_PAR_ROLE } from '../utils/permissions'
@@ -27,8 +28,14 @@ function Parametres({ utilisateur }) {
   const [formEntreprise] = Form.useForm()
   const [formUser] = Form.useForm()
   const [formPassword] = Form.useForm()
+  const [formOrganisation] = Form.useForm()
 
   const [parametres, setParametres] = useState({})
+  const [organisation, setOrganisation] = useState(null)
+  const [organisationLoading, setOrganisationLoading] = useState(false)
+  const [statutModalVisible, setStatutModalVisible] = useState(false)
+  const [statutConfirmText, setStatutConfirmText] = useState('')
+  const [statutActionLoading, setStatutActionLoading] = useState(false)
   const [utilisateurs, setUtilisateurs] = useState([])
   const [domaine, setDomaine] = useState(null)
   const [domaineLoading, setDomaineLoading] = useState(false)
@@ -80,6 +87,13 @@ function Parametres({ utilisateur }) {
     setUtilisateurs(await ipcRenderer.invoke('utilisateurs:getAll') || [])
   }, [])
 
+  const chargerOrganisation = useCallback(async () => {
+    if (!ipcRenderer) return
+    const data = await ipcRenderer.invoke('organisations:getMine')
+    setOrganisation(data)
+    if (data) formOrganisation.setFieldsValue({ nom: data.nom })
+  }, [formOrganisation])
+
   const chargerDomaine = useCallback(async () => {
     if (!ipcRenderer) return
     const data = await ipcRenderer.invoke('domaine:get')
@@ -90,7 +104,8 @@ function Parametres({ utilisateur }) {
     chargerParametres()
     chargerUtilisateurs()
     chargerDomaine()
-  }, [chargerParametres, chargerUtilisateurs, chargerDomaine])
+    chargerOrganisation()
+  }, [chargerParametres, chargerUtilisateurs, chargerDomaine, chargerOrganisation])
 
   // ── Sauvegarder entreprise ───────────────────────────────
   const sauvegarderEntreprise = async (values) => {
@@ -243,6 +258,40 @@ function Parametres({ utilisateur }) {
     message.success('✅ Mot de passe modifié !')
     formPassword.resetFields()
     setPasswordModalVisible(false)
+  }
+
+  // ── Organisation ─────────────────────────────────────────
+  const sauvegarderOrganisation = async (values) => {
+    if (!ipcRenderer) return
+    setOrganisationLoading(true)
+    try {
+      const result = await ipcRenderer.invoke('organisations:update', { nom: values.nom })
+      if (result?.erreur) { message.error(`❌ ${result.erreur}`); return }
+      setOrganisation(result)
+      message.success('✅ Organisation mise à jour !')
+    } finally {
+      setOrganisationLoading(false)
+    }
+  }
+
+  const basculerStatutOrganisation = async () => {
+    if (!ipcRenderer || !organisation) return
+    const nouveauStatut = organisation.statut === 'active' ? 'inactive' : 'active'
+    setStatutActionLoading(true)
+    try {
+      const result = await ipcRenderer.invoke('organisations:setStatut', { statut: nouveauStatut })
+      if (result?.erreur) { message.error(`❌ ${result.erreur}`); return }
+      setOrganisation(result.succes)
+      message.success(
+        nouveauStatut === 'active'
+          ? '✅ Organisation réactivée !'
+          : '✅ Organisation désactivée. Les connexions seront refusées jusqu\'à réactivation.'
+      )
+      setStatutModalVisible(false)
+      setStatutConfirmText('')
+    } finally {
+      setStatutActionLoading(false)
+    }
   }
 
   // ── Thème ────────────────────────────────────────────────
@@ -686,6 +735,60 @@ function Parametres({ utilisateur }) {
   // ════════════════════════════════════════════════════════
   // ONGLET UTILISATEURS
   // ════════════════════════════════════════════════════════
+  // ════════════════════════════════════════════════════════
+  // ONGLET ORGANISATION
+  // ════════════════════════════════════════════════════════
+  const organisationActive = organisation?.statut === 'active'
+  const confirmationAttendue = organisationActive ? 'DÉSACTIVER' : 'RÉACTIVER'
+
+  const tabOrganisation = (
+    <div>
+      <Card style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <Text strong style={{ fontSize: 15 }}>Identité de l'organisation</Text>
+          <Tag color={organisationActive ? 'green' : 'red'} style={{ borderRadius: 12 }}>
+            {organisationActive ? '● Active' : '● Désactivée'}
+          </Tag>
+        </div>
+
+        <Form form={formOrganisation} layout="vertical" onFinish={sauvegarderOrganisation}>
+          <Form.Item name="nom" label="Nom de l'organisation"
+            rules={[{ required: true, message: 'Le nom est obligatoire' }]}>
+            <Input prefix={<ApartmentOutlined />} size="large" style={{ borderRadius: 8 }} maxLength={200} />
+          </Form.Item>
+          <Button type="primary" htmlType="submit" icon={<SaveOutlined />}
+            loading={organisationLoading}
+            style={{ borderRadius: 8, background: 'linear-gradient(135deg, #1890ff, #722ed1)', border: 'none' }}>
+            Enregistrer
+          </Button>
+        </Form>
+
+        {organisation?.code && (
+          <Text style={{ display: 'block', marginTop: 16, color: '#aaa', fontSize: 12 }}>
+            Identifiant technique : <code>{organisation.code}</code> (non modifiable)
+          </Text>
+        )}
+      </Card>
+
+      <Card
+        title={<Space><WarningOutlined style={{ color: '#cf1322' }} /><Text strong>Zone sensible</Text></Space>}
+        style={{ borderRadius: 12, border: '1px solid #ffccc7', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
+      >
+        <Text style={{ display: 'block', marginBottom: 16, color: '#666' }}>
+          {organisationActive
+            ? 'Désactiver votre organisation empêchera toute nouvelle connexion (y compris la vôtre) jusqu\'à réactivation. Les sessions déjà ouvertes ne sont pas interrompues.'
+            : 'Votre organisation est désactivée : aucun utilisateur ne peut se connecter. Réactivez-la pour restaurer l\'accès.'}
+        </Text>
+        <Button danger={organisationActive} type={organisationActive ? 'default' : 'primary'}
+          icon={<PoweroffOutlined />}
+          style={{ borderRadius: 8 }}
+          onClick={() => setStatutModalVisible(true)}>
+          {organisationActive ? 'Désactiver l\'organisation' : 'Réactiver l\'organisation'}
+        </Button>
+      </Card>
+    </div>
+  )
+
   const tabUtilisateurs = (
     <div>
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
@@ -1408,6 +1511,11 @@ function Parametres({ utilisateur }) {
           children: tabEntreprise
         },
         {
+          key: '7',
+          label: <Space><ApartmentOutlined />Organisation</Space>,
+          children: tabOrganisation
+        },
+        {
           key: '2',
           label: <Space><TeamOutlined />Utilisateurs</Space>,
           children: tabUtilisateurs
@@ -1628,6 +1736,62 @@ function Parametres({ utilisateur }) {
             </div>
           )
         })()}
+      </Modal>
+
+      {/* ── Modal Activation/Désactivation Organisation ── */}
+      <Modal
+        title={
+          <Space>
+            <ExclamationCircleOutlined style={{ color: organisationActive ? '#ff4d4f' : '#52c41a', fontSize: 20 }} />
+            <Text strong style={{ color: organisationActive ? '#cf1322' : '#237804', fontSize: 16 }}>
+              {organisationActive ? 'Désactiver l\'organisation' : 'Réactiver l\'organisation'}
+            </Text>
+          </Space>
+        }
+        open={statutModalVisible}
+        onCancel={() => { setStatutModalVisible(false); setStatutConfirmText('') }}
+        footer={null}
+        width={480}
+        centered
+      >
+        <div style={{
+          background: organisationActive ? '#fff2f0' : '#f6ffed', borderRadius: 10,
+          border: `1px solid ${organisationActive ? '#ffa39e' : '#b7eb8f'}`, padding: '16px', marginBottom: 20
+        }}>
+          <Text style={{ color: organisationActive ? '#cf1322' : '#237804', display: 'block', marginBottom: 10, fontWeight: 600 }}>
+            {organisationActive
+              ? <>⚠️ Plus personne ne pourra se connecter tant que l'organisation ne sera pas réactivée. Tapez <strong>DÉSACTIVER</strong> pour confirmer :</>
+              : <>Tapez <strong>RÉACTIVER</strong> pour confirmer :</>}
+          </Text>
+          <Input
+            value={statutConfirmText}
+            onChange={e => setStatutConfirmText(e.target.value)}
+            placeholder={`Tapez : ${confirmationAttendue}`}
+            size="large"
+            style={{
+              borderRadius: 8,
+              borderColor: statutConfirmText === confirmationAttendue ? '#52c41a' : (organisationActive ? '#ffa39e' : '#b7eb8f'),
+              fontWeight: 'bold'
+            }}
+          />
+        </div>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+          <Button size="large" style={{ borderRadius: 8 }}
+            onClick={() => { setStatutModalVisible(false); setStatutConfirmText('') }}>
+            Annuler
+          </Button>
+          <Button
+            danger={organisationActive} type="primary"
+            size="large"
+            loading={statutActionLoading}
+            disabled={statutConfirmText !== confirmationAttendue}
+            icon={<PoweroffOutlined />}
+            onClick={basculerStatutOrganisation}
+            style={{ borderRadius: 8, fontWeight: 'bold' }}
+          >
+            {organisationActive ? 'Désactiver' : 'Réactiver'}
+          </Button>
+        </div>
       </Modal>
 
       {/* ── Modal Réinitialisation ── */}

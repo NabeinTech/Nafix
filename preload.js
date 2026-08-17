@@ -21,6 +21,7 @@ const INVOKE_CHANNELS = [
   'auth:login', 'auth:logout',
   'utilisateurs:getAll', 'utilisateurs:create', 'utilisateurs:delete',
   'utilisateurs:updatePassword', 'utilisateurs:updateRole', 'utilisateurs:updatePermissions',
+  'organisations:getMine', 'organisations:update', 'organisations:setStatut',
   'domaine:get', 'domaine:save',
   'retours:getAll', 'retours:getPendants', 'retours:create', 'retours:approuver', 'retours:rejeter',
   'db:getStats', 'db:reinitialiser',

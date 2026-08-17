@@ -213,6 +213,7 @@ function registerAppHandlers() {
   const avoirsService = require('./core/services/avoirsService')
   const dashboardService = require('./core/services/dashboardService')
   const statistiquesService = require('./core/services/statistiquesService')
+  const organisationsService = require('./core/services/organisationsService')
 
   // Sprint 4 — l'organisation vient désormais de l'utilisateur authentifié
   // (utilisateurConnecte.organisation_id), jamais d'une "première organisation
@@ -842,6 +843,14 @@ function registerAppHandlers() {
     if (!ok) {
       return { erreur: 'Identifiant ou mot de passe incorrect !' }
     }
+    // Sprint 5 — une organisation désactivée bloque la connexion de ses
+    // utilisateurs (sinon "désactiver" une organisation n'aurait aucun effet).
+    if (utilisateur.organisation_id) {
+      const organisation = await organisationsService.getById(utilisateur.organisation_id)
+      if (organisation && organisation.statut !== 'active') {
+        return { erreur: 'Votre organisation a été désactivée. Contactez votre administrateur.' }
+      }
+    }
     const { password: _pw, ...userSansPassword } = utilisateur
     utilisateurConnecte = userSansPassword
     return { utilisateur: userSansPassword }
@@ -975,6 +984,21 @@ function registerAppHandlers() {
   ipcMain.handle('utilisateurs:updatePermissions', async (_, { id, permissions }) => {
     verifierPermission('utilisateurs:updatePermissions', utilisateurConnecte)
     return UtilisateursDAO.updatePermissions(id, permissions, await getOrganisationIdActive())
+  })
+
+  // ===== ORGANISATION =====
+  // Sprint 5 — id toujours dérivé de la session (getOrganisationIdActive),
+  // jamais accepté depuis le renderer : un utilisateur ne doit jamais pouvoir
+  // lire/modifier une autre organisation en passant un id arbitraire.
+  ipcMain.handle('organisations:getMine', async () => organisationsService.getById(await getOrganisationIdActive()))
+  ipcMain.handle('organisations:update', async (_, { nom }) => {
+    verifierPermission('organisations:update', utilisateurConnecte)
+    validateIPC({ nom }, { nom: { required: true, type: 'string', maxLen: 200 } })
+    return organisationsService.update(await getOrganisationIdActive(), { nom })
+  })
+  ipcMain.handle('organisations:setStatut', async (_, { statut }) => {
+    verifierPermission('organisations:setStatut', utilisateurConnecte)
+    return organisationsService.setStatut(await getOrganisationIdActive(), statut)
   })
 
   // ===== DOMAINE =====

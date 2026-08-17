@@ -13,7 +13,9 @@ const CANAUX_RESTREINTS = {
   'utilisateurs:updateRole': ['administrateur'],
   'utilisateurs:updatePermissions': ['administrateur'],
   'parametres:save': ['administrateur'],
-  'parametres:exporterSauvegarde': ['administrateur']
+  'parametres:exporterSauvegarde': ['administrateur'],
+  'organisations:update': ['administrateur'],
+  'organisations:setStatut': ['administrateur']
 }
 
 function verifierPermission(canal, utilisateurConnecte) {

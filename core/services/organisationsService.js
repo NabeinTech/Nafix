@@ -1,9 +1,13 @@
-// Sprint 1 — Fondation multi-tenant. Une installation Desktop n'a aujourd'hui
-// qu'une seule organisation active à la fois : cette fonction la résout
-// explicitement (jamais via une variable globale cachée), pour que
-// main.js puisse la transmettre en paramètre à chaque appel de service.
+// Sprint 1 — Fondation multi-tenant. getOrganisationActive() reste disponible
+// (ex. futur assistant de configuration) mais n'est plus dans le chemin de
+// résolution de session depuis le Sprint 4 (voir getOrganisationIdActive
+// dans main.js, qui dérive l'organisation de l'utilisateur authentifié).
+//
+// Sprint 5 — Gestion des organisations : délégation vers OrganisationsDAO,
+// organisationId toujours reçu explicitement, jamais lu d'un état global.
 
 const pool = require('../../db/pool')
+const OrganisationsDAO = require('../../dao/OrganisationsDAO')
 
 async function getOrganisationActive() {
   const { rows } = await pool.query(
@@ -12,4 +16,16 @@ async function getOrganisationActive() {
   return rows[0] || null
 }
 
-module.exports = { getOrganisationActive }
+function getById(organisationId) {
+  return OrganisationsDAO.getById(organisationId)
+}
+
+function update(organisationId, data) {
+  return OrganisationsDAO.update(organisationId, data)
+}
+
+function setStatut(organisationId, statut) {
+  return OrganisationsDAO.setStatut(organisationId, statut)
+}
+
+module.exports = { getOrganisationActive, getById, update, setStatut }
