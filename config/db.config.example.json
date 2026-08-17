@@ -1,0 +1,8 @@
+{
+  "_comment": "Copiez ce fichier en db.config.json et renseignez vos paramètres",
+  "host": "192.168.1.100",
+  "port": 5432,
+  "user":"admin",
+  "password": "9292",
+  "database": "nafix_db"
+}

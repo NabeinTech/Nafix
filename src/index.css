@@ -1,0 +1,202 @@
+/* ===== VARIABLES DE COULEURS ===== */
+:root {
+  --primary: #1890ff;
+  --secondary: #722ed1;
+  --success: #52c41a;
+  --danger: #ff4d4f;
+  --warning: #faad14;
+  --dark: #001529;
+  --bg: #f0f2f5;
+  --card: #ffffff;
+}
+
+/* ===== BASE ===== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--bg);
+  color: #333;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* ===== LAYOUT ===== */
+.ant-layout {
+  background: var(--bg) !important;
+}
+
+.ant-layout-content {
+  background: var(--bg) !important;
+}
+
+/* ===== SIDEBAR ===== */
+.ant-layout-sider {
+  box-shadow: 2px 0 8px rgba(0,0,0,0.15) !important;
+}
+
+.ant-menu-dark {
+  background: var(--dark) !important;
+}
+
+/* ===== CARDS ===== */
+.ant-card {
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+  border: none !important;
+  transition: box-shadow 0.3s ease !important;
+}
+
+.ant-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important;
+}
+
+.ant-card-head {
+  border-bottom: 2px solid #f0f2f5 !important;
+  font-weight: 600 !important;
+}
+
+/* ===== BOUTONS ===== */
+.ant-btn-primary {
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 2px 4px rgba(24,144,255,0.3) !important;
+}
+
+.ant-btn {
+  border-radius: 8px !important;
+}
+
+/* ===== TABLEAUX ===== */
+.ant-table {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+.ant-table-thead > tr > th {
+  background: #f8f9fa !important;
+  font-weight: 600 !important;
+  color: #555 !important;
+  border-bottom: 2px solid #e8e8e8 !important;
+  padding: 14px 16px !important;
+}
+
+.ant-table-tbody > tr > td {
+  padding: 12px 16px !important;
+  border-bottom: 1px solid #f5f5f5 !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: #f0f7ff !important;
+}
+
+.ant-table-tbody > tr:last-child > td {
+  border-bottom: none !important;
+}
+
+/* ===== FORMULAIRES ===== */
+.ant-input,
+.ant-input-number,
+.ant-select-selector,
+.ant-picker {
+  border-radius: 8px !important;
+  border: 1.5px solid #d9d9d9 !important;
+  transition: all 0.3s !important;
+}
+
+.ant-input:focus,
+.ant-input-number:focus,
+.ant-select-focused .ant-select-selector {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(24,144,255,0.1) !important;
+}
+
+/* ===== MODALS ===== */
+.ant-modal-content {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2) !important;
+}
+
+.ant-modal-header {
+  border-bottom: 2px solid #f0f2f5 !important;
+  padding: 16px 24px !important;
+}
+
+.ant-modal-title {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+
+/* ===== TAGS ===== */
+.ant-tag {
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  padding: 2px 10px !important;
+}
+
+/* ===== STATISTIQUES ===== */
+.ant-statistic-title {
+  font-size: 13px !important;
+  color: #888 !important;
+  font-weight: 500 !important;
+}
+
+.ant-statistic-content-value {
+  font-weight: 700 !important;
+}
+
+/* ===== PAGINATION ===== */
+.ant-pagination-item-active {
+  border-color: var(--primary) !important;
+}
+
+/* ===== MENU ===== */
+.ant-menu-item-selected {
+  background: rgba(24,144,255,0.15) !important;
+  border-right: 3px solid var(--primary) !important;
+}
+
+/* ===== MESSAGES ===== */
+.ant-message-notice-content {
+  border-radius: 10px !important;
+  padding: 10px 20px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+/* ===== TITRES ===== */
+h1, h2, h3, h4, h5 {
+  font-weight: 700 !important;
+}
+
+/* ===== ANIMATIONS ===== */
+.ant-card,
+.ant-btn,
+.ant-table-row {
+  transition: all 0.2s ease !important;
+}
+
+/* ===== TRÉSORERIE — lignes colorées ===== */
+.row-entree > td { background: #f6ffed !important; }
+.row-sortie > td { background: #fff2f0 !important; }
+.row-cloture > td { background: #fafafa !important; color: #999 !important; }
+.row-credit > td  { background: #fff7e6 !important; }
+.row-partiel > td { background: #fff2f0 !important; }

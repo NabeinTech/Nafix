@@ -1,0 +1,118 @@
+{
+  "name": "nafix",
+  "version": "0.1.0",
+  "private": true,
+  "main": "main.js",
+  "homepage": "./",
+  "dependencies": {
+    "@ant-design/icons": "^6.1.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^13.5.0",
+    "antd": "^6.3.1",
+    "bcryptjs": "^2.4.3",
+    "dayjs": "^1.11.10",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.0",
+    "koffi": "^3.1.5",
+    "pg": "^8.20.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router-dom": "^7.13.1",
+    "react-scripts": "5.0.1",
+    "recharts": "^3.8.0",
+    "sudo-prompt": "^9.2.1",
+    "vosk": "^0.3.39",
+    "web-vitals": "^2.1.4",
+    "xlsx": "^0.18.5"
+  },
+  "scripts": {
+    "start": "cd /d C:\\ && cd /d \"C:\\Users\\HP\\Desktop\\Nafix5\\Nafix\" && react-scripts start",
+    "build": "cd /d C:\\ && cd /d \"C:\\Users\\HP\\Desktop\\Nafix5\\Nafix\" && react-scripts build",
+    "test": "cd /d C:\\ && cd /d \"C:\\Users\\HP\\Desktop\\Nafix5\\Nafix\" && react-scripts test",
+    "eject": "cd /d C:\\ && cd /d \"C:\\Users\\HP\\Desktop\\Nafix5\\Nafix\" && react-scripts eject",
+    "dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && node launch.js\"",
+    "electron": "concurrently \"npm start\" \"wait-on http://localhost:3000 && node launch.js\"",
+    "dist": "cd /d C:\\ && cd /d \"C:\\Users\\HP\\Desktop\\Nafix5\\Nafix\" && react-scripts build && electron-builder --win nsis"
+  },
+  "build": {
+    "extends": null,
+    "appId": "com.nafimax.nafix",
+    "productName": "Nafix",
+    "directories": {
+      "output": "dist_installer"
+    },
+    "asar": false,
+    "files": [
+      "build/**/*",
+      "main.js",
+      "preload.js",
+      "db/**/*",
+      "dao/**/*",
+      "auth/**/*",
+      "server/**/*",
+      "config/**/*",
+      "!config/db.config.json",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/postgres",
+        "to": "postgres"
+      },
+      {
+        "from": "resources/vcredist",
+        "to": "vcredist"
+      },
+      {
+        "from": "resources/vosk",
+        "to": "vosk"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/favicon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "electron": "^33.4.11",
+    "electron-builder": "^26.15.3",
+    "electron-rebuild": "^3.2.9",
+    "wait-on": "^8.0.5"
+  },
+  "overrides": {
+    "node-gyp": "^13.0.1",
+    "node-addon-api": "^8.9.2"
+  },
+  "allowScripts": {
+    "ffi-napi@4.0.3": true,
+    "ref-napi@3.0.3": true,
+    "koffi@3.1.5": true
+  }
+}

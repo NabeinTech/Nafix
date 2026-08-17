@@ -1,0 +1,15 @@
+{
+  "short_name": "Nafix",
+  "name": "Nafix — Gestion Commerciale",
+  "icons": [
+    {
+      "src": "nafix-logo.png",
+      "type": "image/png",
+      "sizes": "any"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#001529",
+  "background_color": "#001529"
+}
