@@ -282,6 +282,24 @@ async function runMigrations() {
     await client.query('ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS organisation_id INTEGER REFERENCES organisations(id)')
     await client.query('UPDATE utilisateurs SET organisation_id = $1 WHERE organisation_id IS NULL', [idOrganisationLegacy])
 
+    // ── Sprint 6, Partie B — Paramètres et Domaine rattachés à une organisation ──
+    // "id" était un littéral (DEFAULT 1, pas une séquence) : une seule ligne a
+    // jamais existé. Le convertir en auto-incrémenté permet désormais une ligne
+    // par organisation, sans toucher à la ligne existante (id=1 reste id=1).
+    await client.query('CREATE SEQUENCE IF NOT EXISTS parametres_id_seq OWNED BY parametres.id')
+    await client.query("SELECT setval('parametres_id_seq', GREATEST((SELECT COALESCE(MAX(id),0) FROM parametres), 1))")
+    await client.query("ALTER TABLE parametres ALTER COLUMN id SET DEFAULT nextval('parametres_id_seq')")
+    await client.query('ALTER TABLE parametres ADD COLUMN IF NOT EXISTS organisation_id INTEGER REFERENCES organisations(id)')
+    await client.query('UPDATE parametres SET organisation_id = $1 WHERE organisation_id IS NULL', [idOrganisationLegacy])
+    await client.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_parametres_organisation_id ON parametres(organisation_id)')
+
+    await client.query('CREATE SEQUENCE IF NOT EXISTS domaine_id_seq OWNED BY domaine.id')
+    await client.query("SELECT setval('domaine_id_seq', GREATEST((SELECT COALESCE(MAX(id),0) FROM domaine), 1))")
+    await client.query("ALTER TABLE domaine ALTER COLUMN id SET DEFAULT nextval('domaine_id_seq')")
+    await client.query('ALTER TABLE domaine ADD COLUMN IF NOT EXISTS organisation_id INTEGER REFERENCES organisations(id)')
+    await client.query('UPDATE domaine SET organisation_id = $1 WHERE organisation_id IS NULL', [idOrganisationLegacy])
+    await client.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_domaine_organisation_id ON domaine(organisation_id)')
+
     console.log('✅ Migrations terminées')
   } catch (err) {
     console.error('❌ Erreur migration:', err.message)

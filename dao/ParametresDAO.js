@@ -1,8 +1,8 @@
 const pool = require('../db/pool')
 
 const ParametresDAO = {
-  async get() {
-    const { rows } = await pool.query('SELECT * FROM parametres WHERE id = 1')
+  async get(organisationId) {
+    const { rows } = await pool.query('SELECT * FROM parametres WHERE organisation_id = $1', [organisationId])
     return rows[0] || {}
   },
 
@@ -104,29 +104,19 @@ const ParametresDAO = {
     }
   },
 
-  async save(params) {
-    const { rows: existing } = await pool.query('SELECT id FROM parametres WHERE id = 1')
-    if (existing.length) {
-      await pool.query(
-        `UPDATE parametres SET
-          nom_entreprise=$1, slogan=$2, telephone=$3, telephone_secondaire=$4,
-          email=$5, adresse=$6, registre_commerce=$7, ninea=$8,
-          tva_taux=$9, mention_facture=$10, logo_base64=$11, format_facture=$12
-         WHERE id=1`,
-        [params.nom_entreprise, params.slogan, params.telephone, params.telephone_secondaire,
-         params.email, params.adresse, params.registre_commerce, params.ninea,
-         params.tva_taux, params.mention_facture, params.logo_base64, params.format_facture || 'auto']
-      )
-    } else {
-      await pool.query(
-        `INSERT INTO parametres (id, nom_entreprise, slogan, telephone, telephone_secondaire,
-          email, adresse, registre_commerce, ninea, tva_taux, mention_facture, logo_base64, format_facture)
-         VALUES (1,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-        [params.nom_entreprise, params.slogan, params.telephone, params.telephone_secondaire,
-         params.email, params.adresse, params.registre_commerce, params.ninea,
-         params.tva_taux, params.mention_facture, params.logo_base64, params.format_facture || 'auto']
-      )
-    }
+  async save(params, organisationId) {
+    await pool.query(
+      `INSERT INTO parametres (organisation_id, nom_entreprise, slogan, telephone, telephone_secondaire,
+        email, adresse, registre_commerce, ninea, tva_taux, mention_facture, logo_base64, format_facture)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+       ON CONFLICT (organisation_id) DO UPDATE SET
+         nom_entreprise=$2, slogan=$3, telephone=$4, telephone_secondaire=$5,
+         email=$6, adresse=$7, registre_commerce=$8, ninea=$9,
+         tva_taux=$10, mention_facture=$11, logo_base64=$12, format_facture=$13`,
+      [organisationId, params.nom_entreprise, params.slogan, params.telephone, params.telephone_secondaire,
+       params.email, params.adresse, params.registre_commerce, params.ninea,
+       params.tva_taux, params.mention_facture, params.logo_base64, params.format_facture || 'auto']
+    )
     return true
   }
 }

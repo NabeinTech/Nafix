@@ -63,18 +63,17 @@ function getCategoriesByDomaine(type) {
 }
 
 const DomaineDAO = {
-  async get() {
-    const { rows } = await pool.query('SELECT * FROM domaine WHERE id = 1')
+  async get(organisationId) {
+    const { rows } = await pool.query('SELECT * FROM domaine WHERE organisation_id = $1', [organisationId])
     return rows[0] || { type: 'general', nom: 'Commerce Général' }
   },
 
-  async save(domaine) {
-    const { rows: existing } = await pool.query('SELECT id FROM domaine WHERE id = 1')
-    if (existing.length) {
-      await pool.query('UPDATE domaine SET type=$1, nom=$2 WHERE id=1', [domaine.type, domaine.nom])
-    } else {
-      await pool.query('INSERT INTO domaine (id, type, nom) VALUES (1,$1,$2)', [domaine.type, domaine.nom])
-    }
+  async save(domaine, organisationId) {
+    await pool.query(
+      `INSERT INTO domaine (organisation_id, type, nom) VALUES ($1,$2,$3)
+       ON CONFLICT (organisation_id) DO UPDATE SET type=$2, nom=$3`,
+      [organisationId, domaine.type, domaine.nom]
+    )
 
     const categories = getCategoriesByDomaine(domaine.type)
     for (const cat of categories) {

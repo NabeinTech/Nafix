@@ -214,6 +214,8 @@ function registerAppHandlers() {
   const dashboardService = require('./core/services/dashboardService')
   const statistiquesService = require('./core/services/statistiquesService')
   const organisationsService = require('./core/services/organisationsService')
+  const parametresService = require('./core/services/parametresService')
+  const domaineService = require('./core/services/domaineService')
 
   // Sprint 4 — l'organisation vient désormais de l'utilisateur authentifié
   // (utilisateurConnecte.organisation_id), jamais d'une "première organisation
@@ -233,7 +235,6 @@ function registerAppHandlers() {
   const CategoriesDAO   = require('./dao/CategoriesDAO')
   const ParametresDAO   = require('./dao/ParametresDAO')
   const UtilisateursDAO = require('./dao/UtilisateursDAO')
-  const DomaineDAO      = require('./dao/DomaineDAO')
 
   // ===== VALIDATION IPC =====
   const MODES_PAIEMENT = ['especes', 'wave', 'orange_money', 'cheque', 'pret', 'carte']
@@ -367,7 +368,7 @@ function registerAppHandlers() {
 
       const valeur = (ligne, idx) => (idx === -1 ? '' : (ligne[idx] ?? ''))
 
-      const domaineCourant = await DomaineDAO.get()
+      const domaineCourant = await domaineService.get(organisationId)
       const categoriesExistantes = await CategoriesDAO.getAll()
       const categoriesConnues = new Set(categoriesExistantes.map(c => normaliser(c.nom)))
 
@@ -518,10 +519,10 @@ function registerAppHandlers() {
   })
 
   // ===== PARAMETRES =====
-  ipcMain.handle('parametres:get', () => ParametresDAO.get())
-  ipcMain.handle('parametres:save', (_, params) => {
+  ipcMain.handle('parametres:get', async () => parametresService.get(await getOrganisationIdActive()))
+  ipcMain.handle('parametres:save', async (_, params) => {
     verifierPermission('parametres:save', utilisateurConnecte)
-    return ParametresDAO.save(params)
+    return parametresService.save(params, await getOrganisationIdActive())
   })
 
   // Sauvegarde complète — un seul fichier .zip contenant tout ce qu'il faut
@@ -1005,10 +1006,10 @@ function registerAppHandlers() {
   })
 
   // ===== DOMAINE =====
-  ipcMain.handle('domaine:get', () => DomaineDAO.get())
-  ipcMain.handle('domaine:save', (_, d) => {
+  ipcMain.handle('domaine:get', async () => domaineService.get(await getOrganisationIdActive()))
+  ipcMain.handle('domaine:save', async (_, d) => {
     verifierPermission('domaine:save', utilisateurConnecte)
-    return DomaineDAO.save(d)
+    return domaineService.save(d, await getOrganisationIdActive())
   })
 
   // ===== AVOIRS / COMPTES PRÉPAYÉS =====
