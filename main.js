@@ -216,6 +216,7 @@ function registerAppHandlers() {
   const organisationsService = require('./core/services/organisationsService')
   const parametresService = require('./core/services/parametresService')
   const domaineService = require('./core/services/domaineService')
+  const categoriesService = require('./core/services/categoriesService')
 
   // Sprint 4 — l'organisation vient désormais de l'utilisateur authentifié
   // (utilisateurConnecte.organisation_id), jamais d'une "première organisation
@@ -232,7 +233,6 @@ function registerAppHandlers() {
   const ProduitsDAO     = require('./dao/ProduitsDAO')
   const ClientsDAO      = require('./dao/ClientsDAO')
   const DevisDAO        = require('./dao/DevisDAO')
-  const CategoriesDAO   = require('./dao/CategoriesDAO')
   const ParametresDAO   = require('./dao/ParametresDAO')
   const UtilisateursDAO = require('./dao/UtilisateursDAO')
 
@@ -369,7 +369,7 @@ function registerAppHandlers() {
       const valeur = (ligne, idx) => (idx === -1 ? '' : (ligne[idx] ?? ''))
 
       const domaineCourant = await domaineService.get(organisationId)
-      const categoriesExistantes = await CategoriesDAO.getAll()
+      const categoriesExistantes = await categoriesService.getAll(organisationId)
       const categoriesConnues = new Set(categoriesExistantes.map(c => normaliser(c.nom)))
 
       let importes = 0
@@ -385,7 +385,7 @@ function registerAppHandlers() {
         const categorie = categorieBrute || 'Sans catégorie'
 
         if (!categoriesConnues.has(normaliser(categorie))) {
-          await CategoriesDAO.create({ nom: categorie, icone: '📦', couleur: 'blue', domaine: domaineCourant?.type })
+          await categoriesService.create({ nom: categorie, icone: '📦', couleur: 'blue', domaine: domaineCourant?.type }, organisationId)
           categoriesConnues.add(normaliser(categorie))
         }
 
@@ -1035,6 +1035,7 @@ function registerAppHandlers() {
     verifierPermission('db:getStats', utilisateurConnecte)
     const pool = require('./db/pool')
     const config = require(getDbConfigPath())
+    const organisationIdStats = await getOrganisationIdActive()
     const tables = [
       'produits', 'clients', 'ventes', 'devis', 'tresorerie',
       'fournisseurs', 'achats', 'categories', 'sous_categories',
@@ -1043,12 +1044,14 @@ function registerAppHandlers() {
     const tableStats = []
     for (const table of tables) {
       try {
-        const res = await pool.query(`SELECT COUNT(*) AS count FROM ${table}`)
+        const res = await pool.query(`SELECT COUNT(*) AS count FROM ${table} WHERE organisation_id = $1`, [organisationIdStats])
         tableStats.push({ table, count: parseInt(res.rows[0].count, 10) })
       } catch (e) {
         tableStats.push({ table, count: 0, erreur: e.message })
       }
     }
+    // pg_database_size est une métrique physique de la base PostgreSQL entière —
+    // non scopable par organisation par nature (contrairement aux comptages ci-dessus).
     let dbSize = null
     try {
       const res = await pool.query(`SELECT pg_size_pretty(pg_database_size($1)) AS size`, [config.database])
@@ -1071,12 +1074,12 @@ function registerAppHandlers() {
   })
 
   // ===== CATEGORIES =====
-  ipcMain.handle('categories:getAll', () => CategoriesDAO.getAll())
-  ipcMain.handle('categories:create', (_, cat) => CategoriesDAO.create(cat))
-  ipcMain.handle('categories:update', (_, cat) => CategoriesDAO.update(cat))
-  ipcMain.handle('categories:delete', (_, id) => CategoriesDAO.delete(id))
+  ipcMain.handle('categories:getAll', async () => categoriesService.getAll(await getOrganisationIdActive()))
+  ipcMain.handle('categories:create', async (_, cat) => categoriesService.create(cat, await getOrganisationIdActive()))
+  ipcMain.handle('categories:update', async (_, cat) => categoriesService.update(cat, await getOrganisationIdActive()))
+  ipcMain.handle('categories:delete', async (_, id) => categoriesService.delete(id, await getOrganisationIdActive()))
 
   // ===== SOUS-CATEGORIES =====
-  ipcMain.handle('sous_categories:create', (_, scat) => CategoriesDAO.createSousCategorie(scat))
-  ipcMain.handle('sous_categories:delete', (_, id) => CategoriesDAO.deleteSousCategorie(id))
+  ipcMain.handle('sous_categories:create', async (_, scat) => categoriesService.createSousCategorie(scat, await getOrganisationIdActive()))
+  ipcMain.handle('sous_categories:delete', async (_, id) => categoriesService.deleteSousCategorie(id, await getOrganisationIdActive()))
 }

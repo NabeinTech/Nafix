@@ -300,6 +300,17 @@ async function runMigrations() {
     await client.query('UPDATE domaine SET organisation_id = $1 WHERE organisation_id IS NULL', [idOrganisationLegacy])
     await client.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_domaine_organisation_id ON domaine(organisation_id)')
 
+    // ── Sprint 7, Chantier 1 — Catégories et sous-catégories ──────────────
+    // categories.id/sous_categories.id sont déjà des SERIAL — pas de
+    // conversion de séquence nécessaire ici (contrairement à parametres/domaine).
+    await client.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS organisation_id INTEGER REFERENCES organisations(id)')
+    await client.query('UPDATE categories SET organisation_id = $1 WHERE organisation_id IS NULL', [idOrganisationLegacy])
+    await client.query('ALTER TABLE categories DROP CONSTRAINT IF EXISTS categories_nom_key')
+    await client.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_org_nom ON categories(organisation_id, nom)')
+
+    await client.query('ALTER TABLE sous_categories ADD COLUMN IF NOT EXISTS organisation_id INTEGER REFERENCES organisations(id)')
+    await client.query('UPDATE sous_categories SET organisation_id = $1 WHERE organisation_id IS NULL', [idOrganisationLegacy])
+
     console.log('✅ Migrations terminées')
   } catch (err) {
     console.error('❌ Erreur migration:', err.message)

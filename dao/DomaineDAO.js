@@ -77,17 +77,17 @@ const DomaineDAO = {
 
     const categories = getCategoriesByDomaine(domaine.type)
     for (const cat of categories) {
-      const existant = await pool.query('SELECT id FROM categories WHERE nom = $1', [cat.nom])
+      const existant = await pool.query('SELECT id FROM categories WHERE nom = $1 AND organisation_id = $2', [cat.nom, organisationId])
       if (!existant.rows.length) {
         const { rows } = await pool.query(
-          'INSERT INTO categories (nom, icone, couleur, domaine) VALUES ($1,$2,$3,$4) RETURNING id',
-          [cat.nom, cat.icone, cat.couleur, domaine.type]
+          'INSERT INTO categories (nom, icone, couleur, domaine, organisation_id) VALUES ($1,$2,$3,$4,$5) RETURNING id',
+          [cat.nom, cat.icone, cat.couleur, domaine.type, organisationId]
         )
         const catId = rows[0].id
         for (const sc of (cat.sous_categories || [])) {
           await pool.query(
-            'INSERT INTO sous_categories (categorie_id, nom) VALUES ($1,$2)',
-            [catId, sc]
+            'INSERT INTO sous_categories (categorie_id, nom, organisation_id) VALUES ($1,$2,$3)',
+            [catId, sc, organisationId]
           )
         }
       }
