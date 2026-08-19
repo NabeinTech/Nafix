@@ -18,6 +18,7 @@ import {
 } from '@ant-design/icons'
 import { getTousDomaines, getDomaine } from '../utils/domainConfig'
 import { PERMISSIONS_DEFAUT_PAR_ROLE } from '../utils/permissions'
+import dayjs from 'dayjs'
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -33,6 +34,7 @@ function Parametres({ utilisateur }) {
 
   const [parametres, setParametres] = useState({})
   const [organisation, setOrganisation] = useState(null)
+  const [abonnement, setAbonnement] = useState(null)
   const [organisationLoading, setOrganisationLoading] = useState(false)
   const [statutModalVisible, setStatutModalVisible] = useState(false)
   const [statutConfirmText, setStatutConfirmText] = useState('')
@@ -105,12 +107,22 @@ function Parametres({ utilisateur }) {
     setDomaine(data?.type || null)
   }, [])
 
+  const chargerAbonnement = useCallback(async () => {
+    if (!ipcRenderer) return
+    try {
+      setAbonnement(await ipcRenderer.invoke('abonnement:getStatut'))
+    } catch {
+      setAbonnement(null)
+    }
+  }, [])
+
   useEffect(() => {
     chargerParametres()
     chargerUtilisateurs()
     chargerDomaine()
     chargerOrganisation()
-  }, [chargerParametres, chargerUtilisateurs, chargerDomaine, chargerOrganisation])
+    chargerAbonnement()
+  }, [chargerParametres, chargerUtilisateurs, chargerDomaine, chargerOrganisation, chargerAbonnement])
 
   // ── Sauvegarder entreprise ───────────────────────────────
   const sauvegarderEntreprise = async (values) => {
@@ -785,6 +797,9 @@ function Parametres({ utilisateur }) {
   const organisationActive = organisation?.statut === 'active'
   const confirmationAttendue = organisationActive ? 'DÉSACTIVER' : 'RÉACTIVER'
 
+  const LIBELLE_STATUT_ABONNEMENT = { essai: 'Essai', actif: 'Actif', impaye: 'Paiement en retard', suspendu: 'Suspendu', annule: 'Annulé' }
+  const COULEUR_STATUT_ABONNEMENT = { essai: 'gold', actif: 'green', impaye: 'orange', suspendu: 'red', annule: 'red' }
+
   const tabOrganisation = (
     <div>
       <Card style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 16 }}>
@@ -812,6 +827,40 @@ function Parametres({ utilisateur }) {
             Identifiant technique : <code>{organisation.code}</code> (non modifiable)
           </Text>
         )}
+      </Card>
+
+      <Card style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <Text strong style={{ fontSize: 15 }}>Abonnement</Text>
+          {abonnement && (
+            <Tag color={COULEUR_STATUT_ABONNEMENT[abonnement.statut] || 'default'} style={{ borderRadius: 12 }}>
+              ● {LIBELLE_STATUT_ABONNEMENT[abonnement.statut] || abonnement.statut}
+            </Tag>
+          )}
+        </div>
+        {abonnement ? (
+          <Row gutter={[16, 8]}>
+            <Col span={12}>
+              <Text style={{ display: 'block', color: '#888', fontSize: 12 }}>Plan</Text>
+              <Text strong>{abonnement.plan_nom || '—'}</Text>
+            </Col>
+            <Col span={12}>
+              <Text style={{ display: 'block', color: '#888', fontSize: 12 }}>
+                {abonnement.statut === 'essai' ? 'Fin de la période d\'essai' : 'Prochain paiement'}
+              </Text>
+              <Text strong>
+                {abonnement.statut === 'essai'
+                  ? (abonnement.fin_essai_le ? dayjs(abonnement.fin_essai_le).format('DD/MM/YYYY') : '—')
+                  : (abonnement.prochain_paiement_le ? dayjs(abonnement.prochain_paiement_le).format('DD/MM/YYYY') : '—')}
+              </Text>
+            </Col>
+          </Row>
+        ) : (
+          <Text style={{ color: '#aaa' }}>Chargement…</Text>
+        )}
+        <Text style={{ display: 'block', marginTop: 16, color: '#aaa', fontSize: 12 }}>
+          Pour toute modification de votre abonnement, contactez votre administrateur plateforme.
+        </Text>
       </Card>
 
       <Card style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 16 }}>

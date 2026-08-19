@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { Layout, Menu, Avatar, Typography, Button, Popconfirm } from 'antd'
+import { Layout, Menu, Avatar, Typography, Button, Popconfirm, Tag } from 'antd'
+import dayjs from 'dayjs'
 import {
   DashboardOutlined, ShoppingOutlined, TeamOutlined,
   FileTextOutlined, ShoppingCartOutlined, FileDoneOutlined,
@@ -14,11 +15,16 @@ import { utilisateurPeutAcceder } from '../utils/permissions'
 const { Sider } = Layout
 const { Text } = Typography
 
-function Sidebar({ utilisateur, onLogout }) {
+function Sidebar({ utilisateur, onLogout, statutAbonnement }) {
   const [collapsed, setCollapsed] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const role = utilisateur?.role || 'caissier'
+
+  const enEssai = statutAbonnement?.statut === 'essai' && statutAbonnement?.accesAutorise
+  const joursRestantsEssai = enEssai && statutAbonnement?.fin_essai_le
+    ? dayjs(statutAbonnement.fin_essai_le).diff(dayjs(), 'day')
+    : null
 
   const tousLesItems = [
     // ── 1. Tableau de bord ───────────────────────────────────────────
@@ -177,6 +183,11 @@ function Sidebar({ utilisateur, onLogout }) {
             }}>
               {role}
             </Text>
+            {joursRestantsEssai !== null && (
+              <Tag color="gold" style={{ marginTop: 4, borderRadius: 8, fontSize: 10, lineHeight: '16px' }}>
+                Essai — {joursRestantsEssai >= 0 ? `J-${joursRestantsEssai}` : 'dernier jour'}
+              </Tag>
+            )}
           </div>
         </div>
       )}

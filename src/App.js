@@ -19,8 +19,11 @@ import NafixVoice from './pages/NafixVoice'
 import Fournisseurs from './pages/Fournisseurs'
 import Commandes from './pages/Commandes'
 import ComptesPrepayes from './pages/ComptesPrepayes'
+import EcranAbonnementBloque from './components/EcranAbonnementBloque'
 import { peutAcceder } from './utils/permissions'
 import 'antd/dist/reset.css'
+
+const INTERVALLE_RAFRAICHISSEMENT_ABONNEMENT_MS = 5 * 60 * 1000
 
 const { Content } = Layout
 
@@ -61,6 +64,37 @@ function App() {
   const [couleurTheme, setCouleurTheme] = useState(
     () => localStorage.getItem('nafix_couleur_theme') || '#1890ff'
   )
+
+  const [statutAbonnement, setStatutAbonnement] = useState(null)
+  const [organisationMine, setOrganisationMine] = useState(null)
+
+  // Statut d'abonnement — chargé au login puis rafraîchi périodiquement,
+  // pour refléter un changement fait par le Platform Admin (suspension,
+  // réactivation) sans attendre une reconnexion. Les deux canaux IPC sont
+  // exemptés du blocage d'abonnement (main.js, ignorerAbonnement: true),
+  // donc consultables même si accesAutorise finit par être false.
+  useEffect(() => {
+    if (!utilisateur || !ipcRenderer) {
+      setStatutAbonnement(null)
+      setOrganisationMine(null)
+      return
+    }
+    let annule = false
+    const chargerStatutAbonnement = async () => {
+      try {
+        const [abo, org] = await Promise.all([
+          ipcRenderer.invoke('abonnement:getStatut'),
+          ipcRenderer.invoke('organisations:getMine')
+        ])
+        if (!annule) { setStatutAbonnement(abo); setOrganisationMine(org) }
+      } catch {
+        // session probablement invalide entre-temps ; ne bloque pas l'UI
+      }
+    }
+    chargerStatutAbonnement()
+    const intervalle = setInterval(chargerStatutAbonnement, INTERVALLE_RAFRAICHISSEMENT_ABONNEMENT_MS)
+    return () => { annule = true; clearInterval(intervalle) }
+  }, [utilisateur])
 
   useEffect(() => {
     const handler = (e) => {
@@ -110,6 +144,19 @@ function App() {
     )
   }
 
+  // ── Abonnement bloqué (suspendu/annulé/essai expiré) ─────
+  if (statutAbonnement && statutAbonnement.accesAutorise === false) {
+    return (
+      <ConfigProvider theme={{ token: { colorPrimary: couleurTheme } }}>
+        <EcranAbonnementBloque
+          organisation={organisationMine}
+          statutAbonnement={statutAbonnement}
+          onLogout={handleLogout}
+        />
+      </ConfigProvider>
+    )
+  }
+
   return (
     <ConfigProvider theme={{ token: { colorPrimary: couleurTheme } }}>
     <HashRouter>
@@ -117,6 +164,7 @@ function App() {
         <Sidebar
           utilisateur={utilisateur}
           onLogout={handleLogout}
+          statutAbonnement={statutAbonnement}
         />
         <Layout>
           <Content style={{ margin: '24px' }}>
