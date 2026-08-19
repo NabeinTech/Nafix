@@ -10,8 +10,8 @@ const RetoursDAO = {
     const { rows } = await pool.query(`
       SELECT r.*, v.montant_total AS vente_montant, c.nom AS client_nom
       FROM retours r
-      LEFT JOIN ventes v ON r.vente_id = v.id
-      LEFT JOIN clients c ON v.client_id = c.id
+      LEFT JOIN ventes v ON r.vente_id = v.id AND v.organisation_id = $1
+      LEFT JOIN clients c ON v.client_id = c.id AND c.organisation_id = $1
       WHERE r.organisation_id = $1
       ORDER BY r.created_at DESC
     `, [organisationId])
@@ -22,8 +22,8 @@ const RetoursDAO = {
     const { rows } = await pool.query(`
       SELECT r.*, v.montant_total AS vente_montant, c.nom AS client_nom
       FROM retours r
-      LEFT JOIN ventes v ON r.vente_id = v.id
-      LEFT JOIN clients c ON v.client_id = c.id
+      LEFT JOIN ventes v ON r.vente_id = v.id AND v.organisation_id = $1
+      LEFT JOIN clients c ON v.client_id = c.id AND c.organisation_id = $1
       WHERE r.statut = 'en_attente' AND r.organisation_id = $1
       ORDER BY r.created_at ASC
     `, [organisationId])
@@ -32,6 +32,19 @@ const RetoursDAO = {
 
   // Crée un retour en attente d'approbation — aucun effet immédiat sur stock/CA/trésorerie
   async create(retour, organisationId) {
+    // Sprint 10 — si une vente_id est fournie (elle est nullable — un retour
+    // générique sans vente précise est un usage légitime déjà existant),
+    // elle doit appartenir à cette organisation (sinon RetoursDAO.getAll/
+    // getPendants ferait fuiter vente_montant et client_nom via les LEFT JOIN
+    // ventes/clients).
+    if (retour.vente_id) {
+      const { rows: [venteOk] } = await pool.query(
+        'SELECT id FROM ventes WHERE id = $1 AND organisation_id = $2',
+        [retour.vente_id, organisationId]
+      )
+      if (!venteOk) throw new Error('Vente introuvable')
+    }
+
     const montant = parseFloat(retour.montant_retour) || 0
     const { rows } = await pool.query(
       `INSERT INTO retours (vente_id, panier_retour, montant_retour, raison, mode_remboursement, statut, organisation_id)

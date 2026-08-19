@@ -217,6 +217,7 @@ function registerAppHandlers() {
   const parametresService = require('./core/services/parametresService')
   const domaineService = require('./core/services/domaineService')
   const categoriesService = require('./core/services/categoriesService')
+  const sauvegardeService = require('./core/services/sauvegardeService')
 
   // Sprint 4 — l'organisation vient désormais de l'utilisateur authentifié
   // (utilisateurConnecte.organisation_id), jamais d'une "première organisation
@@ -233,7 +234,6 @@ function registerAppHandlers() {
   const ProduitsDAO     = require('./dao/ProduitsDAO')
   const ClientsDAO      = require('./dao/ClientsDAO')
   const DevisDAO        = require('./dao/DevisDAO')
-  const ParametresDAO   = require('./dao/ParametresDAO')
   const UtilisateursDAO = require('./dao/UtilisateursDAO')
 
   // ===== VALIDATION IPC =====
@@ -525,80 +525,56 @@ function registerAppHandlers() {
     return parametresService.save(params, await getOrganisationIdActive())
   })
 
-  // Sauvegarde complète — un seul fichier .zip contenant tout ce qu'il faut
-  // pour restaurer Nafix ailleurs : dump complet de la base (produits, ventes,
-  // clients, trésorerie, paramètres — logo inclus puisqu'il est stocké en
-  // base) + la config de connexion utilisée. Utilise pg_dump (fourni avec
-  // Nafix) plutôt qu'une simple copie de fichiers, pour une sauvegarde
-  // cohérente même si l'app tourne au moment de l'export.
+  // Sauvegarde scopée par organisation (Sprint 9) — remplace l'ancien export
+  // pg_dump de la base entière (fuite de confidentialité inter-organisations
+  // identifiée à l'audit de clôture du Sprint 8) par un fichier .json ne
+  // contenant que les données de l'organisation de l'utilisateur connecté.
   ipcMain.handle('parametres:exporterSauvegarde', async () => {
     verifierPermission('parametres:exporterSauvegarde', utilisateurConnecte)
     const fs = require('fs')
-    const path = require('path')
-    const os = require('os')
-    const { execFile, spawn } = require('child_process')
     const { dialog } = require('electron')
-    const { getDbConfigPath } = require('./config/paths')
 
     const resultatDialogue = await dialog.showSaveDialog(mainWindow, {
-      title: 'Enregistrer la sauvegarde complète de Nafix',
-      defaultPath: `Nafix_Sauvegarde_${new Date().toISOString().slice(0, 10)}.zip`,
-      filters: [{ name: 'Archive ZIP', extensions: ['zip'] }]
+      title: 'Enregistrer la sauvegarde de mon organisation',
+      defaultPath: `Nafix_Sauvegarde_${new Date().toISOString().slice(0, 10)}.json`,
+      filters: [{ name: 'Sauvegarde Nafix', extensions: ['json'] }]
     })
     if (resultatDialogue.canceled || !resultatDialogue.filePath) {
       return { annule: true }
     }
 
-    const dossierTemp = fs.mkdtempSync(path.join(os.tmpdir(), 'nafix_backup_'))
     try {
-      const config = JSON.parse(fs.readFileSync(getDbConfigPath(), 'utf8'))
-
-      const binDir = app.isPackaged
-        ? path.join(process.resourcesPath, 'postgres', 'bin')
-        : path.join(__dirname, 'resources', 'postgres', 'bin')
-      const pgDump = path.join(binDir, 'pg_dump.exe')
-
-      const dumpPath = path.join(dossierTemp, 'base_de_donnees.sql')
-      await new Promise((resolve, reject) => {
-        execFile(pgDump, [
-          '-h', config.host, '-p', String(config.port), '-U', config.user,
-          '-d', config.database, '-f', dumpPath, '--no-owner', '--no-privileges'
-        ], {
-          env: { ...process.env, PGPASSWORD: config.password },
-          windowsHide: true, timeout: 120000
-        }, (error, stdout, stderr) => error ? reject(new Error(stderr || error.message)) : resolve())
-      })
-
-      // Config de connexion — permet de restaurer plus facilement sur un autre poste
-      fs.copyFileSync(getDbConfigPath(), path.join(dossierTemp, 'db.config.json'))
-
-      fs.writeFileSync(path.join(dossierTemp, 'LISEZ-MOI.txt'),
-        `Sauvegarde Nafix — générée le ${new Date().toLocaleString('fr-FR')}\r\n\r\n` +
-        `Contenu de cette archive :\r\n` +
-        `- base_de_donnees.sql : toutes les données (produits, ventes, clients, trésorerie,\r\n` +
-        `  catégories, utilisateurs, paramètres et logo de l'entreprise)\r\n` +
-        `- db.config.json : la configuration de connexion utilisée au moment de la sauvegarde\r\n\r\n` +
-        `Pour restaurer : utilisez psql ou pg_restore sur "base_de_donnees.sql" vers une base\r\n` +
-        `PostgreSQL vide, puis copiez db.config.json à l'emplacement attendu par Nafix.\r\n`,
-        'utf8'
-      )
-
-      await new Promise((resolve, reject) => {
-        const ps = spawn('powershell.exe', [
-          '-NoProfile', '-NonInteractive', '-Command',
-          `Compress-Archive -Path "${dossierTemp}\\*" -DestinationPath "${resultatDialogue.filePath}" -Force`
-        ], { windowsHide: true })
-        let stderr = ''
-        ps.stderr.on('data', d => { stderr += d })
-        ps.on('exit', code => code === 0 ? resolve() : reject(new Error(stderr || `Compression échouée (code ${code})`)))
-        ps.on('error', reject)
-      })
-
+      const sauvegarde = await sauvegardeService.exporter(await getOrganisationIdActive())
+      fs.writeFileSync(resultatDialogue.filePath, JSON.stringify(sauvegarde, null, 2), 'utf8')
       return { succes: true, chemin: resultatDialogue.filePath }
     } catch (err) {
       return { erreur: err.message }
-    } finally {
-      fs.rmSync(dossierTemp, { recursive: true, force: true })
+    }
+  })
+
+  // Restauration d'une sauvegarde d'organisation (Sprint 9) — n'accepte que le
+  // format produit par parametres:exporterSauvegarde ci-dessus ; exige que les
+  // tables cibles soient globalement vides (voir sauvegardeService.importer).
+  ipcMain.handle('parametres:importerSauvegarde', async () => {
+    verifierPermission('parametres:importerSauvegarde', utilisateurConnecte)
+    const fs = require('fs')
+    const { dialog } = require('electron')
+
+    const resultatDialogue = await dialog.showOpenDialog(mainWindow, {
+      title: 'Restaurer une sauvegarde Nafix',
+      properties: ['openFile'],
+      filters: [{ name: 'Sauvegarde Nafix', extensions: ['json'] }]
+    })
+    if (resultatDialogue.canceled || !resultatDialogue.filePaths.length) {
+      return { annule: true }
+    }
+
+    try {
+      const contenu = fs.readFileSync(resultatDialogue.filePaths[0], 'utf8')
+      const sauvegarde = JSON.parse(contenu)
+      return await sauvegardeService.importer(sauvegarde, await getOrganisationIdActive())
+    } catch (err) {
+      return { erreur: 'Fichier illisible ou invalide : ' + err.message }
     }
   })
 
@@ -1005,6 +981,42 @@ function registerAppHandlers() {
     return organisationsService.setStatut(await getOrganisationIdActive(), statut)
   })
 
+  // Onboarding self-service (écran de connexion) — appelé AVANT toute session,
+  // donc ni getOrganisationIdActive() ni verifierPermission() ici : c'est
+  // l'acte fondateur d'un compte, pas une opération d'un utilisateur déjà
+  // authentifié. Seule protection possible à ce stade : validation des champs
+  // + unicité de username (déjà appliquée dans OrganisationsDAO.creerAvecAdmin).
+  ipcMain.handle('organisations:creerAvecAdmin', async (_, donnees) => {
+    validateIPC(donnees, {
+      nom:       { required: true, type: 'string', maxLen: 200 },
+      adminNom:  { required: true, type: 'string', maxLen: 100 },
+      username:  { required: true, type: 'string', maxLen: 100 },
+      password:  { required: true, type: 'string', maxLen: 200 }
+    })
+    const resultat = await organisationsService.creerAvecAdmin(donnees)
+    if (resultat.erreur) return resultat
+    utilisateurConnecte = resultat.succes.utilisateur
+    return { utilisateur: resultat.succes.utilisateur }
+  })
+
+  // Création d'une organisation supplémentaire par un administrateur déjà
+  // connecté (franchise/multi-boutique) — même mécanisme que ci-dessus, mais
+  // ici une session existe déjà : RBAC appliqué, et surtout aucun changement
+  // de session — l'admin créateur reste connecté à SA propre organisation,
+  // il n'obtient aucun accès à celle qu'il vient de créer.
+  ipcMain.handle('organisations:creerOrganisation', async (_, donnees) => {
+    verifierPermission('organisations:creerOrganisation', utilisateurConnecte)
+    validateIPC(donnees, {
+      nom:       { required: true, type: 'string', maxLen: 200 },
+      adminNom:  { required: true, type: 'string', maxLen: 100 },
+      username:  { required: true, type: 'string', maxLen: 100 },
+      password:  { required: true, type: 'string', maxLen: 200 }
+    })
+    const resultat = await organisationsService.creerAvecAdmin(donnees)
+    if (resultat.erreur) return resultat
+    return { succes: { organisation: resultat.succes.organisation, utilisateur: resultat.succes.utilisateur } }
+  })
+
   // ===== DOMAINE =====
   ipcMain.handle('domaine:get', async () => domaineService.get(await getOrganisationIdActive()))
   ipcMain.handle('domaine:save', async (_, d) => {
@@ -1070,7 +1082,7 @@ function registerAppHandlers() {
 
   ipcMain.handle('db:reinitialiser', async (_, options) => {
     verifierPermission('db:reinitialiser', utilisateurConnecte)
-    return ParametresDAO.reinitialiser(options || {})
+    return parametresService.reinitialiser(options || {}, await getOrganisationIdActive())
   })
 
   // ===== CATEGORIES =====

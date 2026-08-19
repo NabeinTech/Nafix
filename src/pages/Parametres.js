@@ -13,7 +13,7 @@ import {
   ReloadOutlined, CheckCircleOutlined, TableOutlined,
   BgColorsOutlined, CheckOutlined, EditOutlined,
   CloseOutlined, LockOutlined, WarningOutlined,
-  ExclamationCircleOutlined, CloudDownloadOutlined,
+  ExclamationCircleOutlined, CloudDownloadOutlined, CloudUploadOutlined,
   ApartmentOutlined, PoweroffOutlined
 } from '@ant-design/icons'
 import { getTousDomaines, getDomaine } from '../utils/domainConfig'
@@ -29,6 +29,7 @@ function Parametres({ utilisateur }) {
   const [formUser] = Form.useForm()
   const [formPassword] = Form.useForm()
   const [formOrganisation] = Form.useForm()
+  const [formNouvelleOrganisation] = Form.useForm()
 
   const [parametres, setParametres] = useState({})
   const [organisation, setOrganisation] = useState(null)
@@ -36,6 +37,9 @@ function Parametres({ utilisateur }) {
   const [statutModalVisible, setStatutModalVisible] = useState(false)
   const [statutConfirmText, setStatutConfirmText] = useState('')
   const [statutActionLoading, setStatutActionLoading] = useState(false)
+  const [nouvelleOrgModalVisible, setNouvelleOrgModalVisible] = useState(false)
+  const [nouvelleOrgLoading, setNouvelleOrgLoading] = useState(false)
+  const [nouvelleOrgCreee, setNouvelleOrgCreee] = useState(null)
   const [utilisateurs, setUtilisateurs] = useState([])
   const [domaine, setDomaine] = useState(null)
   const [domaineLoading, setDomaineLoading] = useState(false)
@@ -51,6 +55,7 @@ function Parametres({ utilisateur }) {
   const [dbStats, setDbStats] = useState(null)
   const [dbLoading, setDbLoading] = useState(false)
   const [sauvegardeEnCours, setSauvegardeEnCours] = useState(false)
+  const [restaurationEnCours, setRestaurationEnCours] = useState(false)
   const [resetModalVisible, setResetModalVisible] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
   const [resetConfirmText, setResetConfirmText] = useState('')
@@ -294,6 +299,25 @@ function Parametres({ utilisateur }) {
     }
   }
 
+  const creerNouvelleOrganisation = async (values) => {
+    if (!ipcRenderer) return
+    setNouvelleOrgLoading(true)
+    try {
+      const result = await ipcRenderer.invoke('organisations:creerOrganisation', {
+        nom: values.nomOrganisation,
+        adminNom: values.adminNom,
+        username: values.username,
+        password: values.password
+      })
+      if (result?.erreur) { message.error(`❌ ${result.erreur}`); return }
+      setNouvelleOrgCreee(result.succes)
+      formNouvelleOrganisation.resetFields()
+      message.success('✅ Nouvelle organisation créée !')
+    } finally {
+      setNouvelleOrgLoading(false)
+    }
+  }
+
   // ── Thème ────────────────────────────────────────────────
   const appliquerTheme = async (couleur) => {
     if (!couleur || !/^#[0-9a-fA-F]{6}$/.test(couleur)) {
@@ -345,7 +369,7 @@ function Parametres({ utilisateur }) {
     setDbLoading(false)
   }, [])
 
-  // ── Sauvegarde complète (dump base + config, en .zip) ─────
+  // ── Sauvegarde de mon organisation (données scopées, en .json) ─
   const exporterSauvegarde = async () => {
     if (!ipcRenderer) return
     setSauvegardeEnCours(true)
@@ -353,10 +377,30 @@ function Parametres({ utilisateur }) {
       const resultat = await ipcRenderer.invoke('parametres:exporterSauvegarde')
       if (resultat?.annule) return
       if (resultat?.erreur) { message.error(`❌ ${resultat.erreur}`); return }
-      message.success('✅ Sauvegarde complète enregistrée !')
+      message.success('✅ Sauvegarde enregistrée !')
     } finally {
       setSauvegardeEnCours(false)
     }
+  }
+
+  const importerSauvegarde = async () => {
+    if (!ipcRenderer) return
+    Modal.confirm({
+      title: 'Restaurer une sauvegarde ?',
+      content: 'Cette action exige que les données de Nafix soient actuellement vides (utilisez d\'abord "Réinitialiser" si besoin). Voulez-vous continuer ?',
+      okText: 'Restaurer', cancelText: 'Annuler',
+      onOk: async () => {
+        setRestaurationEnCours(true)
+        try {
+          const resultat = await ipcRenderer.invoke('parametres:importerSauvegarde')
+          if (resultat?.annule) return
+          if (resultat?.erreur) { message.error(`❌ ${resultat.erreur}`); return }
+          message.success('✅ Sauvegarde restaurée !')
+        } finally {
+          setRestaurationEnCours(false)
+        }
+      }
+    })
   }
 
   // ── Config rôles ─────────────────────────────────────────
@@ -768,6 +812,22 @@ function Parametres({ utilisateur }) {
             Identifiant technique : <code>{organisation.code}</code> (non modifiable)
           </Text>
         )}
+      </Card>
+
+      <Card style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+          <ApartmentOutlined style={{ color: '#1890ff', fontSize: 16 }} />
+          <Text strong style={{ fontSize: 15 }}>Nouvelle organisation</Text>
+        </div>
+        <Text style={{ display: 'block', marginBottom: 16, color: '#666' }}>
+          Créez une organisation totalement indépendante (autre boutique, autre franchise) avec son propre
+          compte administrateur. Vous ne conservez aucun accès à cette nouvelle organisation — communiquez
+          les identifiants créés à la personne qui la gérera.
+        </Text>
+        <Button icon={<UserAddOutlined />} style={{ borderRadius: 8 }}
+          onClick={() => { setNouvelleOrgCreee(null); setNouvelleOrgModalVisible(true) }}>
+          Créer une nouvelle organisation
+        </Button>
       </Card>
 
       <Card
@@ -1392,26 +1452,37 @@ function Parametres({ utilisateur }) {
           </div>
           <div>
             <Text strong style={{ color: '#389e0d', fontSize: 16, display: 'block' }}>
-              Sauvegarde complète
+              Sauvegarde de mon organisation
             </Text>
             <Text style={{ color: '#8c8c8c', fontSize: 12 }}>
-              Exporte toutes les données de Nafix (produits, ventes, clients, trésorerie, catégories,
-              utilisateurs, paramètres et logo) dans un seul fichier .zip — à garder sur une clé USB
+              Exporte les données de votre organisation (produits, ventes, clients, trésorerie,
+              catégories, paramètres et logo) dans un fichier .json — à garder sur une clé USB
               ou un espace cloud, en plus de ce PC.
             </Text>
           </div>
         </div>
 
-        <Button
-          type="primary"
-          icon={<CloudDownloadOutlined />}
-          size="large"
-          loading={sauvegardeEnCours}
-          onClick={exporterSauvegarde}
-          style={{ borderRadius: 10, fontWeight: 'bold', background: '#52c41a', borderColor: '#52c41a' }}
-        >
-          Télécharger la sauvegarde complète
-        </Button>
+        <Space wrap>
+          <Button
+            type="primary"
+            icon={<CloudDownloadOutlined />}
+            size="large"
+            loading={sauvegardeEnCours}
+            onClick={exporterSauvegarde}
+            style={{ borderRadius: 10, fontWeight: 'bold', background: '#52c41a', borderColor: '#52c41a' }}
+          >
+            Télécharger la sauvegarde
+          </Button>
+          <Button
+            icon={<CloudUploadOutlined />}
+            size="large"
+            loading={restaurationEnCours}
+            onClick={importerSauvegarde}
+            style={{ borderRadius: 10, fontWeight: 'bold', borderColor: '#52c41a', color: '#389e0d' }}
+          >
+            Restaurer une sauvegarde
+          </Button>
+        </Space>
       </Card>
 
       {/* ── Zone Danger ───────────────────────────────────── */}
@@ -1792,6 +1863,82 @@ function Parametres({ utilisateur }) {
             {organisationActive ? 'Désactiver' : 'Réactiver'}
           </Button>
         </div>
+      </Modal>
+
+      {/* ── Modal Création d'une nouvelle organisation ── */}
+      <Modal
+        title={<Space><UserAddOutlined style={{ color: '#1890ff' }} /><Text strong>Créer une nouvelle organisation</Text></Space>}
+        open={nouvelleOrgModalVisible}
+        onCancel={() => { setNouvelleOrgModalVisible(false); formNouvelleOrganisation.resetFields(); setNouvelleOrgCreee(null) }}
+        footer={null}
+        width={480}
+        centered
+      >
+        {nouvelleOrgCreee ? (
+          <div>
+            <div style={{
+              background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 10,
+              padding: '16px', marginBottom: 20
+            }}>
+              <Text style={{ color: '#237804', display: 'block', marginBottom: 10, fontWeight: 600 }}>
+                ✅ Organisation « {nouvelleOrgCreee.organisation.nom} » créée !
+              </Text>
+              <Text style={{ display: 'block', color: '#666', marginBottom: 8 }}>
+                Communiquez ces identifiants à la personne qui gérera cette organisation :
+              </Text>
+              <Text style={{ display: 'block' }}>Identifiant : <strong>{nouvelleOrgCreee.utilisateur.username}</strong></Text>
+              <Text style={{ display: 'block', color: '#aaa', fontSize: 12, marginTop: 8 }}>
+                Le mot de passe n'est pas ré-affiché — c'est celui que vous venez de saisir.
+              </Text>
+            </div>
+            <Button type="primary" style={{ borderRadius: 8, width: '100%' }}
+              onClick={() => { setNouvelleOrgModalVisible(false); setNouvelleOrgCreee(null) }}>
+              Fermer
+            </Button>
+          </div>
+        ) : (
+          <Form form={formNouvelleOrganisation} layout="vertical" onFinish={creerNouvelleOrganisation}>
+            <Form.Item name="nomOrganisation" label="Nom de l'entreprise"
+              rules={[{ required: true, message: 'Le nom est obligatoire' }]}>
+              <Input prefix={<ApartmentOutlined />} size="large" style={{ borderRadius: 8 }} maxLength={200} />
+            </Form.Item>
+            <Form.Item name="adminNom" label="Nom du responsable"
+              rules={[{ required: true, message: 'Le nom du responsable est obligatoire' }]}>
+              <Input prefix={<UserOutlined />} size="large" style={{ borderRadius: 8 }} maxLength={100} />
+            </Form.Item>
+            <Form.Item name="username" label="Identifiant de connexion"
+              rules={[{ required: true, message: 'L\'identifiant est obligatoire' }]}>
+              <Input prefix={<UserOutlined />} size="large" style={{ borderRadius: 8 }} maxLength={100} />
+            </Form.Item>
+            <Form.Item name="password" label="Mot de passe"
+              rules={[{ required: true, message: 'Le mot de passe est obligatoire' }, { min: 6, message: 'Au moins 6 caractères' }]}>
+              <Input.Password prefix={<LockOutlined />} size="large" style={{ borderRadius: 8 }} maxLength={200} />
+            </Form.Item>
+            <Form.Item name="passwordConfirm" label="Confirmer le mot de passe" dependencies={['password']}
+              rules={[
+                { required: true, message: 'La confirmation est obligatoire' },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue('password') === value) return Promise.resolve()
+                    return Promise.reject(new Error('Les mots de passe ne correspondent pas'))
+                  }
+                })
+              ]}>
+              <Input.Password prefix={<LockOutlined />} size="large" style={{ borderRadius: 8 }} maxLength={200} />
+            </Form.Item>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <Button size="large" style={{ borderRadius: 8 }}
+                onClick={() => { setNouvelleOrgModalVisible(false); formNouvelleOrganisation.resetFields() }}>
+                Annuler
+              </Button>
+              <Button type="primary" htmlType="submit" size="large" loading={nouvelleOrgLoading}
+                icon={<UserAddOutlined />}
+                style={{ borderRadius: 8, background: 'linear-gradient(135deg, #1890ff, #722ed1)', border: 'none' }}>
+                Créer
+              </Button>
+            </div>
+          </Form>
+        )}
       </Modal>
 
       {/* ── Modal Réinitialisation ── */}

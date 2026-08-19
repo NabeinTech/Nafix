@@ -5,7 +5,7 @@ const AchatsDAO = {
     const { rows } = await pool.query(`
       SELECT a.*, f.nom AS fournisseur_nom
       FROM achats a
-      LEFT JOIN fournisseurs f ON a.fournisseur_id = f.id
+      LEFT JOIN fournisseurs f ON a.fournisseur_id = f.id AND f.organisation_id = $1
       WHERE a.organisation_id = $1
       ORDER BY a.created_at DESC
     `, [organisationId])
@@ -16,6 +16,18 @@ const AchatsDAO = {
     const client = await pool.connect()
     try {
       await client.query('BEGIN')
+
+      // Sprint 10 — le fournisseur_id fourni doit appartenir à cette
+      // organisation (sinon AchatsDAO.getAll ferait fuiter son nom via le
+      // LEFT JOIN fournisseurs).
+      if (achat.fournisseur_id) {
+        const { rows: [fournisseurOk] } = await client.query(
+          'SELECT id FROM fournisseurs WHERE id = $1 AND organisation_id = $2',
+          [achat.fournisseur_id, organisationId]
+        )
+        if (!fournisseurOk) throw new Error('Fournisseur introuvable')
+      }
+
       const { rows } = await client.query(
         `INSERT INTO achats
           (fournisseur_id, reference, montant_total, montant_paye, montant_du,

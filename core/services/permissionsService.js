@@ -22,7 +22,14 @@ const CANAUX_RESTREINTS = {
   // un appel IPC direct depuis un autre rôle était jusqu'ici possible.
   'domaine:save': ['administrateur'],
   'utilisateurs:getAll': ['administrateur'],
-  'db:getStats': ['administrateur']
+  'db:getStats': ['administrateur'],
+  // Sprint 9 — même protection que l'export qu'il remplace en partie.
+  'parametres:importerSauvegarde': ['administrateur'],
+  // Sprint 12 — création d'une organisation supplémentaire par un admin déjà
+  // connecté (scénario franchise/multi-boutique) ; à distinguer du canal
+  // organisations:creerAvecAdmin (Sprint 11), volontairement sans RBAC car
+  // appelé avant toute session, depuis l'écran de connexion.
+  'organisations:creerOrganisation': ['administrateur']
 }
 
 function verifierPermission(canal, utilisateurConnecte) {

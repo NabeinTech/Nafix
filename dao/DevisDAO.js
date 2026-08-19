@@ -5,7 +5,7 @@ const DevisDAO = {
     const { rows } = await pool.query(`
       SELECT d.*, c.nom as client_nom
       FROM devis d
-      LEFT JOIN clients c ON d.client_id = c.id
+      LEFT JOIN clients c ON d.client_id = c.id AND c.organisation_id = $1
       WHERE d.organisation_id = $1
       ORDER BY d.created_at DESC
     `, [organisationId])
@@ -13,6 +13,15 @@ const DevisDAO = {
   },
 
   async create(devis, organisationId) {
+    // Sprint 10 — le client_id fourni doit appartenir à cette organisation
+    // (sinon DevisDAO.getAll ferait fuiter son nom via le LEFT JOIN clients).
+    if (devis.client_id) {
+      const { rows: [clientOk] } = await pool.query(
+        'SELECT id FROM clients WHERE id = $1 AND organisation_id = $2',
+        [devis.client_id, organisationId]
+      )
+      if (!clientOk) throw new Error('Client introuvable')
+    }
     const { rows } = await pool.query(
       `INSERT INTO devis (client_id, validite, notes, montant_total, panier, statut, organisation_id)
        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
@@ -38,6 +47,16 @@ const DevisDAO = {
         [facture.devis_id, organisationId]
       )
       if (!devisExistant) throw new Error('Devis introuvable')
+
+      // Sprint 10 — même vérification que DevisDAO.create : le client_id
+      // fourni à la conversion doit appartenir à cette organisation.
+      if (facture.client_id) {
+        const { rows: [clientOk] } = await client.query(
+          'SELECT id FROM clients WHERE id = $1 AND organisation_id = $2',
+          [facture.client_id, organisationId]
+        )
+        if (!clientOk) throw new Error('Client introuvable')
+      }
 
       const montant = facture.montant_total || 0
       const { rows } = await client.query(

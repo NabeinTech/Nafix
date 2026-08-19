@@ -16,6 +16,7 @@ const ProduitsDAO = {
                  END
                ) AS item
           WHERE cc.statut NOT IN ('livree', 'annulee')
+            AND cc.organisation_id = p.organisation_id
             AND (item->>'produit_id') IS NOT NULL
             AND (item->>'produit_id') != ''
             AND (item->>'produit_id')::integer = p.id

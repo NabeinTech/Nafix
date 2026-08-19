@@ -28,4 +28,8 @@ function setStatut(organisationId, statut) {
   return OrganisationsDAO.setStatut(organisationId, statut)
 }
 
-module.exports = { getOrganisationActive, getById, update, setStatut }
+function creerAvecAdmin(donnees) {
+  return OrganisationsDAO.creerAvecAdmin(donnees)
+}
+
+module.exports = { getOrganisationActive, getById, update, setStatut, creerAvecAdmin }

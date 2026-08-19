@@ -311,6 +311,15 @@ async function runMigrations() {
     await client.query('ALTER TABLE sous_categories ADD COLUMN IF NOT EXISTS organisation_id INTEGER REFERENCES organisations(id)')
     await client.query('UPDATE sous_categories SET organisation_id = $1 WHERE organisation_id IS NULL', [idOrganisationLegacy])
 
+    // ── Sprint 9 — commandes_clients.numero était unique globalement alors que
+    // sa génération (CommandesDAO.create) est déjà scopée par organisation —
+    // deux organisations créant chacune leur première commande de l'année
+    // généraient le même numéro et entraient en collision. Même correctif que
+    // produits.reference (Sprint 1), clotures_journalieres.date_cloture
+    // (Sprint 3) et categories.nom (Sprint 7).
+    await client.query('ALTER TABLE commandes_clients DROP CONSTRAINT IF EXISTS commandes_clients_numero_key')
+    await client.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_commandes_org_numero ON commandes_clients(organisation_id, numero)')
+
     console.log('✅ Migrations terminées')
   } catch (err) {
     console.error('❌ Erreur migration:', err.message)

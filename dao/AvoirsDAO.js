@@ -13,7 +13,7 @@ const AvoirsDAO = {
         (SELECT COUNT(*) FROM transactions_avoir t WHERE t.avoir_id = a.id AND t.type = 'achat') AS nb_achats,
         (SELECT COUNT(*) FROM transactions_avoir t WHERE t.avoir_id = a.id)                       AS nb_transactions
       FROM avoirs_clients a
-      LEFT JOIN clients c ON a.client_id = c.id
+      LEFT JOIN clients c ON a.client_id = c.id AND c.organisation_id = $1
       WHERE a.organisation_id = $1
       ORDER BY a.created_at DESC
     `, [organisationId])
@@ -37,7 +37,7 @@ const AvoirsDAO = {
     const { rows } = await pool.query(`
       SELECT t.*, c.nom AS client_nom
       FROM transactions_avoir t
-      LEFT JOIN clients c ON t.client_id = c.id
+      LEFT JOIN clients c ON t.client_id = c.id AND c.organisation_id = $2
       WHERE t.avoir_id = $1 AND t.organisation_id = $2
       ORDER BY t.created_at DESC
     `, [avoirId, organisationId])
@@ -51,8 +51,8 @@ const AvoirsDAO = {
              a.reference AS avoir_reference,
              a.montant_initial AS avoir_montant_initial
       FROM transactions_avoir t
-      LEFT JOIN clients c ON t.client_id = c.id
-      LEFT JOIN avoirs_clients a ON t.avoir_id = a.id
+      LEFT JOIN clients c ON t.client_id = c.id AND c.organisation_id = $1
+      LEFT JOIN avoirs_clients a ON t.avoir_id = a.id AND a.organisation_id = $1
       WHERE t.organisation_id = $1
       ORDER BY t.created_at DESC
       LIMIT 500
@@ -64,6 +64,17 @@ const AvoirsDAO = {
     const dbClient = await pool.connect()
     try {
       await dbClient.query('BEGIN')
+
+      // Sprint 10 — le client_id fourni doit appartenir à cette organisation
+      // (sinon AvoirsDAO.getAll/getTransactions ferait fuiter nom, téléphone,
+      // email et adresse via les LEFT JOIN clients).
+      if (client_id) {
+        const { rows: [clientOk] } = await dbClient.query(
+          'SELECT id FROM clients WHERE id = $1 AND organisation_id = $2',
+          [client_id, organisationId]
+        )
+        if (!clientOk) throw new Error('Client introuvable')
+      }
 
       const reference = `CPRE-${Date.now().toString().slice(-8)}`
 

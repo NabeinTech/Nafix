@@ -1,4 +1,5 @@
 const pool = require('../db/pool')
+const AuthService = require('../auth/AuthService')
 
 const OrganisationsDAO = {
   async getById(id) {
@@ -39,6 +40,44 @@ const OrganisationsDAO = {
       [nom, code || null]
     )
     return rows[0]
+  },
+
+  // Onboarding self-service — appelé avant toute session (écran de connexion),
+  // donc sans organisationId/RBAC à ce stade : la seule protection possible
+  // est la validation des données. Transaction unique : si le username existe
+  // déjà, tout est annulé — jamais d'organisation orpheline sans utilisateur.
+  async creerAvecAdmin({ nom, adminNom, username, password }) {
+    const client = await pool.connect()
+    try {
+      await client.query('BEGIN')
+
+      const existant = await client.query('SELECT id FROM utilisateurs WHERE username = $1', [username])
+      if (existant.rows.length) {
+        await client.query('ROLLBACK')
+        return { erreur: 'Cet identifiant existe déjà !' }
+      }
+
+      const { rows: [organisation] } = await client.query(
+        "INSERT INTO organisations (nom, code, statut) VALUES ($1, NULL, 'active') RETURNING id, nom, code, statut, created_at",
+        [nom]
+      )
+
+      const hashedPwd = await AuthService.hashPassword(password)
+      const { rows: [utilisateur] } = await client.query(
+        `INSERT INTO utilisateurs (nom, username, password, role, organisation_id)
+         VALUES ($1, $2, $3, 'administrateur', $4)
+         RETURNING id, nom, username, role, organisation_id`,
+        [adminNom, username, hashedPwd, organisation.id]
+      )
+
+      await client.query('COMMIT')
+      return { succes: { organisation, utilisateur } }
+    } catch (err) {
+      await client.query('ROLLBACK')
+      return { erreur: err.message }
+    } finally {
+      client.release()
+    }
   }
 }
 

@@ -5,7 +5,7 @@ const CommandesDAO = {
     const { rows } = await pool.query(`
       SELECT cc.*, c.telephone AS client_tel_ref
       FROM commandes_clients cc
-      LEFT JOIN clients c ON cc.client_id = c.id
+      LEFT JOIN clients c ON cc.client_id = c.id AND c.organisation_id = $1
       WHERE cc.organisation_id = $1
       ORDER BY
         CASE cc.statut
@@ -35,6 +35,25 @@ const CommandesDAO = {
       date_livraison_prevue, priorite, mode_paiement,
       panier, total, acompte, notes, vendeur
     } = commande
+
+    // Sprint 10 — client_id et les produit_id du panier doivent appartenir à
+    // cette organisation (sinon CommandesDAO.getAll fait fuiter client_tel_ref,
+    // et ProduitsDAO.getAll contamine en_commande avec cette commande).
+    if (client_id) {
+      const { rows: [clientOk] } = await pool.query(
+        'SELECT id FROM clients WHERE id = $1 AND organisation_id = $2',
+        [client_id, organisationId]
+      )
+      if (!clientOk) throw new Error('Client introuvable')
+    }
+    const produitIds = [...new Set((panier || []).map(item => item.produit_id).filter(Boolean))]
+    if (produitIds.length) {
+      const { rows: produitsOk } = await pool.query(
+        'SELECT id FROM produits WHERE id = ANY($1::int[]) AND organisation_id = $2',
+        [produitIds, organisationId]
+      )
+      if (produitsOk.length !== produitIds.length) throw new Error('Produit introuvable')
+    }
 
     const { rows: [{ count }] } = await pool.query(
       'SELECT COUNT(*) FROM commandes_clients WHERE organisation_id = $1', [organisationId]

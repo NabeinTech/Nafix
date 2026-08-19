@@ -206,7 +206,7 @@ const TresorerieDAO = {
     const { rows: ventes } = await pool.query(`
       SELECT v.*, c.nom AS client_nom, c.telephone AS client_telephone
       FROM ventes v
-      LEFT JOIN clients c ON v.client_id = c.id
+      LEFT JOIN clients c ON v.client_id = c.id AND c.organisation_id = $2
       WHERE v.created_at::date = $1 AND v.organisation_id = $2
       ORDER BY v.created_at ASC
     `, [date, organisationId])

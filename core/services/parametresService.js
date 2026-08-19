@@ -11,4 +11,8 @@ function save(params, organisationId) {
   return ParametresDAO.save(params, organisationId)
 }
 
-module.exports = { get, save }
+function reinitialiser(options, organisationId) {
+  return ParametresDAO.reinitialiser(options, organisationId)
+}
+
+module.exports = { get, save, reinitialiser }

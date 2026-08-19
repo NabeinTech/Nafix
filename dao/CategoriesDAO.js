@@ -38,6 +38,17 @@ const CategoriesDAO = {
   },
 
   async createSousCategorie(scat, organisationId) {
+    // Sprint 10 — categorie_id doit appartenir à cette organisation (défense
+    // en profondeur : CategoriesDAO.getAll filtre déjà categories et
+    // sous_categories séparément par organisation_id, donc une ligne
+    // orpheline créée ici n'apparaît sous aucune catégorie visible — mais
+    // autant refuser la création plutôt que de laisser une référence morte).
+    const categorieOk = await pool.query(
+      'SELECT id FROM categories WHERE id = $1 AND organisation_id = $2',
+      [scat.categorie_id, organisationId]
+    )
+    if (!categorieOk.rows.length) return { erreur: 'Catégorie introuvable' }
+
     const existant = await pool.query(
       'SELECT id FROM sous_categories WHERE LOWER(nom) = LOWER($1) AND categorie_id = $2 AND organisation_id = $3',
       [scat.nom, scat.categorie_id, organisationId]

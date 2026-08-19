@@ -10,7 +10,7 @@ const VentesDAO = {
         v.est_pret, v.est_partiel, v.date_pret, v.panier, v.vendeur, v.notes, v.created_at,
         c.nom as client_nom
       FROM ventes v
-      LEFT JOIN clients c ON v.client_id = c.id
+      LEFT JOIN clients c ON v.client_id = c.id AND c.organisation_id = $1
       WHERE v.organisation_id = $1
       ORDER BY v.created_at DESC
     `, [organisationId])
@@ -22,6 +22,16 @@ const VentesDAO = {
     try {
       await client.query('BEGIN')
       const panier = JSON.parse(vente.panier || '[]')
+
+      // Sprint 10 — le client_id fourni doit appartenir à cette organisation
+      // (sinon VentesDAO.getAll ferait fuiter son nom via le LEFT JOIN clients).
+      if (vente.client_id) {
+        const { rows: [clientOk] } = await client.query(
+          'SELECT id FROM clients WHERE id = $1 AND organisation_id = $2',
+          [vente.client_id, organisationId]
+        )
+        if (!clientOk) throw new Error('Client introuvable')
+      }
 
       // Vérification stock avant toute écriture (verrou FOR UPDATE évite les races)
       // Un même produit peut apparaître sur plusieurs lignes (niveaux d'unité différents :
@@ -91,6 +101,16 @@ const VentesDAO = {
         'SELECT panier FROM ventes WHERE id = $1 AND organisation_id = $2 FOR UPDATE', [vente.id, organisationId]
       )
       if (!ancienne) throw new Error('Vente introuvable')
+
+      // Sprint 10 — même vérification qu'à la création : client_id doit
+      // appartenir à cette organisation avant d'être réécrit sur la vente.
+      if (vente.client_id) {
+        const { rows: [clientOk] } = await client.query(
+          'SELECT id FROM clients WHERE id = $1 AND organisation_id = $2',
+          [vente.client_id, organisationId]
+        )
+        if (!clientOk) throw new Error('Client introuvable')
+      }
 
       // Remettre le stock des anciens articles
       const ancienPanier = JSON.parse(ancienne.panier || '[]')
