@@ -6,6 +6,8 @@
 // existant correspondant (core/services/*), strictement inchangé.
 const path = require('path')
 const express = require('express')
+const pool = require('../../db/pool')
+const logger = require('./lib/logger')
 const authRoutes = require('./routes/auth')
 const platformRoutes = require('./routes/platform')
 const abonnementRoutes = require('./routes/abonnement')
@@ -30,7 +32,39 @@ function creerApp() {
   app.set('trust proxy', false)
   app.use(express.json())
 
-  app.get('/health', (req, res) => res.json({ ok: true }))
+  // Sprint 20 — une ligne structurée par requête (méthode, chemin, statut,
+  // durée, tenant si authentifié) — traçabilité minimale sans dépendance
+  // externe. req.tenantContext/req.platformAdmin ne sont posés qu'après les
+  // middlewares d'authentification de chaque routeur ; on les lit ici après
+  // coup (res.on('finish')), au moment où ils sont déjà disponibles.
+  app.use((req, res, next) => {
+    const debut = Date.now()
+    res.on('finish', () => {
+      logger.info('requete_http', {
+        methode: req.method,
+        chemin: req.originalUrl,
+        statut: res.statusCode,
+        dureeMs: Date.now() - debut,
+        organisationId: req.tenantContext?.organisationId || null,
+        platformAdminId: req.platformAdmin?.id || null
+      })
+    })
+    next()
+  })
+
+  // Health check réel — vérifie que PostgreSQL répond, pas seulement que le
+  // process Node est vivant (un "ok" qui ne veut rien dire n'aide personne
+  // en astreinte). Échoue proprement (503) plutôt que de laisser un
+  // health-check externe attendre un timeout.
+  app.get('/health', async (req, res) => {
+    try {
+      await pool.query('SELECT 1')
+      res.json({ ok: true, base: 'connectee' })
+    } catch (err) {
+      logger.erreur('health_check_echec', { message: err.message })
+      res.status(503).json({ ok: false, base: 'injoignable' })
+    }
+  })
 
   // Sprint 17 — page publique d'inscription (statique, aucune dépendance
   // externe, servie directement par Express). Appelle POST /auth/signup
@@ -73,7 +107,11 @@ function creerApp() {
   // API trop bavardes").
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
-    console.error('Erreur API:', err.message)
+    logger.erreur('erreur_non_geree', {
+      message: err.message, stack: err.stack,
+      methode: req.method, chemin: req.originalUrl,
+      organisationId: req.tenantContext?.organisationId || null
+    })
     res.status(500).json({ erreur: 'Erreur interne' })
   })
 

@@ -218,6 +218,7 @@ function registerAppHandlers() {
   const domaineService = require('./core/services/domaineService')
   const categoriesService = require('./core/services/categoriesService')
   const sauvegardeService = require('./core/services/sauvegardeService')
+  const abonnementsService = require('./core/services/abonnementsService')
 
   // Sprint 4 — l'organisation vient désormais de l'utilisateur authentifié
   // (utilisateurConnecte.organisation_id), jamais d'une "première organisation
@@ -225,10 +226,30 @@ function registerAppHandlers() {
   // dès qu'une base en contiendrait plus d'une. On la résout explicitement à
   // chaque appel plutôt que de la garder en variable globale cachée séparée —
   // utilisateurConnecte reste la seule source de vérité de session (Sprint 0).
-  async function getOrganisationIdActive() {
+  //
+  // Audit de clôture (post-Sprint 20) — constat : le blocage d'abonnement du
+  // Sprint 18 n'existait que côté API (server/api/middleware/subscriptionGate.js),
+  // jamais côté Desktop/IPC — une organisation suspendue gardait un accès
+  // complet et illimité via l'application Desktop. Comme getOrganisationIdActive()
+  // est le point de résolution unique appelé par la quasi-totalité des ~100
+  // handlers IPC, c'est ici — et nulle part ailleurs — que le même contrôle
+  // doit s'appliquer, pour rester cohérent avec l'API sans toucher chaque
+  // handler individuellement. Seuls les appelants qui doivent rester
+  // consultables même bloqué (voir abonnement:getStatut, organisations:getMine)
+  // passent explicitement { ignorerAbonnement: true } — tous les ~90 autres
+  // appels existants (`await getOrganisationIdActive()`, sans argument)
+  // héritent du contrôle par défaut, sans modification de leur propre code.
+  async function getOrganisationIdActive({ ignorerAbonnement = false } = {}) {
     if (!utilisateurConnecte) throw new Error('Aucune session active — connectez-vous pour continuer.')
     if (!utilisateurConnecte.organisation_id) throw new Error('Votre compte n\'est rattaché à aucune organisation. Contactez votre administrateur.')
-    return utilisateurConnecte.organisation_id
+    const organisationId = utilisateurConnecte.organisation_id
+    if (!ignorerAbonnement) {
+      const abonnement = await abonnementsService.getByOrganisation(organisationId)
+      if (!abonnementsService.accesAutorise(abonnement)) {
+        throw new Error('Abonnement inactif ou expiré. Contactez votre administrateur pour régulariser votre abonnement.')
+      }
+    }
+    return organisationId
   }
 
   const ProduitsDAO     = require('./dao/ProduitsDAO')
@@ -970,7 +991,19 @@ function registerAppHandlers() {
   // Sprint 5 — id toujours dérivé de la session (getOrganisationIdActive),
   // jamais accepté depuis le renderer : un utilisateur ne doit jamais pouvoir
   // lire/modifier une autre organisation en passant un id arbitraire.
-  ipcMain.handle('organisations:getMine', async () => organisationsService.getById(await getOrganisationIdActive()))
+  // ignorerAbonnement: true — une organisation bloquée doit pouvoir consulter
+  // son propre nom/statut (l'écran Paramètres en dépend), même sans accès aux
+  // modules métier.
+  ipcMain.handle('organisations:getMine', async () => organisationsService.getById(await getOrganisationIdActive({ ignorerAbonnement: true })))
+
+  // Audit de clôture (post-Sprint 20) — équivalent Desktop de GET /abonnement
+  // côté API : seule façon pour un utilisateur bloqué de savoir POURQUOI
+  // (et non recevoir juste une erreur générique sur chaque action).
+  ipcMain.handle('abonnement:getStatut', async () => {
+    const organisationId = await getOrganisationIdActive({ ignorerAbonnement: true })
+    const abonnement = await abonnementsService.getByOrganisation(organisationId)
+    return { ...abonnement, accesAutorise: abonnementsService.accesAutorise(abonnement) }
+  })
   ipcMain.handle('organisations:update', async (_, { nom }) => {
     verifierPermission('organisations:update', utilisateurConnecte)
     validateIPC({ nom }, { nom: { required: true, type: 'string', maxLen: 200 } })
