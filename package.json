@@ -13,7 +13,9 @@
     "antd": "^6.3.1",
     "bcryptjs": "^2.4.3",
     "dayjs": "^1.11.10",
+    "express": "^5.2.1",
     "html2canvas": "^1.4.1",
+    "jsonwebtoken": "^9.0.3",
     "jspdf": "^4.2.0",
     "koffi": "^3.1.5",
     "pg": "^8.20.0",
@@ -34,6 +36,7 @@
     "eject": "cd /d C:\\ && cd /d \"C:\\Users\\HP\\Desktop\\Nafix5\\Nafix\" && react-scripts eject",
     "dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && node launch.js\"",
     "electron": "concurrently \"npm start\" \"wait-on http://localhost:3000 && node launch.js\"",
+    "api": "node server/api/server.js",
     "dist": "cd /d C:\\ && cd /d \"C:\\Users\\HP\\Desktop\\Nafix5\\Nafix\" && react-scripts build && electron-builder --win nsis"
   },
   "build": {

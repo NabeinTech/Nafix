@@ -1,6 +1,10 @@
 # middleware/
 
-Prévu (Sprint 14) :
+**`tenantContext.js` implémenté (Sprint 14)** — `extraireTenantContext(payload)`.
+Pas encore branché comme middleware Express (Sprint 15) : fonction pure
+appelable indépendamment.
+
+Contenu :
 
 - **Authentification** : vérifie la signature et l'expiration de l'access
   token (JWT), rejette sinon.

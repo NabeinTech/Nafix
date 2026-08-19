@@ -70,6 +70,19 @@ const OrganisationsDAO = {
         [adminNom, username, hashedPwd, organisation.id]
       )
 
+      // Sprint 18 — toute organisation créée par ce flux reçoit un essai
+      // gratuit de 14 jours, dans la même transaction (jamais d'organisation
+      // sans abonnement). Silencieux si le plan n'existe pas encore (base pas
+      // migrée avec le Sprint 18) plutôt que de faire échouer la création.
+      const { rows: [planEssai] } = await client.query("SELECT id FROM plans WHERE code = 'essai_gratuit'")
+      if (planEssai) {
+        const finEssai = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+        await client.query(
+          "INSERT INTO abonnements (organisation_id, plan_id, statut, fin_essai_le) VALUES ($1,$2,'essai',$3)",
+          [organisation.id, planEssai.id, finEssai]
+        )
+      }
+
       await client.query('COMMIT')
       return { succes: { organisation, utilisateur } }
     } catch (err) {
@@ -78,6 +91,24 @@ const OrganisationsDAO = {
     } finally {
       client.release()
     }
+  },
+
+  // Sprint 19 — SEUL point sanctionné de tout le dépôt pour lister TOUTES les
+  // organisations sans filtre organisation_id. Nom délibérément explicite
+  // ("PourPlateforme") pour qu'un futur appel accidentel depuis un chemin
+  // tenant-scopé saute aux yeux en revue de code — n'appeler que depuis
+  // server/api/routes/platform.js, jamais depuis un service/DAO métier.
+  async getAllPourPlateforme() {
+    const { rows } = await pool.query(`
+      SELECT o.id, o.nom, o.code, o.statut, o.created_at,
+             a.statut AS abonnement_statut, a.fin_essai_le, p.code AS plan_code, p.nom AS plan_nom,
+             (SELECT COUNT(*)::int FROM utilisateurs u WHERE u.organisation_id = o.id) AS nb_utilisateurs
+      FROM organisations o
+      LEFT JOIN abonnements a ON a.organisation_id = o.id
+      LEFT JOIN plans p ON a.plan_id = p.id
+      ORDER BY o.id
+    `)
+    return rows
   }
 }
 

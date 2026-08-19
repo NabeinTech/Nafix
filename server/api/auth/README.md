@@ -1,6 +1,10 @@
 # auth/ (server/api/auth — à ne pas confondre avec auth/AuthService.js à la racine)
 
-Prévu (Sprint 14) :
+**`tokenService.js` implémenté (Sprint 14)** — `connexion`, `rafraichir`, `deconnexion`,
+`emettreAccessToken`, `verifierAccessToken`. Aucune route HTTP ne l'appelle
+encore (Sprint 15).
+
+Contenu :
 
 - Émission d'un **access token** JWT courte durée (~15 min), jamais persisté
   sur disque côté client — gardé en mémoire uniquement.

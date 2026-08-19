@@ -32,4 +32,10 @@ function creerAvecAdmin(donnees) {
   return OrganisationsDAO.creerAvecAdmin(donnees)
 }
 
-module.exports = { getOrganisationActive, getById, update, setStatut, creerAvecAdmin }
+// Sprint 19 — réservé à server/api/routes/platform.js (Platform Admin
+// uniquement). Voir l'avertissement dans OrganisationsDAO.getAllPourPlateforme.
+function getAllPourPlateforme() {
+  return OrganisationsDAO.getAllPourPlateforme()
+}
+
+module.exports = { getOrganisationActive, getById, update, setStatut, creerAvecAdmin, getAllPourPlateforme }

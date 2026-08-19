@@ -320,6 +320,144 @@ async function runMigrations() {
     await client.query('ALTER TABLE commandes_clients DROP CONSTRAINT IF EXISTS commandes_clients_numero_key')
     await client.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_commandes_org_numero ON commandes_clients(organisation_id, numero)')
 
+    // ── Sprint 14 — refresh tokens de la future API SaaS (fondation ajoutée
+    // en Sprint 13). Pas de organisation_id ici : un refresh token est
+    // toujours scopé par utilisateur_id, dont l'organisation se dérive déjà
+    // (utilisateurs.organisation_id) — dupliquer la valeur créerait une
+    // source de vérité redondante, potentiellement incohérente. token_hash
+    // stocke un hash SHA-256 du token opaque (haute entropie générée
+    // aléatoirement, pas un secret choisi par un humain — bcrypt, prévu pour
+    // les mots de passe, serait un coût inutile ici). remplace_par trace la
+    // chaîne de rotation : un refresh token déjà consommé puis représenté
+    // est un signal de vol détectable (rejeté, cf. tokenService.js).
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS refresh_tokens (
+        id              SERIAL PRIMARY KEY,
+        utilisateur_id  INTEGER NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
+        token_hash      TEXT NOT NULL UNIQUE,
+        cree_le         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expire_le       TIMESTAMP NOT NULL,
+        revoque         INTEGER DEFAULT 0,
+        remplace_par    INTEGER REFERENCES refresh_tokens(id) ON DELETE SET NULL
+      )
+    `)
+    await client.query('CREATE INDEX IF NOT EXISTS idx_refresh_tokens_utilisateur ON refresh_tokens(utilisateur_id)')
+
+    // ── Sprint 18 — abonnements & billing. Catalogue de plans global (comme
+    // organisations.code, ce n'est pas une donnée d'organisation : c'est le
+    // référentiel commercial partagé). Aucun prestataire de paiement réel
+    // intégré ici (aucun compte/clé API disponible) — le modèle est conçu
+    // pour qu'un vrai prestataire s'y branche plus tard sans migration de
+    // schéma supplémentaire (statut, dates, quotas déjà en place).
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS plans (
+        id                SERIAL PRIMARY KEY,
+        code              TEXT UNIQUE NOT NULL,
+        nom               TEXT NOT NULL,
+        prix_mensuel      REAL NOT NULL DEFAULT 0,
+        max_utilisateurs  INTEGER,
+        actif             INTEGER DEFAULT 1,
+        created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+    await client.query(`
+      INSERT INTO plans (code, nom, prix_mensuel, max_utilisateurs)
+      SELECT 'essai_gratuit', 'Essai gratuit', 0, 3
+      WHERE NOT EXISTS (SELECT 1 FROM plans WHERE code = 'essai_gratuit')
+    `)
+    await client.query(`
+      INSERT INTO plans (code, nom, prix_mensuel, max_utilisateurs)
+      SELECT 'standard', 'Standard', 15000, 10
+      WHERE NOT EXISTS (SELECT 1 FROM plans WHERE code = 'standard')
+    `)
+    await client.query(`
+      INSERT INTO plans (code, nom, prix_mensuel, max_utilisateurs)
+      SELECT 'illimite', 'Illimité', 35000, NULL
+      WHERE NOT EXISTS (SELECT 1 FROM plans WHERE code = 'illimite')
+    `)
+
+    // Une seule ligne par organisation, mise à jour en place au fil des
+    // changements de statut/plan (pas d'historique multi-lignes pour ce
+    // MVP — suffisant tant qu'aucune vraie facturation n'est branchée).
+    // Statuts : essai | actif | impaye (période de grâce, accès conservé) |
+    // suspendu | annule (ces deux derniers coupent l'accès — voir
+    // abonnementsService.accesAutorise).
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS abonnements (
+        id                    SERIAL PRIMARY KEY,
+        organisation_id       INTEGER NOT NULL UNIQUE REFERENCES organisations(id) ON DELETE CASCADE,
+        plan_id               INTEGER NOT NULL REFERENCES plans(id),
+        statut                TEXT NOT NULL DEFAULT 'essai',
+        debut_le              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        fin_essai_le          TIMESTAMP,
+        prochain_paiement_le  TIMESTAMP,
+        created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+
+    // Backfill : toute organisation déjà existante avant ce sprint (legacy
+    // comprise) n'a par définition jamais souscrit via le nouveau flux —
+    // elle est "grand-pérée" en statut actif permanent (fin_essai_le NULL),
+    // jamais en essai à durée limitée. Les organisations créées APRÈS ce
+    // sprint reçoivent leur ligne directement dans OrganisationsDAO.creerAvecAdmin
+    // (statut 'essai'), donc ce backfill ne les concernera jamais (la
+    // condition NOT EXISTS ne matche que les organisations sans ligne du tout).
+    await client.query(`
+      INSERT INTO abonnements (organisation_id, plan_id, statut, fin_essai_le)
+      SELECT o.id, (SELECT id FROM plans WHERE code = 'essai_gratuit'), 'actif', NULL
+      FROM organisations o
+      WHERE NOT EXISTS (SELECT 1 FROM abonnements a WHERE a.organisation_id = o.id)
+    `)
+
+    // ── Sprint 19 — Platform Admin. Séparation structurelle stricte, jamais
+    // dans "utilisateurs" : un administrateur d'organisation ne doit jamais
+    // pouvoir devenir Platform Admin par un simple changement de rôle — le
+    // cloisonnement se fait au niveau table, pas au niveau d'un flag.
+    // Aucune route HTTP ne crée de ligne ici (voir server/api/scripts/
+    // creerAdminPlateforme.js — script manuel, hors réseau, par design).
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS admins_plateforme (
+        id          SERIAL PRIMARY KEY,
+        nom         TEXT NOT NULL,
+        email       TEXT UNIQUE NOT NULL,
+        password    TEXT NOT NULL,
+        actif       INTEGER DEFAULT 1,
+        created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+
+    // Refresh tokens dédiés — jamais la même table que refresh_tokens
+    // (Sprint 14, FK vers utilisateurs) : mélanger les deux domaines de
+    // confiance dans une table polymorphe romprait précisément la séparation
+    // recherchée.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS refresh_tokens_plateforme (
+        id                    SERIAL PRIMARY KEY,
+        admin_plateforme_id   INTEGER NOT NULL REFERENCES admins_plateforme(id) ON DELETE CASCADE,
+        token_hash            TEXT NOT NULL UNIQUE,
+        cree_le               TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expire_le             TIMESTAMP NOT NULL,
+        revoque               INTEGER DEFAULT 0,
+        remplace_par          INTEGER REFERENCES refresh_tokens_plateforme(id) ON DELETE SET NULL
+      )
+    `)
+    await client.query('CREATE INDEX IF NOT EXISTS idx_refresh_tokens_plateforme_admin ON refresh_tokens_plateforme(admin_plateforme_id)')
+
+    // organisation_id nullable : certaines actions (ex. creation d'un
+    // Platform Admin, hors HTTP) ne concernent aucune organisation precise.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS audit_logs_plateforme (
+        id                    SERIAL PRIMARY KEY,
+        admin_plateforme_id   INTEGER REFERENCES admins_plateforme(id) ON DELETE SET NULL,
+        action                TEXT NOT NULL,
+        organisation_id       INTEGER REFERENCES organisations(id) ON DELETE SET NULL,
+        details               JSONB,
+        created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+    await client.query('CREATE INDEX IF NOT EXISTS idx_audit_logs_plateforme_org ON audit_logs_plateforme(organisation_id)')
+
     console.log('✅ Migrations terminées')
   } catch (err) {
     console.error('❌ Erreur migration:', err.message)
