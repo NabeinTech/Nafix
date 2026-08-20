@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Platform Admin — Nafix</title>
+<style>
+  :root {
+    --bleu: #1890ff;
+    --violet: #722ed1;
+    --texte: #1a1a2e;
+    --texte-att: #888;
+    --fond: #f0f2f5;
+    --erreur: #cf1322;
+    --erreur-fond: #fff2f0;
+    --succes: #237804;
+    --succes-fond: #f6ffed;
+    --bordure: #e8e8e8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--fond);
+    color: var(--texte);
+    min-height: 100vh;
+  }
+  .cache { display: none !important; }
+
+  /* ---- Ecran de connexion ---- */
+  #vue-connexion {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .carte {
+    width: 100%;
+    max-width: 420px;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+    padding: 40px 36px;
+  }
+  .logo {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--bleu), var(--violet));
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 24px; font-weight: bold;
+    margin-bottom: 20px;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.sous-titre { color: var(--texte-att); margin: 0 0 28px; font-size: 14px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .champ { margin-bottom: 16px; }
+  input, select {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--bleu); }
+  button {
+    padding: 11px 18px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--bleu), var(--violet));
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button.pleine-largeur { width: 100%; padding: 13px; margin-top: 8px; }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  button.secondaire { background: white; color: var(--texte); border: 1px solid #d9d9d9; }
+  button.petit { padding: 6px 10px; font-size: 12px; }
+  .message {
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .message.erreur { display: block; background: var(--erreur-fond); color: var(--erreur); border: 1px solid #ffa39e; }
+  .message.succes { display: block; background: var(--succes-fond); color: var(--succes); border: 1px solid #b7eb8f; }
+
+  /* ---- Tableau de bord ---- */
+  #vue-tableau-bord { padding: 24px 32px; }
+  .entete {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .entete h1 { display: flex; align-items: center; gap: 12px; }
+  .entete .logo { width: 36px; height: 36px; font-size: 16px; margin: 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  th, td {
+    text-align: left;
+    padding: 12px 14px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--bordure);
+  }
+  th { color: var(--texte-att); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.03em; }
+  tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .badge-vert { background: #f6ffed; color: #389e0d; }
+  .badge-rouge { background: #fff2f0; color: #cf1322; }
+  .badge-or { background: #fffbe6; color: #d48806; }
+  .badge-gris { background: #f5f5f5; color: #888; }
+  .actions-ligne { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* ---- Panneau modal ---- */
+  #superposition {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    z-index: 10;
+  }
+  #panneau {
+    width: 100%; max-width: 480px;
+    background: white;
+    border-radius: 14px;
+    padding: 28px 32px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #panneau h2 { margin: 0 0 4px; font-size: 18px; }
+  #panneau .sous-titre { color: var(--texte-att); font-size: 13px; margin: 0 0 20px; }
+  .panneau-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .entree-audit { padding: 10px 0; border-bottom: 1px solid var(--bordure); font-size: 13px; }
+  .entree-audit:last-child { border-bottom: none; }
+  .entree-audit .action { font-weight: 700; }
+  .entree-audit .meta { color: var(--texte-att); font-size: 12px; margin-top: 2px; }
+  .entree-audit .details { font-family: monospace; font-size: 11px; color: #555; margin-top: 4px; word-break: break-all; }
+  .vide { color: var(--texte-att); font-size: 13px; text-align: center; padding: 20px; }
+</style>
+</head>
+<body>
+
+  <!-- ============ Ecran de connexion ============ -->
+  <div id="vue-connexion">
+    <div class="carte">
+      <div class="logo">N</div>
+      <h1>Platform Admin</h1>
+      <p class="sous-titre">Console de gestion des organisations Nafix.</p>
+
+      <div id="message-connexion" class="message"></div>
+
+      <form id="formulaire-connexion">
+        <div class="champ">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required autocomplete="username">
+        </div>
+        <div class="champ">
+          <label for="password">Mot de passe</label>
+          <input id="password" name="password" type="password" required autocomplete="current-password">
+        </div>
+        <button type="submit" id="bouton-connexion" class="pleine-largeur">Se connecter</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ Tableau de bord ============ -->
+  <div id="vue-tableau-bord" class="cache">
+    <div class="entete">
+      <h1><span class="logo">N</span> Platform Admin</h1>
+      <button id="bouton-deconnexion" class="secondaire">Déconnexion</button>
+    </div>
+    <div id="message-tableau-bord" class="message"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>Organisation</th>
+          <th>Statut</th>
+          <th>Plan</th>
+          <th>Abonnement</th>
+          <th>Fin d'essai</th>
+          <th>Utilisateurs</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="corps-tableau"></tbody>
+    </table>
+  </div>
+
+  <!-- ============ Panneau modal (actions) ============ -->
+  <div id="superposition" class="cache">
+    <div id="panneau"></div>
+  </div>
+
+<script>
+  const API = ''
+  const CLE_ACCESS = 'nafix_platform_access'
+  const CLE_REFRESH = 'nafix_platform_refresh'
+
+  const vueConnexion = document.getElementById('vue-connexion')
+  const vueTableauBord = document.getElementById('vue-tableau-bord')
+  const superposition = document.getElementById('superposition')
+  const panneau = document.getElementById('panneau')
+  const corpsTableau = document.getElementById('corps-tableau')
+
+  let organisations = []
+
+  function afficherMessage(id, texte, type) {
+    const el = document.getElementById(id)
+    el.textContent = texte
+    el.className = 'message ' + type
+  }
+  function effacerMessage(id) {
+    const el = document.getElementById(id)
+    el.className = 'message'
+  }
+
+  // ---- Appels API avec rafraîchissement automatique sur 401 ----
+  async function appelAPI(chemin, options = {}, dejaTente = false) {
+    const accessToken = localStorage.getItem(CLE_ACCESS)
+    const reponse = await fetch(API + chemin, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...(options.headers || {})
+      }
+    })
+    if (reponse.status === 401 && !dejaTente) {
+      const rafraichi = await tenterRafraichissement()
+      if (rafraichi) return appelAPI(chemin, options, true)
+      revenirEcranConnexion()
+      throw new Error('Session expirée, reconnectez-vous.')
+    }
+    return reponse
+  }
+
+  async function tenterRafraichissement() {
+    const refreshToken = localStorage.getItem(CLE_REFRESH)
+    if (!refreshToken) return false
+    try {
+      const reponse = await fetch(API + '/platform/auth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken })
+      })
+      if (!reponse.ok) return false
+      const resultat = await reponse.json()
+      localStorage.setItem(CLE_ACCESS, resultat.accessToken)
+      localStorage.setItem(CLE_REFRESH, resultat.refreshToken)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  function revenirEcranConnexion() {
+    localStorage.removeItem(CLE_ACCESS)
+    localStorage.removeItem(CLE_REFRESH)
+    vueTableauBord.classList.add('cache')
+    vueConnexion.classList.remove('cache')
+  }
+
+  // ---- Connexion ----
+  document.getElementById('formulaire-connexion').addEventListener('submit', async (evenement) => {
+    evenement.preventDefault()
+    effacerMessage('message-connexion')
+    const bouton = document.getElementById('bouton-connexion')
+    bouton.disabled = true
+    bouton.textContent = 'Connexion…'
+    try {
+      const reponse = await fetch(API + '/platform/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value
+        })
+      })
+      const resultat = await reponse.json()
+      if (!reponse.ok) {
+        afficherMessage('message-connexion', resultat.erreur || 'Connexion refusée.', 'erreur')
+        return
+      }
+      localStorage.setItem(CLE_ACCESS, resultat.accessToken)
+      localStorage.setItem(CLE_REFRESH, resultat.refreshToken)
+      vueConnexion.classList.add('cache')
+      vueTableauBord.classList.remove('cache')
+      await chargerOrganisations()
+    } catch {
+      afficherMessage('message-connexion', 'Impossible de contacter le serveur.', 'erreur')
+    } finally {
+      bouton.disabled = false
+      bouton.textContent = 'Se connecter'
+    }
+  })
+
+  // ---- Déconnexion ----
+  document.getElementById('bouton-deconnexion').addEventListener('click', async () => {
+    const refreshToken = localStorage.getItem(CLE_REFRESH)
+    try {
+      await fetch(API + '/platform/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken })
+      })
+    } catch {}
+    revenirEcranConnexion()
+  })
+
+  // ---- Chargement du tableau ----
+  async function chargerOrganisations() {
+    effacerMessage('message-tableau-bord')
+    try {
+      const reponse = await appelAPI('/platform/organisations')
+      if (!reponse.ok) throw new Error('Chargement impossible.')
+      organisations = await reponse.json()
+      dessinerTableau()
+    } catch (e) {
+      afficherMessage('message-tableau-bord', e.message, 'erreur')
+    }
+  }
+
+  function formaterDate(iso) {
+    if (!iso) return '—'
+    return new Date(iso).toLocaleDateString('fr-FR')
+  }
+
+  const LIBELLES_ABONNEMENT = { essai: 'Essai', actif: 'Actif', impaye: 'Impayé', suspendu: 'Suspendu', annule: 'Annulé' }
+  const COULEURS_ABONNEMENT = { essai: 'badge-or', actif: 'badge-vert', impaye: 'badge-or', suspendu: 'badge-rouge', annule: 'badge-rouge' }
+
+  function dessinerTableau() {
+    corpsTableau.innerHTML = ''
+    if (!organisations.length) {
+      corpsTableau.innerHTML = '<tr><td colspan="7" class="vide">Aucune organisation.</td></tr>'
+      return
+    }
+    for (const org of organisations) {
+      const tr = document.createElement('tr')
+      const statutOrgBadge = org.statut === 'active' ? 'badge-vert' : 'badge-rouge'
+      const statutAboBadge = COULEURS_ABONNEMENT[org.abonnement_statut] || 'badge-gris'
+      const statutAboLibelle = LIBELLES_ABONNEMENT[org.abonnement_statut] || (org.abonnement_statut || '—')
+      tr.innerHTML = `
+        <td><strong>${echapper(org.nom)}</strong>${org.code ? `<br><span style="color:var(--texte-att);font-size:11px">${echapper(org.code)}</span>` : ''}</td>
+        <td><span class="badge ${statutOrgBadge}">${org.statut === 'active' ? 'Active' : 'Inactive'}</span></td>
+        <td>${echapper(org.plan_nom || '—')}</td>
+        <td><span class="badge ${statutAboBadge}">${statutAboLibelle}</span></td>
+        <td>${formaterDate(org.fin_essai_le)}</td>
+        <td>${org.nb_utilisateurs}</td>
+        <td class="actions-ligne">
+          <button class="secondaire petit" data-action="statut">Statut</button>
+          <button class="secondaire petit" data-action="plan">Plan</button>
+          <button class="secondaire petit" data-action="abonnement">Abonnement</button>
+          <button class="secondaire petit" data-action="audit">Audit</button>
+        </td>
+      `
+      tr.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => ouvrirPanneau(btn.dataset.action, org))
+      })
+      corpsTableau.appendChild(tr)
+    }
+  }
+
+  function echapper(texte) {
+    const div = document.createElement('div')
+    div.textContent = texte == null ? '' : String(texte)
+    return div.innerHTML
+  }
+
+  // ---- Panneau modal ----
+  function fermerPanneau() {
+    superposition.classList.add('cache')
+    panneau.innerHTML = ''
+  }
+  superposition.addEventListener('click', (e) => { if (e.target === superposition) fermerPanneau() })
+
+  async function ouvrirPanneau(action, org) {
+    if (action === 'statut') return panneauStatutOrganisation(org)
+    if (action === 'plan') return panneauChangerPlan(org)
+    if (action === 'abonnement') return panneauChangerAbonnement(org)
+    if (action === 'audit') return panneauAudit(org)
+  }
+
+  function panneauStatutOrganisation(org) {
+    const nouveauStatut = org.statut === 'active' ? 'inactive' : 'active'
+    panneau.innerHTML = `
+      <h2>Statut de l'organisation</h2>
+      <p class="sous-titre">${echapper(org.nom)}</p>
+      <div id="message-panneau" class="message"></div>
+      <p>Statut actuel : <span class="badge ${org.statut === 'active' ? 'badge-vert' : 'badge-rouge'}">${org.statut === 'active' ? 'Active' : 'Inactive'}</span></p>
+      <p>Basculer vers : <strong>${nouveauStatut === 'active' ? 'Active' : 'Inactive'}</strong></p>
+      <div class="panneau-actions">
+        <button id="bouton-confirmer">Confirmer</button>
+        <button class="secondaire" id="bouton-annuler">Annuler</button>
+      </div>
+    `
+    superposition.classList.remove('cache')
+    document.getElementById('bouton-annuler').addEventListener('click', fermerPanneau)
+    document.getElementById('bouton-confirmer').addEventListener('click', async () => {
+      try {
+        const reponse = await appelAPI(`/platform/organisations/${org.id}/statut`, {
+          method: 'PUT', body: JSON.stringify({ statut: nouveauStatut })
+        })
+        const resultat = await reponse.json()
+        if (!reponse.ok) throw new Error(resultat.erreur || 'Échec.')
+        fermerPanneau()
+        afficherMessage('message-tableau-bord', `Statut de "${org.nom}" mis à jour.`, 'succes')
+        await chargerOrganisations()
+      } catch (e) {
+        afficherMessage('message-panneau', e.message, 'erreur')
+      }
+    })
+  }
+
+  async function panneauChangerPlan(org) {
+    panneau.innerHTML = `<h2>Changer de plan</h2><p class="sous-titre">${echapper(org.nom)}</p><p class="vide">Chargement…</p>`
+    superposition.classList.remove('cache')
+    try {
+      const reponse = await appelAPI('/platform/plans')
+      const plans = await reponse.json()
+      panneau.innerHTML = `
+        <h2>Changer de plan</h2>
+        <p class="sous-titre">${echapper(org.nom)} — plan actuel : ${echapper(org.plan_nom || '—')}</p>
+        <div id="message-panneau" class="message"></div>
+        <div class="champ">
+          <label for="select-plan">Nouveau plan</label>
+          <select id="select-plan">
+            ${plans.map(p => `<option value="${echapper(p.code)}">${echapper(p.nom)} (${p.prix_mensuel} FCFA/mois)</option>`).join('')}
+          </select>
+        </div>
+        <div class="panneau-actions">
+          <button id="bouton-confirmer">Confirmer</button>
+          <button class="secondaire" id="bouton-annuler">Annuler</button>
+        </div>
+      `
+      document.getElementById('bouton-annuler').addEventListener('click', fermerPanneau)
+      document.getElementById('bouton-confirmer').addEventListener('click', async () => {
+        try {
+          const codePlan = document.getElementById('select-plan').value
+          const rep = await appelAPI(`/platform/organisations/${org.id}/abonnement/plan`, {
+            method: 'PUT', body: JSON.stringify({ codePlan })
+          })
+          const resultat = await rep.json()
+          if (!rep.ok) throw new Error(resultat.erreur || 'Échec.')
+          fermerPanneau()
+          afficherMessage('message-tableau-bord', `Plan de "${org.nom}" mis à jour.`, 'succes')
+          await chargerOrganisations()
+        } catch (e) {
+          afficherMessage('message-panneau', e.message, 'erreur')
+        }
+      })
+    } catch (e) {
+      panneau.innerHTML = `<h2>Changer de plan</h2><div class="message erreur">${echapper(e.message)}</div>`
+    }
+  }
+
+  function panneauChangerAbonnement(org) {
+    const statuts = ['essai', 'actif', 'impaye', 'suspendu', 'annule']
+    panneau.innerHTML = `
+      <h2>Statut d'abonnement</h2>
+      <p class="sous-titre">${echapper(org.nom)} — actuel : ${LIBELLES_ABONNEMENT[org.abonnement_statut] || org.abonnement_statut || '—'}</p>
+      <div id="message-panneau" class="message"></div>
+      <div class="champ">
+        <label for="select-statut-abo">Nouveau statut</label>
+        <select id="select-statut-abo">
+          ${statuts.map(s => `<option value="${s}" ${s === org.abonnement_statut ? 'selected' : ''}>${LIBELLES_ABONNEMENT[s]}</option>`).join('')}
+        </select>
+      </div>
+      <div class="panneau-actions">
+        <button id="bouton-confirmer">Confirmer</button>
+        <button class="secondaire" id="bouton-annuler">Annuler</button>
+      </div>
+    `
+    superposition.classList.remove('cache')
+    document.getElementById('bouton-annuler').addEventListener('click', fermerPanneau)
+    document.getElementById('bouton-confirmer').addEventListener('click', async () => {
+      try {
+        const statut = document.getElementById('select-statut-abo').value
+        const reponse = await appelAPI(`/platform/organisations/${org.id}/abonnement/statut`, {
+          method: 'PUT', body: JSON.stringify({ statut })
+        })
+        const resultat = await reponse.json()
+        if (!reponse.ok) throw new Error(resultat.erreur || 'Échec.')
+        fermerPanneau()
+        afficherMessage('message-tableau-bord', `Abonnement de "${org.nom}" mis à jour.`, 'succes')
+        await chargerOrganisations()
+      } catch (e) {
+        afficherMessage('message-panneau', e.message, 'erreur')
+      }
+    })
+  }
+
+  async function panneauAudit(org) {
+    panneau.innerHTML = `<h2>Journal d'audit</h2><p class="sous-titre">${echapper(org.nom)}</p><p class="vide">Chargement…</p>`
+    superposition.classList.remove('cache')
+    try {
+      const reponse = await appelAPI(`/platform/organisations/${org.id}/audit`)
+      const entrees = await reponse.json()
+      const listeHtml = entrees.length
+        ? entrees.map(e => `
+            <div class="entree-audit">
+              <div class="action">${echapper(e.action)}</div>
+              <div class="meta">${echapper(e.admin_email || '—')} · ${new Date(e.created_at).toLocaleString('fr-FR')}</div>
+              ${e.details ? `<div class="details">${echapper(JSON.stringify(e.details))}</div>` : ''}
+            </div>
+          `).join('')
+        : '<p class="vide">Aucune action journalisée pour cette organisation.</p>'
+      panneau.innerHTML = `
+        <h2>Journal d'audit</h2>
+        <p class="sous-titre">${echapper(org.nom)}</p>
+        ${listeHtml}
+        <div class="panneau-actions">
+          <button class="secondaire" id="bouton-fermer">Fermer</button>
+        </div>
+      `
+      document.getElementById('bouton-fermer').addEventListener('click', fermerPanneau)
+    } catch (e) {
+      panneau.innerHTML = `<h2>Journal d'audit</h2><div class="message erreur">${echapper(e.message)}</div>`
+    }
+  }
+
+  // ---- Démarrage : session déjà active ? ----
+  if (localStorage.getItem(CLE_ACCESS)) {
+    vueConnexion.classList.add('cache')
+    vueTableauBord.classList.remove('cache')
+    chargerOrganisations()
+  }
+</script>
+</body>
+</html>

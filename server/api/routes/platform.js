@@ -50,6 +50,13 @@ router.get('/organisations', authentifierPlateforme, async (req, res) => {
   res.json(await organisationsService.getAllPourPlateforme())
 })
 
+// Post-MVP — console web Platform Admin : catalogue des plans, nécessaire
+// pour peupler le sélecteur de changement de plan. Lecture seule, même
+// service que la route publique GET /abonnement/plans (Sprint 18).
+router.get('/plans', authentifierPlateforme, async (req, res) => {
+  res.json(await abonnementsService.getPlans())
+})
+
 router.put('/organisations/:id/statut', authentifierPlateforme, async (req, res) => {
   const { statut } = req.body || {}
   const resultat = await organisationsService.setStatut(req.params.id, statut)
