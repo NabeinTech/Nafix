@@ -9,6 +9,26 @@
 const { creerApp } = require('./app')
 const pool = require('../../db/pool')
 const logger = require('./lib/logger')
+const runMigrations = require('../../db/migrate')
+
+// Audit de clôture — jusqu'ici, JWT_SECRET absent/vide n'était détecté qu'au
+// premier login (tokenService.getSecret() lève, capturé par le handler
+// d'erreur générique -> 500 muet côté client). Sur un vrai déploiement, une
+// variable d'environnement oubliée doit bloquer le démarrage, pas se
+// découvrir en production au premier utilisateur qui essaie de se connecter.
+// Longueur minimale de 16 caractères : pas une contrainte cryptographique
+// stricte, juste de quoi rejeter une valeur manifestement invalide/placeholder
+// ("secret", "1234"...) sans être plus restrictif que ce que le projet a
+// jamais documenté ou testé.
+function validerSecretDemarrage() {
+  const secret = process.env.JWT_SECRET
+  if (!secret || secret.trim().length < 16) {
+    logger.erreur('demarrage_refuse', { raison: 'JWT_SECRET manquant, vide ou trop court (minimum 16 caractères)' })
+    console.error('❌ JWT_SECRET manquant, vide ou trop court (minimum 16 caractères) — l\'API refuse de démarrer.')
+    process.exit(1)
+  }
+}
+validerSecretDemarrage()
 
 // Audit de clôture — logguer sans quitter laissait le process continuer à
 // servir des requêtes dans un état non garanti (pool PG potentiellement
@@ -31,8 +51,27 @@ process.on('unhandledRejection', (raison) => {
 })
 
 const PORT = process.env.PORT || 3001
-const app = creerApp()
 
+// Audit de clôture — jusqu'ici, seul main.js (Desktop) exécutait les
+// migrations au démarrage ; le process API démarrait directement contre une
+// base supposée déjà migrée. Un déploiement SaaS pur (API seule contre un
+// PostgreSQL cloud neuf, sans jamais lancer Electron dessus) n'obtenait donc
+// jamais son schéma. runMigrations() est le même script idempotent que
+// main.js utilise déjà (rejouable sans effet de bord sur une base à jour) —
+// voir db/migrate.js pour la garde process.versions.electron qui évite d'y
+// créer un compte admin par défaut dans ce contexte API.
+//
+// Volontairement NON bloquant pour app.listen() : si la base est injoignable
+// au démarrage (ex. redémarrage réseau, PostgreSQL pas encore prêt), le
+// serveur HTTP doit quand même démarrer et laisser GET /health rapporter un
+// 503 propre (comportement Sprint 20, déjà testé) plutôt que de faire
+// planter tout le process — un superviseur externe verrait alors un
+// crash-loop plutôt qu'un état "démarré mais dégradé" diagnostiquable.
+runMigrations()
+  .then(() => logger.info('migrations_ok'))
+  .catch(err => logger.erreur('migrations_echouees', { message: err.message, stack: err.stack }))
+
+const app = creerApp()
 const serveur = app.listen(PORT, () => {
   logger.info('api_demarree', { port: PORT })
 })

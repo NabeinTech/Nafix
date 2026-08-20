@@ -177,15 +177,23 @@ async function runMigrations() {
       )
     }
 
-    // Administrateur par défaut avec mot de passe hashé
-    const admin = await client.query("SELECT id FROM utilisateurs WHERE username = 'admin'")
-    if (!admin.rows.length) {
-      const hashedPwd = await AuthService.hashPassword('admin123')
-      await client.query(
-        'INSERT INTO utilisateurs (nom, username, password, role) VALUES ($1, $2, $3, $4)',
-        ['Administrateur', 'admin', hashedPwd, 'administrateur']
-      )
-      console.log('✅ Utilisateur admin créé (admin / admin123)')
+    // Administrateur par défaut avec mot de passe hashé — uniquement pour le
+    // bootstrap Desktop (première installation : aucun autre moyen de se
+    // connecter). Audit de clôture — les migrations tournent désormais aussi
+    // au démarrage du process API (server/api/server.js) ; sur une base
+    // cloud neuve provisionnée pour le SaaS, créer un compte à mot de passe
+    // fixe joignable sur Internet serait dangereux. On ne le crée donc que
+    // sous Electron (même convention que db/pool.js).
+    if (process.versions.electron) {
+      const admin = await client.query("SELECT id FROM utilisateurs WHERE username = 'admin'")
+      if (!admin.rows.length) {
+        const hashedPwd = await AuthService.hashPassword('admin123')
+        await client.query(
+          'INSERT INTO utilisateurs (nom, username, password, role) VALUES ($1, $2, $3, $4)',
+          ['Administrateur', 'admin', hashedPwd, 'administrateur']
+        )
+        console.log('✅ Utilisateur admin créé (admin / admin123)')
+      }
     }
 
     // ── Sprint 1 — Fondation multi-tenant (Organisations + Produits) ──────
@@ -207,7 +215,11 @@ async function runMigrations() {
     let idOrganisationLegacy
     if (orgLegacy.rows.length) {
       idOrganisationLegacy = orgLegacy.rows[0].id
-    } else {
+    } else if (process.versions.electron) {
+      // Même raison que l'admin par défaut ci-dessus : le bootstrap "legacy"
+      // répond à un besoin Desktop (rattacher les données existantes d'une
+      // première installation), pas à un besoin SaaS — une base API neuve
+      // n'a par définition aucune donnée préexistante à rattacher.
       const { rows: paramRows } = await client.query('SELECT nom_entreprise FROM parametres WHERE id = 1')
       const nomLegacy = paramRows[0]?.nom_entreprise || 'Organisation principale'
       const { rows: insereRows } = await client.query(
