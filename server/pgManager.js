@@ -2,13 +2,22 @@ const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const net = require('net')
+const crypto = require('crypto')
 const { spawn, execFile } = require('child_process')
 const { app } = require('electron')
 
 const DB_USER = 'admin'
-const DB_PASSWORD = '9292'
 const DB_NAME = 'nafix_db'
 const DEFAULT_PORT = 5432
+
+// Avant ce correctif, toutes les installations utilisaient ce mot de passe
+// fixe (identique sur chaque poste), ce qui permettait à quiconque sur le
+// même réseau local — en mode "réseau ouvert" — de se connecter directement
+// à PostgreSQL en contournant toute l'isolation applicative multi-tenant.
+// Conservé uniquement en repli pour les installations déjà provisionnées
+// avant ce correctif (leur instance PostgreSQL a réellement ce mot de passe
+// et on ne peut pas le deviner autrement sans la reprovisionner).
+const ANCIEN_MOT_DE_PASSE_PAR_DEFAUT = '9292'
 
 // PostgreSQL est géré comme simple processus enfant de Nafix (pas de service
 // Windows, pas d'élévation UAC en cours d'utilisation) — c'est le choix fait
@@ -34,6 +43,28 @@ function getDataDir() {
 
 function isProvisioned() {
   return fs.existsSync(path.join(getDataDir(), 'PG_VERSION'))
+}
+
+// À côté de pgdata (pas dedans) : initdb attend un répertoire vide ou
+// inexistant à sa première exécution, y créer ce fichier avant coup aurait
+// fait échouer la provision. app.getPath('userData') existe déjà toujours
+// (créé par Electron au démarrage), donc pas de mkdir nécessaire ici.
+function getPasswordFilePath() {
+  return path.join(app.getPath('userData'), '.nafix_admin_pw')
+}
+
+// Génère un mot de passe aléatoire à la toute première provision (persisté
+// dans pgdata, comme le port l'est déjà dans postgresql.conf, pour rester
+// récupérable même si config/db.config.json est perdu/supprimé). Pour une
+// installation déjà provisionnée avant ce correctif (pas de fichier
+// marqueur), on ne peut que retomber sur l'ancien mot de passe fixe.
+function getOrCreatePassword(dejaProvisionne) {
+  const pwPath = getPasswordFilePath()
+  if (fs.existsSync(pwPath)) return fs.readFileSync(pwPath, 'utf8').trim()
+  if (dejaProvisionne) return ANCIEN_MOT_DE_PASSE_PAR_DEFAUT
+  const motDePasse = crypto.randomBytes(24).toString('hex')
+  fs.writeFileSync(pwPath, motDePasse, 'utf8')
+  return motDePasse
 }
 
 // Le port ne doit jamais changer une fois provisionné, sinon les postes
@@ -127,14 +158,14 @@ async function installerVcRedistSiBesoin() {
   })
 }
 
-async function initialiser(port, network, reseauOuvert) {
+async function initialiser(port, network, reseauOuvert, password) {
   const dataDir = getDataDir()
   const binDir = getBinDir()
   const initdb = path.join(binDir, 'initdb.exe')
 
   fs.mkdirSync(dataDir, { recursive: true })
   const pwFile = path.join(app.getPath('temp'), `nafix_pg_pw_${Date.now()}.txt`)
-  fs.writeFileSync(pwFile, DB_PASSWORD, 'utf8')
+  fs.writeFileSync(pwFile, password, 'utf8')
   try {
     await execFileP(initdb, ['-D', dataDir, '-U', DB_USER, `--pwfile=${pwFile}`, '--auth=scram-sha-256', '-E', 'UTF8'])
   } finally {
@@ -157,13 +188,13 @@ async function initialiser(port, network, reseauOuvert) {
   }
 }
 
-async function creerBaseEtRole(port) {
+async function creerBaseEtRole(port, password) {
   const { Client } = require('pg')
   const client = new Client({
     host: '127.0.0.1',
     port,
     user: DB_USER,
-    password: DB_PASSWORD,
+    password,
     database: 'postgres',
     connectionTimeoutMillis: 10000,
     query_timeout: 10000
@@ -234,20 +265,21 @@ async function provisionner(reseauOuvert) {
 
   const dejaProvisionne = isProvisioned()
   const port = (dejaProvisionne && getExistingPort()) || await findFreePort()
+  const password = getOrCreatePassword(dejaProvisionne)
 
   if (!dejaProvisionne) {
-    await initialiser(port, network, reseauOuvert)
+    await initialiser(port, network, reseauOuvert, password)
   }
 
   await demarrer(port)
-  await creerBaseEtRole(port)
+  await creerBaseEtRole(port, password)
 
   let parefeuOk = true
   if (reseauOuvert) {
     parefeuOk = await ouvrirParefeu(port)
   }
 
-  return { port, ipLocale: network ? network.ip : null, parefeuOk }
+  return { port, ipLocale: network ? network.ip : null, parefeuOk, password }
 }
 
 // Permet de réessayer uniquement l'étape du pare-feu depuis l'interface,
@@ -265,6 +297,5 @@ module.exports = {
   testConnection,
   detecterPort,
   DB_USER,
-  DB_PASSWORD,
   DB_NAME
 }

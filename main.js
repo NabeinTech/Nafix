@@ -83,14 +83,21 @@ ipcMain.handle('setup:testConnection', async (_, { host }) => {
 })
 
 // Poste client : se connecte à un serveur existant (sur ce PC ou un autre).
-ipcMain.handle('setup:configurerConnexion', async (_, { host }) => {
+// Le mot de passe est désormais généré aléatoirement par poste serveur (voir
+// pgManager.js) — il n'est plus un secret partagé fixe, donc l'opérateur doit
+// le saisir ici (communiqué par la personne qui a configuré le PC serveur,
+// affiché sur son écran de fin de configuration).
+ipcMain.handle('setup:configurerConnexion', async (_, { host, password }) => {
   try {
-    const { detecterPort, DB_USER, DB_PASSWORD, DB_NAME } = require('./server/dbConnexion')
+    if (!password || typeof password !== 'string') {
+      return { erreur: 'Le mot de passe communiqué par le PC serveur est requis.' }
+    }
+    const { detecterPort, DB_USER, DB_NAME } = require('./server/dbConnexion')
     const port = await detecterPort(host)
     if (port === null) {
       return { erreur: `Impossible de joindre PostgreSQL sur ${host}. Vérifiez que le PC serveur est allumé, connecté au réseau, et que sa configuration Nafix est terminée.` }
     }
-    const config = { host, port, user: DB_USER, password: DB_PASSWORD, database: DB_NAME, manageLocal: false }
+    const config = { host, port, user: DB_USER, password, database: DB_NAME, manageLocal: false }
     fs.mkdirSync(path.dirname(getDbConfigPath()), { recursive: true })
     fs.writeFileSync(getDbConfigPath(), JSON.stringify(config, null, 2), 'utf8')
 
@@ -114,7 +121,7 @@ ipcMain.handle('setup:configurerLocal', async (_, { reseauOuvert }) => {
       host: '127.0.0.1',
       port: resultat.port,
       user: pgManager.DB_USER,
-      password: pgManager.DB_PASSWORD,
+      password: resultat.password,
       database: pgManager.DB_NAME,
       manageLocal: true,
       reseauOuvert: !!reseauOuvert
@@ -128,8 +135,10 @@ ipcMain.handle('setup:configurerLocal', async (_, { reseauOuvert }) => {
 
     // Le redémarrage final n'est déclenché qu'via setup:terminerConfiguration
     // — ça laisse le temps d'afficher (et de réessayer) l'état du pare-feu
-    // en mode serveur multi-poste avant de continuer.
-    return { succes: true, ipLocale: resultat.ipLocale, parefeuOk: resultat.parefeuOk }
+    // en mode serveur multi-poste avant de continuer. Le mot de passe n'est
+    // renvoyé que pour être affiché à l'opérateur en mode réseau ouvert, afin
+    // qu'il le communique aux autres postes (setup:configurerConnexion).
+    return { succes: true, ipLocale: resultat.ipLocale, parefeuOk: resultat.parefeuOk, password: resultat.password }
   } catch (err) {
     return { erreur: err.message }
   }
@@ -1039,6 +1048,12 @@ function registerAppHandlers() {
   // il n'obtient aucun accès à celle qu'il vient de créer.
   ipcMain.handle('organisations:creerOrganisation', async (_, donnees) => {
     verifierPermission('organisations:creerOrganisation', utilisateurConnecte)
+    // Vérifie l'abonnement de l'organisation du créateur (valeur de retour
+    // ignorée : creerAvecAdmin ne prend pas cet id en paramètre, cf.
+    // Sprint 12) — sinon un administrateur suspendu pourrait indéfiniment
+    // créer de nouvelles organisations avec un essai gratuit neuf pour
+    // échapper à sa propre suspension.
+    await getOrganisationIdActive()
     validateIPC(donnees, {
       nom:       { required: true, type: 'string', maxLen: 200 },
       adminNom:  { required: true, type: 'string', maxLen: 100 },

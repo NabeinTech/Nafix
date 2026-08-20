@@ -1,7 +1,6 @@
 const net = require('net')
 
 const DB_USER = 'admin'
-const DB_PASSWORD = '9292'
 const DB_NAME = 'nafix_db'
 const DEFAULT_PORT = 5432
 
@@ -27,4 +26,4 @@ async function detecterPort(host) {
   return null
 }
 
-module.exports = { testConnection, detecterPort, DB_USER, DB_PASSWORD, DB_NAME }
+module.exports = { testConnection, detecterPort, DB_USER, DB_NAME }

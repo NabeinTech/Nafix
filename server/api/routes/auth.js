@@ -12,6 +12,12 @@ const { creerLimiteur } = require('../middleware/rateLimiter')
 
 const limiterConnexion = creerLimiteur({ maxTentatives: 10 })
 const limiterSignup = creerLimiteur({ maxTentatives: 5 }) // plus restrictif : creation de compte, pas juste une tentative de connexion
+// Budget large : un client légitime rafraîchit automatiquement toutes les
+// ~15 min (durée de vie de l'access token), potentiellement pour plusieurs
+// utilisateurs derrière la même IP (petit bureau) — mais reste borné pour
+// éviter un flood applicatif sur cette route (audit de clôture, aucun
+// rate limiter n'y était appliqué jusqu'ici).
+const limiterRefresh = creerLimiteur({ maxTentatives: 30 })
 
 const router = express.Router()
 
@@ -25,7 +31,7 @@ router.post('/login', limiterConnexion, async (req, res) => {
   res.json(resultat.succes)
 })
 
-router.post('/refresh', async (req, res) => {
+router.post('/refresh', limiterRefresh, async (req, res) => {
   const { refreshToken } = req.body || {}
   if (!refreshToken) return res.status(400).json({ erreur: 'refreshToken requis' })
   const resultat = await tokenService.rafraichir(refreshToken)

@@ -9,6 +9,7 @@ const express = require('express')
 const clientsService = require('../../../core/services/clientsService')
 const { authentifier } = require('../middleware/authentification')
 const { verifierAbonnement } = require('../middleware/subscriptionGate')
+const { validerEntree } = require('../../../core/validation')
 
 const router = express.Router()
 router.use(authentifier)
@@ -20,14 +21,24 @@ router.get('/', async (req, res) => {
 })
 
 router.post('/', async (req, res) => {
-  const resultat = await clientsService.create(req.body || {}, req.tenantContext.organisationId)
-  if (resultat?.erreur) return res.status(400).json(resultat)
-  res.status(201).json(resultat)
+  try {
+    validerEntree(req.body, { nom: { required: true, type: 'string', maxLen: 200 } })
+    const resultat = await clientsService.create(req.body || {}, req.tenantContext.organisationId)
+    if (resultat?.erreur) return res.status(400).json(resultat)
+    res.status(201).json(resultat)
+  } catch (e) {
+    res.status(400).json({ erreur: e.message })
+  }
 })
 
 router.put('/:id', async (req, res) => {
-  const resultat = await clientsService.update({ ...req.body, id: req.params.id }, req.tenantContext.organisationId)
-  res.json(resultat)
+  try {
+    validerEntree(req.body, { nom: { required: true, type: 'string', maxLen: 200 } })
+    const resultat = await clientsService.update({ ...req.body, id: req.params.id }, req.tenantContext.organisationId)
+    res.json(resultat)
+  } catch (e) {
+    res.status(400).json({ erreur: e.message })
+  }
 })
 
 router.delete('/:id', async (req, res) => {

@@ -1,8 +1,8 @@
 {
-  "_comment": "Copiez ce fichier en db.config.json et renseignez vos paramètres",
+  "_comment": "Copiez ce fichier en db.config.json et renseignez vos paramètres (le mot de passe est celui affiché lors de la configuration du PC serveur, ou celui que vous avez choisi pour une installation manuelle de PostgreSQL)",
   "host": "192.168.1.100",
   "port": 5432,
   "user":"admin",
-  "password": "9292",
+  "password": "CHANGEZ_MOI",
   "database": "nafix_db"
 }

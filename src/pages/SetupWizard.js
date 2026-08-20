@@ -13,9 +13,11 @@ function SetupWizard() {
   const [etape, setEtape] = useState('choix')
   const [erreur, setErreur] = useState('')
   const [ipLocale, setIpLocale] = useState('')
+  const [motDePasseServeur, setMotDePasseServeur] = useState('')
   const [parefeuOk, setParefeuOk] = useState(true)
   const [parefeuEnCours, setParefeuEnCours] = useState(false)
   const [hostSaisi, setHostSaisi] = useState('')
+  const [passwordSaisi, setPasswordSaisi] = useState('')
   const [testEnCours, setTestEnCours] = useState(false)
   const [testResultat, setTestResultat] = useState(null) // null | true | false
 
@@ -30,6 +32,7 @@ function SetupWizard() {
     }
     if (reseauOuvert) {
       setIpLocale(res.ipLocale)
+      setMotDePasseServeur(res.password || '')
       setParefeuOk(!!res.parefeuOk)
       setEtape('local-ok')
     } else {
@@ -58,10 +61,10 @@ function SetupWizard() {
   }
 
   const validerClient = async () => {
-    if (!hostSaisi.trim()) return
+    if (!hostSaisi.trim() || !passwordSaisi) return
     setErreur('')
     setEtape('client-encours')
-    const res = await ipcRenderer.invoke('setup:configurerConnexion', { host: hostSaisi.trim() })
+    const res = await ipcRenderer.invoke('setup:configurerConnexion', { host: hostSaisi.trim(), password: passwordSaisi })
     if (res.erreur) {
       setErreur(res.erreur)
       setEtape('client-form')
@@ -165,10 +168,15 @@ function SetupWizard() {
             <CheckCircleOutlined style={{ fontSize: 48, color: '#52c41a' }} />
             <Title level={4} style={{ marginTop: 16 }}>Serveur prêt !</Title>
             <Text style={{ display: 'block', marginBottom: 16 }}>
-              Sur les autres postes, indiquez cette adresse lors de leur configuration :
+              Sur les autres postes, indiquez cette adresse et ce mot de passe lors de leur configuration :
             </Text>
-            <Card style={{ background: '#f6ffed', border: '1px solid #b7eb8f', marginBottom: 16 }}>
+            <Card style={{ background: '#f6ffed', border: '1px solid #b7eb8f', marginBottom: 8 }}>
+              <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Adresse</Text>
               <Text strong style={{ fontSize: 24, color: '#389e0d' }}>{ipLocale}</Text>
+            </Card>
+            <Card style={{ background: '#f6ffed', border: '1px solid #b7eb8f', marginBottom: 16 }}>
+              <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>Mot de passe (notez-le, il ne sera plus réaffiché)</Text>
+              <Text strong copyable style={{ fontSize: 16, color: '#389e0d', fontFamily: 'monospace' }}>{motDePasseServeur}</Text>
             </Card>
 
             {!parefeuOk && (
@@ -225,10 +233,20 @@ function SetupWizard() {
             {testResultat === false && (
               <Alert type="warning" showIcon message="Serveur injoignable à cette adresse." style={{ marginBottom: 12 }} />
             )}
+            <Text style={{ color: '#888', display: 'block', marginBottom: 8 }}>
+              Mot de passe communiqué par le PC serveur :
+            </Text>
+            <Input.Password
+              size="large"
+              placeholder="Mot de passe du serveur"
+              value={passwordSaisi}
+              onChange={e => setPasswordSaisi(e.target.value)}
+              style={{ marginBottom: 12 }}
+            />
             <Button
               type="primary" size="large"
               onClick={validerClient}
-              disabled={!hostSaisi.trim()}
+              disabled={!hostSaisi.trim() || !passwordSaisi}
               style={{ width: '100%' }}
             >
               Valider

@@ -12,6 +12,8 @@ const { authentifierPlateforme } = require('../middleware/authentifierPlateforme
 const { creerLimiteur } = require('../middleware/rateLimiter')
 
 const limiterConnexionPlateforme = creerLimiteur({ maxTentatives: 5 })
+// Audit de clôture — aucun rate limiter n'était appliqué sur cette route.
+const limiterRefreshPlateforme = creerLimiteur({ maxTentatives: 20 })
 
 const router = express.Router()
 
@@ -24,7 +26,7 @@ router.post('/auth/login', limiterConnexionPlateforme, async (req, res) => {
   res.json(resultat.succes)
 })
 
-router.post('/auth/refresh', async (req, res) => {
+router.post('/auth/refresh', limiterRefreshPlateforme, async (req, res) => {
   const { refreshToken } = req.body || {}
   if (!refreshToken) return res.status(400).json({ erreur: 'refreshToken requis' })
   const resultat = await platformTokenService.rafraichir(refreshToken)
