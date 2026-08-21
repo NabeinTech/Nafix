@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Créer mon organisation — Nafix</title>
+<title>Connexion — Nafix</title>
 <style>
   :root {
     --bleu: #1890ff;
@@ -29,7 +29,7 @@
   }
   .carte {
     width: 100%;
-    max-width: 440px;
+    max-width: 400px;
     background: white;
     border-radius: 14px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.08);
@@ -77,7 +77,6 @@
     display: none;
   }
   .message.erreur { display: block; background: var(--erreur-fond); color: var(--erreur); border: 1px solid #ffa39e; }
-  .message.succes { display: block; background: var(--succes-fond); color: var(--succes); border: 1px solid #b7eb8f; }
   .lien-retour { text-align: center; margin-top: 20px; font-size: 13px; }
   .lien-retour a { color: var(--bleu); text-decoration: none; }
 </style>
@@ -85,36 +84,24 @@
 <body>
   <div class="carte">
     <div class="logo">N</div>
-    <h1>Créer mon organisation</h1>
-    <p class="sous-titre">Quelques secondes suffisent — vous serez connecté immédiatement après.</p>
+    <h1>Connexion</h1>
+    <p class="sous-titre">Accédez à votre organisation Nafix.</p>
 
     <div id="message" class="message"></div>
 
     <form id="formulaire">
       <div class="champ">
-        <label for="nom">Nom de votre entreprise</label>
-        <input id="nom" name="nom" required maxlength="200" autocomplete="organization">
-      </div>
-      <div class="champ">
-        <label for="adminNom">Votre nom complet</label>
-        <input id="adminNom" name="adminNom" required maxlength="100" autocomplete="name">
-      </div>
-      <div class="champ">
-        <label for="username">Identifiant de connexion</label>
+        <label for="username">Identifiant</label>
         <input id="username" name="username" required maxlength="100" autocomplete="username">
       </div>
       <div class="champ">
         <label for="password">Mot de passe</label>
-        <input id="password" name="password" type="password" required minlength="6" maxlength="200" autocomplete="new-password">
+        <input id="password" name="password" type="password" required maxlength="200" autocomplete="current-password">
       </div>
-      <div class="champ">
-        <label for="passwordConfirm">Confirmer le mot de passe</label>
-        <input id="passwordConfirm" name="passwordConfirm" type="password" required minlength="6" maxlength="200" autocomplete="new-password">
-      </div>
-      <button type="submit" id="bouton">Créer mon organisation</button>
+      <button type="submit" id="bouton">Se connecter</button>
     </form>
 
-    <div class="lien-retour">Vous avez déjà un compte ? <a href="/login.html">Connectez-vous</a>.</div>
+    <div class="lien-retour">Pas encore de compte ? <a href="/signup.html">Créer mon organisation</a></div>
   </div>
 
 <script>
@@ -122,9 +109,9 @@
   const bouton = document.getElementById('bouton')
   const messageEl = document.getElementById('message')
 
-  function afficherMessage(texte, type) {
+  function afficherMessage(texte) {
     messageEl.textContent = texte
-    messageEl.className = 'message ' + type
+    messageEl.className = 'message erreur'
   }
 
   formulaire.addEventListener('submit', async (evenement) => {
@@ -132,39 +119,28 @@
     messageEl.className = 'message'
 
     const donnees = Object.fromEntries(new FormData(formulaire).entries())
-    if (donnees.password !== donnees.passwordConfirm) {
-      afficherMessage('Les mots de passe ne correspondent pas.', 'erreur')
-      return
-    }
-
     bouton.disabled = true
-    bouton.textContent = 'Création en cours…'
+    bouton.textContent = 'Connexion en cours…'
     try {
-      const reponse = await fetch('/auth/signup', {
+      const reponse = await fetch('/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nom: donnees.nom,
-          adminNom: donnees.adminNom,
-          username: donnees.username,
-          password: donnees.password
-        })
+        body: JSON.stringify({ username: donnees.username, password: donnees.password })
       })
       const resultat = await reponse.json()
 
       if (!reponse.ok) {
-        afficherMessage(resultat.erreur || 'Une erreur est survenue.', 'erreur')
+        afficherMessage(resultat.erreur || 'Une erreur est survenue.')
         return
       }
 
       sessionStorage.setItem('nafix_session', JSON.stringify(resultat))
-      afficherMessage('✅ Organisation créée ! Redirection…', 'succes')
       window.location.href = '/dashboard.html'
     } catch (erreur) {
-      afficherMessage('Impossible de contacter le serveur. Réessayez dans un instant.', 'erreur')
+      afficherMessage('Impossible de contacter le serveur. Réessayez dans un instant.')
     } finally {
       bouton.disabled = false
-      bouton.textContent = 'Créer mon organisation'
+      bouton.textContent = 'Se connecter'
     }
   })
 </script>
