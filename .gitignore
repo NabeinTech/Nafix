@@ -41,3 +41,4 @@ resources/vosk/
 # État local d'outils tiers (non lié au projet)
 .qodo/
 .vscode/tmp-*
+package-lock.json

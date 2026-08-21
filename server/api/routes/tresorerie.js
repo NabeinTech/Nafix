@@ -32,8 +32,16 @@ router.post('/', async (req, res) => {
   }
 })
 router.post('/cloturer', async (req, res) => {
-  const { date, cloturePar, notes } = req.body || {}
-  res.json(await tresorerieService.cloturer(date, cloturePar, notes, req.tenantContext.organisationId))
+  try {
+    validerEntree(req.body, {
+      date:        { required: true, type: 'string' },
+      cloturePar:  { required: true, type: 'string', maxLen: 200 }
+    })
+    const { date, cloturePar, notes } = req.body || {}
+    res.json(await tresorerieService.cloturer(date, cloturePar, notes, req.tenantContext.organisationId))
+  } catch (e) {
+    res.status(400).json({ erreur: e.message })
+  }
 })
 router.put('/:id', async (req, res) => {
   try {
