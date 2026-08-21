@@ -36,18 +36,21 @@ validerSecretDemarrage()
 // immédiatement (pas de tentative d'arrêt propre : après une exception non
 // interceptée, serveur.close()/pool.end() pourraient eux-mêmes ne jamais
 // aboutir) — un superviseur de process (systemd/Docker) doit redémarrer.
-process.on('uncaughtException', (err) => {
-  logger.erreur('uncaughtException', { message: err.message, stack: err.stack })
+// Post-MVP — même traitement pour unhandledRejection : une promesse rejetée
+// jamais interceptée signale un bug tout aussi grave (une opération a
+// échoué silencieusement), pas une catégorie à part qu'on tolérerait.
+function arreterSurErreurFatale(type, err) {
+  logger.erreur(type, { message: err.message, stack: err.stack })
   // setImmediate plutôt qu'un exit direct : sur POSIX, l'écriture stderr vers
   // un pipe (cas Docker/systemd) est asynchrone — sortir immédiatement après
   // logger.erreur() risquerait de tronquer ce dernier message, celui qui
   // explique justement pourquoi le process s'arrête.
   process.exitCode = 1
   setImmediate(() => process.exit(1))
-})
+}
+process.on('uncaughtException', (err) => arreterSurErreurFatale('uncaughtException', err))
 process.on('unhandledRejection', (raison) => {
-  const err = raison instanceof Error ? raison : new Error(String(raison))
-  logger.erreur('unhandledRejection', { message: err.message, stack: err.stack })
+  arreterSurErreurFatale('unhandledRejection', raison instanceof Error ? raison : new Error(String(raison)))
 })
 
 const PORT = process.env.PORT || 3001
