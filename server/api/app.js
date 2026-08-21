@@ -10,6 +10,8 @@ const pool = require('../../db/pool')
 const logger = require('./lib/logger')
 const authRoutes = require('./routes/auth')
 const platformRoutes = require('./routes/platform')
+const utilisateursRoutes = require('./routes/utilisateurs')
+const organisationsRoutes = require('./routes/organisations')
 const abonnementRoutes = require('./routes/abonnement')
 const clientsRoutes = require('./routes/clients')
 const produitsRoutes = require('./routes/produits')
@@ -72,7 +74,14 @@ function creerApp() {
   // quel que soit le domaine/port réel de déploiement.
   app.use(express.static(path.join(__dirname, 'public')))
 
+  // Chantier web-shim — build React (npm run build:web), servi tel quel.
+  // src/App.js utilise HashRouter (toutes les "pages" sont "/" + "#/...") :
+  // aucune route catch-all n'est nécessaire, express.static suffit.
+  app.use(express.static(path.join(__dirname, '../../build')))
+
   app.use('/auth', authRoutes)
+  app.use('/utilisateurs', utilisateursRoutes)
+  app.use('/organisations', organisationsRoutes)
   // Sprint 19 — namespace entièrement séparé, sa propre authentification
   // (authentifierPlateforme, jamais authentifier), jamais soumis au gate
   // d'abonnement (un Platform Admin n'appartient à aucune organisation).

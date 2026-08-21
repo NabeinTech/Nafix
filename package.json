@@ -42,6 +42,7 @@
     "dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && node launch.js\"",
     "electron": "concurrently \"npm start\" \"wait-on http://localhost:3000 && node launch.js\"",
     "api": "node server/api/server.js",
+    "build:web": "react-scripts build",
     "dist": "cd /d C:\\ && cd /d \"C:\\Users\\HP\\Desktop\\Nafix5\\Nafix\" && react-scripts build && electron-builder --win nsis"
   },
   "build": {

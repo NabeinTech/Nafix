@@ -114,7 +114,7 @@
       <button type="submit" id="bouton">Créer mon organisation</button>
     </form>
 
-    <div class="lien-retour">Vous avez déjà un compte ? <a href="/login.html">Connectez-vous</a>.</div>
+    <div class="lien-retour">Vous avez déjà un compte ? <a href="/">Connectez-vous</a>.</div>
   </div>
 
 <script>
@@ -157,9 +157,13 @@
         return
       }
 
-      sessionStorage.setItem('nafix_session', JSON.stringify(resultat))
+      // Deux cles distinctes : nafix_web_tokens (lue par ipc-shim.js pour les
+      // appels API suivants) et nafix_session (lue par src/App.js, qui n'y
+      // attend que l'objet utilisateur, pas les tokens).
+      sessionStorage.setItem('nafix_web_tokens', JSON.stringify({ accessToken: resultat.accessToken, refreshToken: resultat.refreshToken }))
+      sessionStorage.setItem('nafix_session', JSON.stringify(resultat.utilisateur))
       afficherMessage('✅ Organisation créée ! Redirection…', 'succes')
-      window.location.href = '/dashboard.html'
+      window.location.href = '/'
     } catch (erreur) {
       afficherMessage('Impossible de contacter le serveur. Réessayez dans un instant.', 'erreur')
     } finally {
