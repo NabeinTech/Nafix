@@ -1,9 +1,17 @@
-// Sous-ensemble minimal de règles de rôles, dédié au RBAC IPC (Sprint 0).
-// Reprend exactement les règles déjà appliquées côté UI dans
-// src/utils/permissions.js (ex. seul administrateur a accès à /parametres).
-// Ce fichier est volontairement séparé de permissions.js (ES modules,
-// non requérable depuis main.js en CommonJS) — à réconcilier plus tard
-// quand une API centralisera les permissions (Mission 2 du plan Nafix Platform).
+// Contrôle d'accès côté serveur pour un sous-ensemble d'actions
+// particulièrement sensibles (RBAC IPC/API, Sprint 0). Volontairement
+// distinct de src/utils/permissions.js (ES modules, non requérable depuis
+// ce fichier CommonJS) — les deux ne couvrent pas le même besoin, ce n'est
+// pas une duplication à corriger : permissions.js pilote l'affichage côté
+// UI (routes/modules visibles, permissions personnalisées par
+// utilisateur) ; CANAUX_RESTREINTS ci-dessous est un garde-fou de sécurité
+// pour une liste précise d'actions sensibles, appliqué indépendamment de ce
+// que montre l'interface. Chacune de ces actions n'est, côté UI, jamais
+// accessible en dehors de l'onglet Paramètres, réservé à administrateur —
+// la cohérence entre les deux fichiers est vérifiée automatiquement par
+// permissionsService.reconciliation.test.js (pas par une fusion technique
+// des deux systèmes ES modules/CommonJS, qui resterait à part entière un
+// changement d'architecture hors de ce périmètre).
 
 const CANAUX_RESTREINTS = {
   'db:reinitialiser': ['administrateur'],
