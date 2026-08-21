@@ -10,7 +10,23 @@
 // budget de l'autre.
 function creerLimiteur({ fenetreMs = 15 * 60 * 1000, maxTentatives = 10 } = {}) {
   const tentatives = new Map()
-  return function limiter(req, res, next) {
+
+  // Audit onboarding — les entrées n'étaient jamais retirées de la Map,
+  // seulement réinitialisées en place à leur prochain accès : sur une route
+  // publique comme /auth/signup (bien plus d'IP uniques au fil du temps que
+  // /auth/login), la mémoire croît sans borne pour la durée de vie du
+  // process. Balayage périodique des entrées dont la fenêtre est expirée et
+  // qui n'ont pas été retouchées depuis — .unref() pour ne jamais empêcher
+  // le process de s'arrêter proprement (SIGTERM, tests).
+  const balayage = setInterval(() => {
+    const maintenant = Date.now()
+    for (const [ip, entree] of tentatives) {
+      if (maintenant - entree.depuis > fenetreMs) tentatives.delete(ip)
+    }
+  }, fenetreMs)
+  balayage.unref()
+
+  function limiter(req, res, next) {
     const ip = req.ip
     const maintenant = Date.now()
     const entree = tentatives.get(ip) || { compte: 0, depuis: maintenant }
@@ -25,6 +41,12 @@ function creerLimiteur({ fenetreMs = 15 * 60 * 1000, maxTentatives = 10 } = {}) 
     }
     next()
   }
+  // Introspection pour les tests uniquement (aucun effet sur le comportement
+  // de limitation lui-même) — vérifier que la Map ne croît pas indéfiniment
+  // nécessite de voir sa taille réelle, pas seulement le comportement du
+  // compteur par IP (déjà correct avant ce correctif).
+  limiter.tailleInterne = () => tentatives.size
+  return limiter
 }
 
 module.exports = { creerLimiteur }

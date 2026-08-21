@@ -105,6 +105,13 @@ function creerApp() {
   // Gestion d'erreur centralisée — ne jamais renvoyer une stack trace ou un
   // message d'erreur brut au client (cf. audit Sprint 13 §L, point "erreurs
   // API trop bavardes").
+  // Audit onboarding — un corps JSON malformé (ex. depuis un client public
+  // comme /auth/signup) était jusqu'ici classé en 500 "Erreur interne" alors
+  // que c'est une erreur du client, pas du serveur. body-parser marque ce
+  // genre d'erreur avec .status (4xx) et .expose=true — la même convention
+  // que le gestionnaire d'erreur par défaut d'Express utilise pour décider
+  // si le message est sûr à renvoyer tel quel. Tout le reste (5xx, ou sans
+  // .expose) garde le comportement générique déjà en place.
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
     logger.erreur('erreur_non_geree', {
@@ -112,6 +119,10 @@ function creerApp() {
       methode: req.method, chemin: req.originalUrl,
       organisationId: req.tenantContext?.organisationId || null
     })
+    const statut = err.status || err.statusCode
+    if (err.expose && statut >= 400 && statut < 500) {
+      return res.status(statut).json({ erreur: err.message })
+    }
     res.status(500).json({ erreur: 'Erreur interne' })
   })
 

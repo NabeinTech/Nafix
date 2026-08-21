@@ -9,6 +9,7 @@ const express = require('express')
 const tokenService = require('../auth/tokenService')
 const organisationsService = require('../../../core/services/organisationsService')
 const { creerLimiteur } = require('../middleware/rateLimiter')
+const { validerEntree } = require('../../../core/validation')
 
 const limiterConnexion = creerLimiteur({ maxTentatives: 10 })
 const limiterSignup = creerLimiteur({ maxTentatives: 5 }) // plus restrictif : creation de compte, pas juste une tentative de connexion
@@ -46,10 +47,22 @@ router.post('/logout', async (req, res) => {
 })
 
 router.post('/signup', limiterSignup, async (req, res) => {
-  const { nom, adminNom, username, password } = req.body || {}
-  if (!nom || !adminNom || !username || !password) {
-    return res.status(400).json({ erreur: 'Tous les champs sont obligatoires' })
+  // Audit onboarding — les checks manuels précédents (!champ) laissaient
+  // passer des types non-string (ex. password numérique), ce qui faisait
+  // échouer bcrypt plus loin avec un message technique peu clair ("Illegal
+  // arguments"). Mêmes limites que validateIPC côté Desktop (main.js), pour
+  // rester cohérent entre les deux points d'entrée d'inscription.
+  try {
+    validerEntree(req.body, {
+      nom:      { required: true, type: 'string', maxLen: 200 },
+      adminNom: { required: true, type: 'string', maxLen: 100 },
+      username: { required: true, type: 'string', maxLen: 100 },
+      password: { required: true, type: 'string', maxLen: 200 }
+    })
+  } catch (e) {
+    return res.status(400).json({ erreur: e.message })
   }
+  const { nom, adminNom, username, password } = req.body
   if (password.length < 6) {
     return res.status(400).json({ erreur: 'Le mot de passe doit contenir au moins 6 caractères' })
   }
