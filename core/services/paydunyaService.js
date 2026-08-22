@@ -77,11 +77,16 @@ async function creerFacture(organisationId, codePlan) {
 // reconfirme via un appel serveur-a-serveur avant toute ecriture. Idempotent
 // (un invoice_token deja "complete" n'est jamais retraite).
 async function traiterWebhook(body) {
-  const hashRecu = body?.data?.hash
+  // Verifie en priorite via le corps reel confirme en sandbox (pas de niveau
+  // "data" imbrique — hash/invoice/status sont a la racine, contrairement a
+  // ce que suggeraient les recherches web initiales). Conserve un repli sur
+  // data.* par prudence si PayDunya envoie un jour un format legerement
+  // different selon le canal.
+  const hashRecu = body?.hash || body?.data?.hash
   const hashAttendu = crypto.createHash('sha512').update(process.env.PAYDUNYA_MASTER_KEY || '').digest('hex')
   if (!hashRecu || hashRecu !== hashAttendu) return { ignore: true, raison: 'hash invalide' }
 
-  const token = body.data.invoice?.token || body.data.token
+  const token = body.invoice?.token || body.token || body.data?.invoice?.token || body.data?.token
   if (!token) return { ignore: true, raison: 'token absent' }
 
   const { rows: [paiement] } = await pool.query('SELECT * FROM paiements WHERE invoice_token = $1', [token])

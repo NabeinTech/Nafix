@@ -11,7 +11,8 @@ const router = express.Router()
 
 router.post('/paydunya', async (req, res) => {
   try {
-    await paydunyaService.traiterWebhook(req.body)
+    const resultat = await paydunyaService.traiterWebhook(req.body)
+    logger.info('webhook_paydunya_traite', resultat)
   } catch (e) {
     logger.erreur('webhook_paydunya_echec', { message: e.message })
   }
