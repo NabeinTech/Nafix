@@ -34,6 +34,12 @@ function creerApp() {
   const app = express()
   app.set('trust proxy', false)
   app.use(express.json())
+  // Chantier PayDunya — le webhook IPN reel envoie un corps
+  // application/x-www-form-urlencoded (confirme en test live, cf.
+  // server/api/routes/webhooks.js), jamais du JSON malgre ce que suggeraient
+  // les recherches web initiales. express.json() seul laissait req.body vide
+  // pour ces requetes precises.
+  app.use(express.urlencoded({ extended: true }))
 
   // Sprint 20 — une ligne structurée par requête (méthode, chemin, statut,
   // durée, tenant si authentifié) — traçabilité minimale sans dépendance
