@@ -28,10 +28,15 @@ const UtilisateursDAO = {
     )
     if (existant.rows.length) return { erreur: 'Cet identifiant existe déjà !' }
 
+    if (user.email) {
+      const emailExistant = await pool.query('SELECT id FROM utilisateurs WHERE email = $1', [user.email])
+      if (emailExistant.rows.length) return { erreur: 'Cet email est déjà utilisé par un autre compte !' }
+    }
+
     const hashedPwd = await AuthService.hashPassword(user.password)
     const { rows } = await pool.query(
-      'INSERT INTO utilisateurs (nom, username, password, role, organisation_id) VALUES ($1,$2,$3,$4,$5) RETURNING id, nom, username, role',
-      [user.nom, user.username, hashedPwd, user.role, organisationId]
+      'INSERT INTO utilisateurs (nom, username, password, role, organisation_id, email) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id, nom, username, role, email',
+      [user.nom, user.username, hashedPwd, user.role, organisationId, user.email || null]
     )
     return { succes: rows[0] }
   },

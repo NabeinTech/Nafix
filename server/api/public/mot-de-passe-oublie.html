@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Créer mon organisation — Nafix</title>
+<title>Mot de passe oublié — Nafix</title>
 <style>
   :root {
     --bleu: #1890ff;
@@ -85,40 +85,20 @@
 <body>
   <div class="carte">
     <div class="logo">N</div>
-    <h1>Créer mon organisation</h1>
-    <p class="sous-titre">Quelques secondes suffisent — vous serez connecté immédiatement après.</p>
+    <h1>Mot de passe oublié</h1>
+    <p class="sous-titre">Entrez votre identifiant ou votre email — si un compte existe, vous recevrez un lien de réinitialisation.</p>
 
     <div id="message" class="message"></div>
 
     <form id="formulaire">
       <div class="champ">
-        <label for="nom">Nom de votre entreprise</label>
-        <input id="nom" name="nom" required maxlength="200" autocomplete="organization">
+        <label for="identifiant">Identifiant ou email</label>
+        <input id="identifiant" name="identifiant" required maxlength="150" autocomplete="username">
       </div>
-      <div class="champ">
-        <label for="adminNom">Votre nom complet</label>
-        <input id="adminNom" name="adminNom" required maxlength="100" autocomplete="name">
-      </div>
-      <div class="champ">
-        <label for="username">Identifiant de connexion</label>
-        <input id="username" name="username" required maxlength="100" autocomplete="username">
-      </div>
-      <div class="champ">
-        <label for="email">Email (pour récupérer votre compte, optionnel)</label>
-        <input id="email" name="email" type="email" maxlength="200" autocomplete="email">
-      </div>
-      <div class="champ">
-        <label for="password">Mot de passe</label>
-        <input id="password" name="password" type="password" required minlength="6" maxlength="200" autocomplete="new-password">
-      </div>
-      <div class="champ">
-        <label for="passwordConfirm">Confirmer le mot de passe</label>
-        <input id="passwordConfirm" name="passwordConfirm" type="password" required minlength="6" maxlength="200" autocomplete="new-password">
-      </div>
-      <button type="submit" id="bouton">Créer mon organisation</button>
+      <button type="submit" id="bouton">Envoyer le lien</button>
     </form>
 
-    <div class="lien-retour">Vous avez déjà un compte ? <a href="/">Connectez-vous</a>.</div>
+    <div class="lien-retour">Vous vous souvenez de votre mot de passe ? <a href="/">Connectez-vous</a>.</div>
   </div>
 
 <script>
@@ -136,44 +116,25 @@
     messageEl.className = 'message'
 
     const donnees = Object.fromEntries(new FormData(formulaire).entries())
-    if (donnees.password !== donnees.passwordConfirm) {
-      afficherMessage('Les mots de passe ne correspondent pas.', 'erreur')
-      return
-    }
-
     bouton.disabled = true
-    bouton.textContent = 'Création en cours…'
+    bouton.textContent = 'Envoi en cours…'
     try {
-      const reponse = await fetch('/auth/signup', {
+      const reponse = await fetch('/auth/mot-de-passe-oublie', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nom: donnees.nom,
-          adminNom: donnees.adminNom,
-          username: donnees.username,
-          email: donnees.email,
-          password: donnees.password
-        })
+        body: JSON.stringify({ identifiant: donnees.identifiant })
       })
-      const resultat = await reponse.json()
+      await reponse.json().catch(() => null)
 
-      if (!reponse.ok) {
-        afficherMessage(resultat.erreur || 'Une erreur est survenue.', 'erreur')
-        return
-      }
-
-      // Deux cles distinctes : nafix_web_tokens (lue par ipc-shim.js pour les
-      // appels API suivants) et nafix_session (lue par src/App.js, qui n'y
-      // attend que l'objet utilisateur, pas les tokens).
-      sessionStorage.setItem('nafix_web_tokens', JSON.stringify({ accessToken: resultat.accessToken, refreshToken: resultat.refreshToken }))
-      sessionStorage.setItem('nafix_session', JSON.stringify(resultat.utilisateur))
-      afficherMessage('✅ Organisation créée ! Redirection…', 'succes')
-      window.location.href = '/'
+      // Message volontairement identique quel que soit le resultat reel
+      // (compte inexistant, sans email, ou existant) — anti-enumeration.
+      afficherMessage('✅ Si un compte existe avec cet identifiant, un email de réinitialisation a été envoyé.', 'succes')
+      formulaire.reset()
     } catch (erreur) {
       afficherMessage('Impossible de contacter le serveur. Réessayez dans un instant.', 'erreur')
     } finally {
       bouton.disabled = false
-      bouton.textContent = 'Créer mon organisation'
+      bouton.textContent = 'Envoyer le lien'
     }
   })
 </script>

@@ -8,6 +8,7 @@
 const express = require('express')
 const tokenService = require('../auth/tokenService')
 const organisationsService = require('../../../core/services/organisationsService')
+const passwordResetService = require('../../../core/services/passwordResetService')
 const { creerLimiteur } = require('../middleware/rateLimiter')
 const { validerEntree } = require('../../../core/validation')
 
@@ -19,6 +20,7 @@ const limiterSignup = creerLimiteur({ maxTentatives: 5 }) // plus restrictif : c
 // éviter un flood applicatif sur cette route (audit de clôture, aucun
 // rate limiter n'y était appliqué jusqu'ici).
 const limiterRefresh = creerLimiteur({ maxTentatives: 30 })
+const limiterMotDePasseOublie = creerLimiteur({ maxTentatives: 5 })
 
 const router = express.Router()
 
@@ -57,17 +59,18 @@ router.post('/signup', limiterSignup, async (req, res) => {
       nom:      { required: true, type: 'string', maxLen: 200 },
       adminNom: { required: true, type: 'string', maxLen: 100 },
       username: { required: true, type: 'string', maxLen: 100 },
-      password: { required: true, type: 'string', maxLen: 200 }
+      password: { required: true, type: 'string', maxLen: 200 },
+      email:    { type: 'email', maxLen: 200 }
     })
   } catch (e) {
     return res.status(400).json({ erreur: e.message })
   }
-  const { nom, adminNom, username, password } = req.body
+  const { nom, adminNom, username, password, email } = req.body
   if (password.length < 6) {
     return res.status(400).json({ erreur: 'Le mot de passe doit contenir au moins 6 caractères' })
   }
 
-  const creation = await organisationsService.creerAvecAdmin({ nom, adminNom, username, password })
+  const creation = await organisationsService.creerAvecAdmin({ nom, adminNom, username, password, email })
   if (creation.erreur) return res.status(400).json({ erreur: creation.erreur })
 
   // Auto-connexion — évite de faire ressaisir le mot de passe qui vient
@@ -75,6 +78,35 @@ router.post('/signup', limiterSignup, async (req, res) => {
   const connexion = await tokenService.connexion(username, password)
   if (connexion.erreur) return res.status(500).json({ erreur: connexion.erreur })
   res.status(201).json(connexion.succes)
+})
+
+// Chantier mot de passe oublié — jamais d'information sur l'existence d'un
+// compte (anti-énumération) : toujours {succes:true}, qu'un identifiant
+// existe ou non, qu'un email soit envoyé ou non.
+router.post('/mot-de-passe-oublie', limiterMotDePasseOublie, async (req, res) => {
+  try {
+    validerEntree(req.body, { identifiant: { required: true, type: 'string', maxLen: 150 } })
+  } catch (e) {
+    return res.status(400).json({ erreur: e.message })
+  }
+  res.json(await passwordResetService.demander(req.body.identifiant))
+})
+
+router.post('/reinitialiser-mot-de-passe', async (req, res) => {
+  try {
+    validerEntree(req.body, {
+      token:    { required: true, type: 'string', maxLen: 200 },
+      password: { required: true, type: 'string', maxLen: 200 }
+    })
+  } catch (e) {
+    return res.status(400).json({ erreur: e.message })
+  }
+  if (req.body.password.length < 6) {
+    return res.status(400).json({ erreur: 'Le mot de passe doit contenir au moins 6 caractères' })
+  }
+  const resultat = await passwordResetService.reinitialiser(req.body.token, req.body.password)
+  if (resultat.erreur) return res.status(400).json(resultat)
+  res.json(resultat)
 })
 
 module.exports = router

@@ -229,6 +229,11 @@ function Login({ onLoginSuccess }) {
                 {loading ? 'Connexion...' : 'Se Connecter'}
               </Button>
             </Form.Item>
+            <div style={{ textAlign: 'center' }}>
+              <a href="https://nafix.digital/mot-de-passe-oublie.html" target="_blank" rel="noreferrer" style={{ fontSize: 13 }}>
+                Mot de passe oublié ?
+              </a>
+            </div>
           </Form>
         ) : (
           <Form

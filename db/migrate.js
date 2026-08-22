@@ -488,6 +488,23 @@ async function runMigrations() {
     `)
     await client.query('CREATE INDEX IF NOT EXISTS idx_paiements_org ON paiements(organisation_id)')
 
+    // Chantier mot de passe oublie — email optionnel (comptes existants sans
+    // email : plusieurs NULL autorises par Postgres sur une colonne UNIQUE,
+    // aucun conflit).
+    await client.query('ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS email TEXT UNIQUE')
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reinitialisations_mot_de_passe (
+        id              SERIAL PRIMARY KEY,
+        utilisateur_id  INTEGER NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
+        token_hash      TEXT NOT NULL UNIQUE,
+        cree_le         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expire_le       TIMESTAMP NOT NULL,
+        utilise         INTEGER DEFAULT 0
+      )
+    `)
+    await client.query('CREATE INDEX IF NOT EXISTS idx_reinitialisations_utilisateur ON reinitialisations_mot_de_passe(utilisateur_id)')
+
     console.log('✅ Migrations terminées')
   } catch (err) {
     console.error('❌ Erreur migration:', err.message)

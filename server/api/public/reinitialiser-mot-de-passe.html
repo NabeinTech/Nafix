@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Créer mon organisation — Nafix</title>
+<title>Nouveau mot de passe — Nafix</title>
 <style>
   :root {
     --bleu: #1890ff;
@@ -85,50 +85,41 @@
 <body>
   <div class="carte">
     <div class="logo">N</div>
-    <h1>Créer mon organisation</h1>
-    <p class="sous-titre">Quelques secondes suffisent — vous serez connecté immédiatement après.</p>
+    <h1>Nouveau mot de passe</h1>
+    <p class="sous-titre" id="sous-titre">Choisissez votre nouveau mot de passe.</p>
 
     <div id="message" class="message"></div>
 
     <form id="formulaire">
       <div class="champ">
-        <label for="nom">Nom de votre entreprise</label>
-        <input id="nom" name="nom" required maxlength="200" autocomplete="organization">
-      </div>
-      <div class="champ">
-        <label for="adminNom">Votre nom complet</label>
-        <input id="adminNom" name="adminNom" required maxlength="100" autocomplete="name">
-      </div>
-      <div class="champ">
-        <label for="username">Identifiant de connexion</label>
-        <input id="username" name="username" required maxlength="100" autocomplete="username">
-      </div>
-      <div class="champ">
-        <label for="email">Email (pour récupérer votre compte, optionnel)</label>
-        <input id="email" name="email" type="email" maxlength="200" autocomplete="email">
-      </div>
-      <div class="champ">
-        <label for="password">Mot de passe</label>
+        <label for="password">Nouveau mot de passe</label>
         <input id="password" name="password" type="password" required minlength="6" maxlength="200" autocomplete="new-password">
       </div>
       <div class="champ">
         <label for="passwordConfirm">Confirmer le mot de passe</label>
         <input id="passwordConfirm" name="passwordConfirm" type="password" required minlength="6" maxlength="200" autocomplete="new-password">
       </div>
-      <button type="submit" id="bouton">Créer mon organisation</button>
+      <button type="submit" id="bouton">Changer le mot de passe</button>
     </form>
 
-    <div class="lien-retour">Vous avez déjà un compte ? <a href="/">Connectez-vous</a>.</div>
+    <div class="lien-retour"><a href="/">Retour à la connexion</a></div>
   </div>
 
 <script>
   const formulaire = document.getElementById('formulaire')
   const bouton = document.getElementById('bouton')
   const messageEl = document.getElementById('message')
+  const token = new URLSearchParams(window.location.search).get('token')
 
   function afficherMessage(texte, type) {
     messageEl.textContent = texte
     messageEl.className = 'message ' + type
+  }
+
+  if (!token) {
+    document.getElementById('sous-titre').textContent = 'Lien invalide.'
+    formulaire.style.display = 'none'
+    afficherMessage('Ce lien de réinitialisation est invalide. Demandez-en un nouveau depuis la page "Mot de passe oublié".', 'erreur')
   }
 
   formulaire.addEventListener('submit', async (evenement) => {
@@ -142,18 +133,12 @@
     }
 
     bouton.disabled = true
-    bouton.textContent = 'Création en cours…'
+    bouton.textContent = 'Changement en cours…'
     try {
-      const reponse = await fetch('/auth/signup', {
+      const reponse = await fetch('/auth/reinitialiser-mot-de-passe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nom: donnees.nom,
-          adminNom: donnees.adminNom,
-          username: donnees.username,
-          email: donnees.email,
-          password: donnees.password
-        })
+        body: JSON.stringify({ token, password: donnees.password })
       })
       const resultat = await reponse.json()
 
@@ -162,18 +147,13 @@
         return
       }
 
-      // Deux cles distinctes : nafix_web_tokens (lue par ipc-shim.js pour les
-      // appels API suivants) et nafix_session (lue par src/App.js, qui n'y
-      // attend que l'objet utilisateur, pas les tokens).
-      sessionStorage.setItem('nafix_web_tokens', JSON.stringify({ accessToken: resultat.accessToken, refreshToken: resultat.refreshToken }))
-      sessionStorage.setItem('nafix_session', JSON.stringify(resultat.utilisateur))
-      afficherMessage('✅ Organisation créée ! Redirection…', 'succes')
-      window.location.href = '/'
+      afficherMessage('✅ Mot de passe changé ! Vous pouvez maintenant vous connecter.', 'succes')
+      formulaire.style.display = 'none'
     } catch (erreur) {
       afficherMessage('Impossible de contacter le serveur. Réessayez dans un instant.', 'erreur')
     } finally {
       bouton.disabled = false
-      bouton.textContent = 'Créer mon organisation'
+      bouton.textContent = 'Changer le mot de passe'
     }
   })
 </script>

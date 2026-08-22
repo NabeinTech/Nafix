@@ -1722,6 +1722,10 @@ function Parametres({ utilisateur }) {
             rules={[{ required: true, message: 'Obligatoire' }]}>
             <Input placeholder="Ex: moussa.diallo" size="large" />
           </Form.Item>
+          <Form.Item name="email" label="Email (pour récupérer le compte, optionnel)"
+            rules={[{ type: 'email', message: 'Email invalide' }]}>
+            <Input placeholder="Ex: moussa.diallo@exemple.com" size="large" />
+          </Form.Item>
           <Form.Item name="role" label="Rôle"
             rules={[{ required: true, message: 'Obligatoire' }]}>
             <Select placeholder="Choisir un rôle" size="large">

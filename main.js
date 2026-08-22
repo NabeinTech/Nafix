@@ -47,6 +47,15 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:3000')
   }
 
+  // Chantier mot de passe oublié — un lien target="_blank" (ex. vers
+  // mot-de-passe-oublie.html sur nafix.digital) serait sinon silencieusement
+  // refusé par Electron (comportement par défaut depuis Electron 14+) :
+  // ouvre dans le navigateur système au lieu d'une fenêtre Electron.
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    require('electron').shell.openExternal(url)
+    return { action: 'deny' }
+  })
+
   // En mode serveur multi-poste, fermer la fenêtre ne doit pas arrêter
   // PostgreSQL (les autres postes en dépendent) : on masque dans la barre
   // système au lieu de quitter, sauf demande explicite via le menu du tray.

@@ -46,7 +46,7 @@ const OrganisationsDAO = {
   // donc sans organisationId/RBAC à ce stade : la seule protection possible
   // est la validation des données. Transaction unique : si le username existe
   // déjà, tout est annulé — jamais d'organisation orpheline sans utilisateur.
-  async creerAvecAdmin({ nom, adminNom, username, password }) {
+  async creerAvecAdmin({ nom, adminNom, username, password, email }) {
     const client = await pool.connect()
     try {
       await client.query('BEGIN')
@@ -57,6 +57,14 @@ const OrganisationsDAO = {
         return { erreur: 'Cet identifiant existe déjà !' }
       }
 
+      if (email) {
+        const emailExistant = await client.query('SELECT id FROM utilisateurs WHERE email = $1', [email])
+        if (emailExistant.rows.length) {
+          await client.query('ROLLBACK')
+          return { erreur: 'Cet email est déjà utilisé par un autre compte !' }
+        }
+      }
+
       const { rows: [organisation] } = await client.query(
         "INSERT INTO organisations (nom, code, statut) VALUES ($1, NULL, 'active') RETURNING id, nom, code, statut, created_at",
         [nom]
@@ -64,10 +72,10 @@ const OrganisationsDAO = {
 
       const hashedPwd = await AuthService.hashPassword(password)
       const { rows: [utilisateur] } = await client.query(
-        `INSERT INTO utilisateurs (nom, username, password, role, organisation_id)
-         VALUES ($1, $2, $3, 'administrateur', $4)
-         RETURNING id, nom, username, role, organisation_id`,
-        [adminNom, username, hashedPwd, organisation.id]
+        `INSERT INTO utilisateurs (nom, username, password, role, organisation_id, email)
+         VALUES ($1, $2, $3, 'administrateur', $4, $5)
+         RETURNING id, nom, username, role, organisation_id, email`,
+        [adminNom, username, hashedPwd, organisation.id, email || null]
       )
 
       // Sprint 18 — toute organisation créée par ce flux reçoit un essai

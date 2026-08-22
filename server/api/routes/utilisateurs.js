@@ -22,7 +22,8 @@ router.post('/', exigerRole('utilisateurs:create'), async (req, res) => {
     validerEntree(req.body, {
       username: { required: true, type: 'string', maxLen: 100 },
       password: { required: true, type: 'string', maxLen: 200 },
-      role:     { required: true, type: 'string', enum: ['administrateur', 'gerant', 'comptable', 'caissier'] }
+      role:     { required: true, type: 'string', enum: ['administrateur', 'gerant', 'comptable', 'caissier'] },
+      email:    { type: 'email', maxLen: 200 }
     })
     const resultat = await UtilisateursDAO.create(req.body, req.tenantContext.organisationId)
     if (resultat?.erreur) return res.status(400).json(resultat)
