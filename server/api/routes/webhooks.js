@@ -10,6 +10,12 @@ const logger = require('../lib/logger')
 const router = express.Router()
 
 router.post('/paydunya', async (req, res) => {
+  // TEMPORAIRE — le hash recu ne correspond pas a sha512(master_key) alors
+  // que la meme formule marche sur la reponse de /checkout-invoice/confirm ;
+  // le corps reel du webhook (par opposition a la reponse de confirmation)
+  // n'a jamais ete observe directement. A retirer une fois la vraie forme
+  // confirmee.
+  logger.info('webhook_paydunya_corps_brut', { corps: req.body })
   try {
     const resultat = await paydunyaService.traiterWebhook(req.body)
     logger.info('webhook_paydunya_traite', resultat)
