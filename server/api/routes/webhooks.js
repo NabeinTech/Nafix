@@ -15,7 +15,10 @@ router.post('/paydunya', async (req, res) => {
   // le corps reel du webhook (par opposition a la reponse de confirmation)
   // n'a jamais ete observe directement. A retirer une fois la vraie forme
   // confirmee.
-  logger.info('webhook_paydunya_corps_brut', { corps: req.body })
+  logger.info('webhook_paydunya_corps_brut', {
+    contentType: req.headers['content-type'],
+    corpsJSON: JSON.stringify(req.body)
+  })
   try {
     const resultat = await paydunyaService.traiterWebhook(req.body)
     logger.info('webhook_paydunya_traite', resultat)
