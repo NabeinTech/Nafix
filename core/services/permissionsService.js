@@ -37,7 +37,12 @@ const CANAUX_RESTREINTS = {
   // connecté (scénario franchise/multi-boutique) ; à distinguer du canal
   // organisations:creerAvecAdmin (Sprint 11), volontairement sans RBAC car
   // appelé avant toute session, depuis l'écran de connexion.
-  'organisations:creerOrganisation': ['administrateur']
+  'organisations:creerOrganisation': ['administrateur'],
+  // Chantier PayDunya — creation d'une facture de paiement d'abonnement,
+  // action de facturation reservee a l'administrateur comme le reste de ce
+  // module (ne fait jamais passer abonnements.statut a 'actif' elle-meme —
+  // voir server/api/routes/abonnement.js et core/services/paydunyaService.js).
+  'abonnement:payer': ['administrateur']
 }
 
 function verifierPermission(canal, utilisateurConnecte) {

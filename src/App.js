@@ -151,6 +151,7 @@ function App() {
         <EcranAbonnementBloque
           organisation={organisationMine}
           statutAbonnement={statutAbonnement}
+          utilisateur={utilisateur}
           onLogout={handleLogout}
         />
       </ConfigProvider>

@@ -228,6 +228,7 @@ function registerAppHandlers() {
   const categoriesService = require('./core/services/categoriesService')
   const sauvegardeService = require('./core/services/sauvegardeService')
   const abonnementsService = require('./core/services/abonnementsService')
+  const paydunyaService = require('./core/services/paydunyaService')
 
   // Sprint 4 — l'organisation vient désormais de l'utilisateur authentifié
   // (utilisateurConnecte.organisation_id), jamais d'une "première organisation
@@ -1012,6 +1013,20 @@ function registerAppHandlers() {
     const organisationId = await getOrganisationIdActive({ ignorerAbonnement: true })
     const abonnement = await abonnementsService.getByOrganisation(organisationId)
     return { ...abonnement, accesAutorise: abonnementsService.accesAutorise(abonnement) }
+  })
+  // Chantier PayDunya — cree la facture puis ouvre le paiement hebergee dans
+  // le navigateur systeme (shell.openExternal), jamais dans la fenetre
+  // Electron elle-meme. N'ecrit jamais abonnements.statut (voir
+  // paydunyaService.js) : seul le webhook PayDunya en a le pouvoir.
+  ipcMain.handle('abonnement:payer', async (_, donnees) => {
+    verifierPermission('abonnement:payer', utilisateurConnecte)
+    const organisationId = await getOrganisationIdActive({ ignorerAbonnement: true })
+    const abonnement = await abonnementsService.getByOrganisation(organisationId)
+    const resultat = await paydunyaService.creerFacture(organisationId, donnees?.codePlan || abonnement?.plan_code)
+    if (resultat.erreur) return resultat
+    const { shell } = require('electron')
+    shell.openExternal(resultat.succes.url)
+    return { succes: true }
   })
   ipcMain.handle('organisations:update', async (_, { nom }) => {
     verifierPermission('organisations:update', utilisateurConnecte)

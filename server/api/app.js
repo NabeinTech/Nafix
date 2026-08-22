@@ -10,6 +10,7 @@ const pool = require('../../db/pool')
 const logger = require('./lib/logger')
 const authRoutes = require('./routes/auth')
 const platformRoutes = require('./routes/platform')
+const webhooksRoutes = require('./routes/webhooks')
 const utilisateursRoutes = require('./routes/utilisateurs')
 const organisationsRoutes = require('./routes/organisations')
 const abonnementRoutes = require('./routes/abonnement')
@@ -80,6 +81,9 @@ function creerApp() {
   app.use(express.static(path.join(__dirname, '../../build')))
 
   app.use('/auth', authRoutes)
+  // Chantier PayDunya — appele par PayDunya lui-meme (serveur-a-serveur),
+  // jamais par un utilisateur : aucun middleware d'authentification.
+  app.use('/webhooks', webhooksRoutes)
   app.use('/utilisateurs', utilisateursRoutes)
   app.use('/organisations', organisationsRoutes)
   // Sprint 19 — namespace entièrement séparé, sa propre authentification

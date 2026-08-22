@@ -212,6 +212,10 @@
     'dashboard:getAll': () => api('GET', '/dashboard'),
     'stats:getAll': () => api('GET', '/statistiques'),
     'abonnement:getStatut': () => api('GET', '/abonnement'),
+    // Contrat different du desktop par necessite : le web doit naviguer
+    // lui-meme vers la page de paiement (main.js ouvre deja le navigateur
+    // systeme cote Electron, la page appelante n'a rien a faire de plus).
+    'abonnement:payer': (donnees) => api('POST', '/abonnement/payer', donnees),
 
     // ── utilisateurs (routes neuves, cf. server/api/routes/utilisateurs.js) ──
     'utilisateurs:getAll': () => api('GET', '/utilisateurs'),

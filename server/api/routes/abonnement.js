@@ -9,7 +9,9 @@
 // existent déjà dans abonnementsService, prêts à être branchés).
 const express = require('express')
 const abonnementsService = require('../../../core/services/abonnementsService')
+const paydunyaService = require('../../../core/services/paydunyaService')
 const { authentifier } = require('../middleware/authentification')
+const { exigerRole } = require('../middleware/rbac')
 
 const router = express.Router()
 router.use(authentifier)
@@ -24,6 +26,17 @@ router.get('/', async (req, res) => {
 
 router.get('/plans', async (req, res) => {
   res.json(await abonnementsService.getPlans())
+})
+
+// Chantier PayDunya — cree une facture de paiement et renvoie l'URL de
+// checkout hebergee vers laquelle rediriger. N'ecrit jamais abonnements.statut
+// elle-meme (voir l'en-tete du fichier) : seul le webhook PayDunya, verifie
+// serveur-a-serveur, a ce pouvoir.
+router.post('/payer', exigerRole('abonnement:payer'), async (req, res) => {
+  const abonnement = await abonnementsService.getByOrganisation(req.tenantContext.organisationId)
+  const resultat = await paydunyaService.creerFacture(req.tenantContext.organisationId, req.body?.codePlan || abonnement?.plan_code)
+  if (resultat.erreur) return res.status(400).json(resultat)
+  res.json(resultat.succes)
 })
 
 module.exports = router

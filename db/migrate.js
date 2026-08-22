@@ -470,6 +470,24 @@ async function runMigrations() {
     `)
     await client.query('CREATE INDEX IF NOT EXISTS idx_audit_logs_plateforme_org ON audit_logs_plateforme(organisation_id)')
 
+    // Chantier PayDunya — trace de chaque facture creee (historique de
+    // facturation) et garde-fou d'idempotence pour le webhook : un
+    // invoice_token deja "complete" ne se retraite jamais, meme si PayDunya
+    // rejoue la notification (retentatives documentees en cas de non-reponse).
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS paiements (
+        id              SERIAL PRIMARY KEY,
+        organisation_id INTEGER NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
+        plan_id         INTEGER NOT NULL REFERENCES plans(id),
+        montant         REAL NOT NULL,
+        invoice_token   TEXT UNIQUE NOT NULL,
+        statut          TEXT NOT NULL DEFAULT 'en_attente',
+        created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        complete_le     TIMESTAMP
+      )
+    `)
+    await client.query('CREATE INDEX IF NOT EXISTS idx_paiements_org ON paiements(organisation_id)')
+
     console.log('✅ Migrations terminées')
   } catch (err) {
     console.error('❌ Erreur migration:', err.message)
