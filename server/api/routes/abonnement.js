@@ -34,7 +34,11 @@ router.get('/plans', async (req, res) => {
 // serveur-a-serveur, a ce pouvoir.
 router.post('/payer', exigerRole('abonnement:payer'), async (req, res) => {
   const abonnement = await abonnementsService.getByOrganisation(req.tenantContext.organisationId)
-  const resultat = await paydunyaService.creerFacture(req.tenantContext.organisationId, req.body?.codePlan || abonnement?.plan_code)
+  // "essai_gratuit" coute 0 FCFA — jamais un plan a payer en soi. Sans choix
+  // explicite du client, "passer au payant" doit basculer vers un vrai plan
+  // payant (standard), pas re-facturer l'essai lui-meme.
+  const codePlan = req.body?.codePlan || (abonnement?.plan_code === 'essai_gratuit' ? 'standard' : abonnement?.plan_code)
+  const resultat = await paydunyaService.creerFacture(req.tenantContext.organisationId, codePlan)
   if (resultat.erreur) return res.status(400).json(resultat)
   res.json(resultat.succes)
 })
