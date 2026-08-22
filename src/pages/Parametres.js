@@ -35,6 +35,7 @@ function Parametres({ utilisateur }) {
   const [parametres, setParametres] = useState({})
   const [organisation, setOrganisation] = useState(null)
   const [abonnement, setAbonnement] = useState(null)
+  const [chargementPaiementAbonnement, setChargementPaiementAbonnement] = useState(false)
   const [organisationLoading, setOrganisationLoading] = useState(false)
   const [statutModalVisible, setStatutModalVisible] = useState(false)
   const [statutConfirmText, setStatutConfirmText] = useState('')
@@ -115,6 +116,25 @@ function Parametres({ utilisateur }) {
       setAbonnement(null)
     }
   }, [])
+
+  // Chantier PayDunya — renouvellement/passage au payant depuis les
+  // Paramètres, sans attendre d'être bloqué (même canal que
+  // EcranAbonnementBloque, paie toujours le plan courant, pas de
+  // changement de plan ici — ça reste une action Platform Admin).
+  const payerAbonnement = async () => {
+    if (!ipcRenderer) return
+    setChargementPaiementAbonnement(true)
+    try {
+      const resultat = await ipcRenderer.invoke('abonnement:payer', { codePlan: abonnement?.plan_code })
+      if (resultat?.erreur) { message.error(`❌ ${resultat.erreur}`); return }
+      if (resultat?.url) window.location.href = resultat.url
+      else message.success('✅ Redirection vers le paiement…')
+    } catch (e) {
+      message.error('❌ Impossible de contacter le prestataire de paiement.')
+    } finally {
+      setChargementPaiementAbonnement(false)
+    }
+  }
 
   useEffect(() => {
     chargerParametres()
@@ -858,8 +878,18 @@ function Parametres({ utilisateur }) {
         ) : (
           <Text style={{ color: '#aaa' }}>Chargement…</Text>
         )}
+        {abonnement && (
+          <Button
+            type="primary"
+            loading={chargementPaiementAbonnement}
+            onClick={payerAbonnement}
+            style={{ marginTop: 16 }}
+          >
+            {abonnement.statut === 'essai' ? 'Passer à un abonnement payant' : 'Renouveler maintenant'}
+          </Button>
+        )}
         <Text style={{ display: 'block', marginTop: 16, color: '#aaa', fontSize: 12 }}>
-          Pour toute modification de votre abonnement, contactez votre administrateur plateforme.
+          Pour changer de plan, contactez votre administrateur plateforme.
         </Text>
       </Card>
 
