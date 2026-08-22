@@ -24,7 +24,11 @@ function EcranAbonnementBloque({ organisation, statutAbonnement, utilisateur, on
     if (!ipcRenderer) return
     setChargementPaiement(true)
     try {
-      const resultat = await ipcRenderer.invoke('abonnement:payer', { codePlan: statutAbonnement?.plan_code })
+      // essai_gratuit coute 0 FCFA — jamais un plan a payer en soi ; on omet
+      // codePlan dans ce cas pour laisser le serveur basculer vers un vrai
+      // plan payant (voir server/api/routes/abonnement.js).
+      const codePlan = statutAbonnement?.plan_code !== 'essai_gratuit' ? statutAbonnement?.plan_code : undefined
+      const resultat = await ipcRenderer.invoke('abonnement:payer', { codePlan })
       if (resultat?.erreur) { message.error(`❌ ${resultat.erreur}`); return }
       if (resultat?.url) window.location.href = resultat.url
     } catch (e) {
