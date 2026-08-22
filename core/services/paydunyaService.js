@@ -4,12 +4,11 @@
 // JWT_SECRET (server/api/server.js) : PAYDUNYA_MASTER_KEY, PAYDUNYA_PRIVATE_KEY,
 // PAYDUNYA_TOKEN, PAYDUNYA_MODE (test|live).
 //
-// IMPORTANT — aucun compte PayDunya disponible au moment de l'écriture : le
-// contrat d'API ci-dessous vient de recherches web (la documentation
-// officielle developers.paydunya.com a renvoyé 403 à chaque tentative
-// directe), pas d'une lecture de la doc source. Noms de champs/URLs à
-// reverifier des que de vraies cles existent — tout est isole ici, aucun
-// autre fichier n'a besoin de changer si un detail differe.
+// Validé de bout en bout en production le 22/08/2026 : facture créée,
+// paiement réel via un client fictif PayDunya, webhook reçu et traité,
+// abonnement passé à "actif". Le webhook arrive en
+// application/x-www-form-urlencoded (voir express.urlencoded dans app.js),
+// champs imbriqués sous "data" — confirmé, plus une hypothèse.
 const crypto = require('crypto')
 const pool = require('../../db/pool')
 const auditLogPlateformeService = require('./auditLogPlateformeService')
@@ -121,4 +120,18 @@ async function traiterWebhook(body) {
   return { traite: true, statut: 'complete' }
 }
 
-module.exports = { creerFacture, traiterWebhook }
+// Historique de facturation d'une organisation (Platform Admin uniquement,
+// meme reserve que OrganisationsDAO.getAllPourPlateforme).
+async function getParOrganisation(organisationId) {
+  const { rows } = await pool.query(
+    `SELECT p.id, p.montant, p.statut, p.invoice_token, p.created_at, p.complete_le, pl.nom AS plan_nom
+     FROM paiements p
+     JOIN plans pl ON p.plan_id = pl.id
+     WHERE p.organisation_id = $1
+     ORDER BY p.created_at DESC`,
+    [organisationId]
+  )
+  return rows
+}
+
+module.exports = { creerFacture, traiterWebhook, getParOrganisation }

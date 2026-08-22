@@ -364,6 +364,7 @@
           <button class="secondaire petit" data-action="plan">Plan</button>
           <button class="secondaire petit" data-action="abonnement">Abonnement</button>
           <button class="secondaire petit" data-action="audit">Audit</button>
+          <button class="secondaire petit" data-action="paiements">Paiements</button>
         </td>
       `
       tr.querySelectorAll('button').forEach(btn => {
@@ -391,6 +392,7 @@
     if (action === 'plan') return panneauChangerPlan(org)
     if (action === 'abonnement') return panneauChangerAbonnement(org)
     if (action === 'audit') return panneauAudit(org)
+    if (action === 'paiements') return panneauPaiements(org)
   }
 
   function panneauStatutOrganisation(org) {
@@ -528,6 +530,42 @@
       document.getElementById('bouton-fermer').addEventListener('click', fermerPanneau)
     } catch (e) {
       panneau.innerHTML = `<h2>Journal d'audit</h2><div class="message erreur">${echapper(e.message)}</div>`
+    }
+  }
+
+  const LIBELLES_PAIEMENT = { complete: 'Payé', en_attente: 'En attente', echoue: 'Échoué' }
+  const COULEURS_PAIEMENT = { complete: 'badge-vert', en_attente: 'badge-gris', echoue: 'badge-rouge' }
+
+  async function panneauPaiements(org) {
+    panneau.innerHTML = `<h2>Historique de facturation</h2><p class="sous-titre">${echapper(org.nom)}</p><p class="vide">Chargement…</p>`
+    superposition.classList.remove('cache')
+    try {
+      const reponse = await appelAPI(`/platform/organisations/${org.id}/paiements`)
+      const paiements = await reponse.json()
+      const listeHtml = paiements.length
+        ? paiements.map(p => `
+            <div class="entree-audit">
+              <div class="action">${echapper(p.plan_nom)} — ${p.montant} FCFA
+                <span class="badge ${COULEURS_PAIEMENT[p.statut] || 'badge-gris'}">${LIBELLES_PAIEMENT[p.statut] || p.statut}</span>
+              </div>
+              <div class="meta">
+                Créé le ${new Date(p.created_at).toLocaleString('fr-FR')}
+                ${p.complete_le ? ` · Payé le ${new Date(p.complete_le).toLocaleString('fr-FR')}` : ''}
+              </div>
+            </div>
+          `).join('')
+        : '<p class="vide">Aucun paiement pour cette organisation.</p>'
+      panneau.innerHTML = `
+        <h2>Historique de facturation</h2>
+        <p class="sous-titre">${echapper(org.nom)}</p>
+        ${listeHtml}
+        <div class="panneau-actions">
+          <button class="secondaire" id="bouton-fermer">Fermer</button>
+        </div>
+      `
+      document.getElementById('bouton-fermer').addEventListener('click', fermerPanneau)
+    } catch (e) {
+      panneau.innerHTML = `<h2>Historique de facturation</h2><div class="message erreur">${echapper(e.message)}</div>`
     }
   }
 

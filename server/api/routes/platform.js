@@ -8,6 +8,7 @@ const platformTokenService = require('../auth/platformTokenService')
 const organisationsService = require('../../../core/services/organisationsService')
 const abonnementsService = require('../../../core/services/abonnementsService')
 const auditLogPlateformeService = require('../../../core/services/auditLogPlateformeService')
+const paydunyaService = require('../../../core/services/paydunyaService')
 const { authentifierPlateforme } = require('../middleware/authentifierPlateforme')
 const { creerLimiteur } = require('../middleware/rateLimiter')
 
@@ -92,6 +93,12 @@ router.put('/organisations/:id/abonnement/statut', authentifierPlateforme, async
 
 router.get('/organisations/:id/audit', authentifierPlateforme, async (req, res) => {
   res.json(await auditLogPlateformeService.getPourOrganisation(req.params.id))
+})
+
+// Chantier PayDunya — historique de facturation, visibilite Platform Admin
+// (l'organisation elle-meme n'y a pas acces, meme perimetre que /audit).
+router.get('/organisations/:id/paiements', authentifierPlateforme, async (req, res) => {
+  res.json(await paydunyaService.getParOrganisation(req.params.id))
 })
 
 module.exports = router
