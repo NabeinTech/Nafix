@@ -88,12 +88,27 @@ async function importer(sauvegarde, organisationId) {
       }
     }
 
+    // Audit sécurité — les clés de chaque ligne importée (donc les noms de
+    // colonnes de l'INSERT dynamique ci-dessous) viennent telles quelles du
+    // fichier JSON fourni par l'utilisateur. Sans validation, un fichier de
+    // sauvegarde forgé pourrait injecter du SQL arbitraire dans la liste de
+    // colonnes (seules les VALEURS étaient paramétrées, pas les noms de
+    // colonnes). Un identifiant Postgres valide ne contient jamais de
+    // parenthèse, point-virgule ni espace — ce filtre élimine toute
+    // possibilité d'injection sans avoir à maintenir une liste blanche par
+    // table.
+    const REGEX_IDENTIFIANT_SQL = /^[a-z_][a-z0-9_]*$/
     const inserer = async (table, lignes) => {
       for (const ligne of (lignes || [])) {
         // organisation_id est toujours forcé à l'organisation courante,
         // jamais repris du fichier importé.
         const ligneCorrigee = { ...ligne, organisation_id: organisationId }
         const colonnes = Object.keys(ligneCorrigee)
+        for (const colonne of colonnes) {
+          if (!REGEX_IDENTIFIANT_SQL.test(colonne)) {
+            throw new Error(`Fichier de sauvegarde invalide : nom de colonne suspect "${colonne}"`)
+          }
+        }
         const placeholders = colonnes.map((_, i) => `$${i + 1}`).join(',')
         await client.query(
           `INSERT INTO ${table} (${colonnes.join(',')}) VALUES (${placeholders})`,

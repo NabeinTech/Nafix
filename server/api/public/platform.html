@@ -472,7 +472,7 @@
     const statuts = ['essai', 'actif', 'impaye', 'suspendu', 'annule']
     panneau.innerHTML = `
       <h2>Statut d'abonnement</h2>
-      <p class="sous-titre">${echapper(org.nom)} — actuel : ${LIBELLES_ABONNEMENT[org.abonnement_statut] || org.abonnement_statut || '—'}</p>
+      <p class="sous-titre">${echapper(org.nom)} — actuel : ${echapper(LIBELLES_ABONNEMENT[org.abonnement_statut] || org.abonnement_statut || '—')}</p>
       <div id="message-panneau" class="message"></div>
       <div class="champ">
         <label for="select-statut-abo">Nouveau statut</label>

@@ -32,7 +32,16 @@ const statistiquesRoutes = require('./routes/statistiques')
 
 function creerApp() {
   const app = express()
-  app.set('trust proxy', false)
+  // Audit du 22/08/2026 — corrigé de `false` à `1` : le process tourne
+  // derrière le proxy d'edge de Railway (un seul saut entre l'internet public
+  // et ce container). Avec `false`, req.ip valait l'adresse interne du proxy
+  // pour TOUTES les requêtes — le limiteur de tentatives (rateLimiter.js,
+  // indexé sur req.ip) se retrouvait donc à partager un unique compteur entre
+  // tous les utilisateurs au lieu d'un compteur par IP réelle, sur /auth/*
+  // notamment. `1` fait confiance au premier X-Forwarded-For (celui posé par
+  // Railway) et rejette toute valeur au-delà — un client ne peut pas usurper
+  // son IP en falsifiant l'en-tête lui-même.
+  app.set('trust proxy', 1)
   app.use(express.json())
   // Chantier PayDunya — le webhook IPN reel envoie un corps
   // application/x-www-form-urlencoded (confirme en test live, cf.
@@ -40,6 +49,21 @@ function creerApp() {
   // les recherches web initiales. express.json() seul laissait req.body vide
   // pour ces requetes precises.
   app.use(express.urlencoded({ extended: true }))
+
+  // Audit du 22/08/2026 — en-têtes de sécurité de base, absents jusqu'ici.
+  // Pas de dépendance (helmet) pour quatre en-têtes statiques — même
+  // philosophie que emailService.js/paydunyaService.js (fetch natif plutôt
+  // qu'un SDK pour un besoin simple). Pas de Content-Security-Policy ici :
+  // le build React (app.js sert ../../build en statique) n'a pas été audité
+  // pour une CSP stricte (scripts inline générés par webpack) — l'ajouter à
+  // l'aveugle casserait l'app plutôt que de la protéger.
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('X-Frame-Options', 'DENY')
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+    res.setHeader('Strict-Transport-Security', 'max-age=15552000; includeSubDomains')
+    next()
+  })
 
   // Sprint 20 — une ligne structurée par requête (méthode, chemin, statut,
   // durée, tenant si authentifié) — traçabilité minimale sans dépendance

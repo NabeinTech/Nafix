@@ -21,6 +21,12 @@ const limiterSignup = creerLimiteur({ maxTentatives: 5 }) // plus restrictif : c
 // rate limiter n'y était appliqué jusqu'ici).
 const limiterRefresh = creerLimiteur({ maxTentatives: 30 })
 const limiterMotDePasseOublie = creerLimiteur({ maxTentatives: 5 })
+// Instance dediee, pas de partage avec limiterMotDePasseOublie : un
+// utilisateur legitime demande un lien PUIS soumet son nouveau mot de passe
+// (2 requetes, sur 2 routes differentes) — un seul compteur partage entre
+// les deux routes ferait consommer le meme budget deux fois pour un usage
+// parfaitement normal.
+const limiterReinitialiser = creerLimiteur({ maxTentatives: 5 })
 
 const router = express.Router()
 
@@ -92,7 +98,11 @@ router.post('/mot-de-passe-oublie', limiterMotDePasseOublie, async (req, res) =>
   res.json(await passwordResetService.demander(req.body.identifiant))
 })
 
-router.post('/reinitialiser-mot-de-passe', async (req, res) => {
+// Audit securite — seule route publique de auth.js sans limiteur (le token
+// lui-meme, 256 bits aleatoires, rend un brute-force du token infaisable ;
+// l'absence de limite reste neanmoins une incoherence avec toutes les
+// routes soeurs et une charge base non bornee possible).
+router.post('/reinitialiser-mot-de-passe', limiterReinitialiser, async (req, res) => {
   try {
     validerEntree(req.body, {
       token:    { required: true, type: 'string', maxLen: 200 },

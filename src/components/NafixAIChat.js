@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Input, Button, Card, Space, Tag, Avatar, Spin, Divider, Tooltip } from 'antd'
 import { SendOutlined, RobotOutlined, UserOutlined, ClearOutlined, QuestionCircleOutlined } from '@ant-design/icons'
+import { formatMarkdown } from '../utils/formatMarkdown'
 import './NafixAIChat.css'
 
 const ipcRenderer = typeof window !== 'undefined' ? window.ipcRenderer : null
@@ -616,15 +617,6 @@ function NafixAIChat() {
       </Card>
     </div>
   )
-}
-
-// Formateur Markdown basique
-function formatMarkdown(text) {
-  return text
-    .replace(/##\s+(.+)/g, '<h3 style="margin-top: 12px; margin-bottom: 8px; color: #1890ff;">$1</h3>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong style="color: #333;">$1</strong>')
-    .replace(/→\s/g, '→ ')
-    .split('\n').map(line => `<div style="margin: 4px 0; line-height: 1.6;">${line}</div>`).join('')
 }
 
 export default NafixAIChat

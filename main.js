@@ -37,6 +37,13 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      // Audit securite — explicite plutot que de dependre du defaut lie a la
+      // version d'Electron (deja actif implicitement depuis Electron 20+,
+      // mais fragile face a un futur changement de comportement ou un ajout
+      // silencieux d'API Node dans preload.js). preload.js ne touche qu'a
+      // contextBridge/ipcRenderer, compatible sandbox — verifie avant ce
+      // changement.
+      sandbox: true,
       preload: path.join(__dirname, 'preload.js')
     }
   })

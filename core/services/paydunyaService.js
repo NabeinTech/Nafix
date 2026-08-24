@@ -83,7 +83,15 @@ async function traiterWebhook(body) {
   // soit correctement peuple.
   const hashRecu = body?.data?.hash
   const hashAttendu = crypto.createHash('sha512').update(process.env.PAYDUNYA_MASTER_KEY || '').digest('hex')
-  if (!hashRecu || hashRecu !== hashAttendu) return { ignore: true, raison: 'hash invalide' }
+  // Audit securite — comparaison a temps constant (crypto.timingSafeEqual)
+  // plutot que !==, pour eviter un canal auxiliaire temporel sur un secret
+  // partage. Longueur verifiee avant (timingSafeEqual leve si les tampons
+  // n'ont pas la meme taille ; une longueur differente n'est pas secrete —
+  // un hash SHA-512 hex fait toujours 128 caracteres).
+  const hashRecuValide = typeof hashRecu === 'string' &&
+    hashRecu.length === hashAttendu.length &&
+    crypto.timingSafeEqual(Buffer.from(hashRecu), Buffer.from(hashAttendu))
+  if (!hashRecuValide) return { ignore: true, raison: 'hash invalide' }
 
   const token = body.data?.invoice?.token
   if (!token) return { ignore: true, raison: 'token absent' }

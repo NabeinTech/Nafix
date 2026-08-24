@@ -1,13 +1,25 @@
 const { Pool } = require('pg')
 
 const OPTIONS_COMMUNES = {
-  ssl: false,
   max: 10,
   min: 1,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 30000,
   allowExitOnIdle: false
 }
+
+// Audit du 22/08/2026 — ssl était figé à false pour TOUS les modes, y
+// compris DATABASE_URL/PGHOST (process API SaaS). Correct pour le mode
+// Desktop (PostgreSQL sur le LAN du commerce, jamais exposé publiquement) ;
+// dangereux pour le mode API si la base n'est pas jointe sur un réseau
+// strictement privé — identifiants et données transiteraient en clair.
+// rejectUnauthorized:false plutôt que true : les certificats des PostgreSQL
+// managés (Railway compris) ne sont généralement pas signés par une autorité
+// présente dans le magasin de confiance de Node — le chiffrement du canal
+// est ce qu'on cherche ici, pas la validation de chaîne de certification.
+// Désactivable explicitement via PGSSL=disable pour un déploiement sur
+// réseau privé confirmé.
+const SSL_CLOUD = process.env.PGSSL === 'disable' ? false : { rejectUnauthorized: false }
 
 // Sprint 13 — deux modes de résolution de la configuration, sans rien changer
 // au comportement Desktop existant :
@@ -31,10 +43,10 @@ if (process.versions.electron) {
   poolConfig = {
     host: config.host, port: config.port, user: config.user,
     password: config.password, database: config.database,
-    ...OPTIONS_COMMUNES
+    ssl: false, ...OPTIONS_COMMUNES
   }
 } else if (process.env.DATABASE_URL) {
-  poolConfig = { connectionString: process.env.DATABASE_URL, ...OPTIONS_COMMUNES }
+  poolConfig = { connectionString: process.env.DATABASE_URL, ssl: SSL_CLOUD, ...OPTIONS_COMMUNES }
 } else if (process.env.PGHOST) {
   poolConfig = {
     host: process.env.PGHOST,
@@ -42,7 +54,7 @@ if (process.versions.electron) {
     user: process.env.PGUSER,
     password: process.env.PGPASSWORD,
     database: process.env.PGDATABASE,
-    ...OPTIONS_COMMUNES
+    ssl: SSL_CLOUD, ...OPTIONS_COMMUNES
   }
 } else {
   console.error('❌ Configuration PostgreSQL introuvable (ni contexte Electron, ni DATABASE_URL, ni PGHOST/PGUSER/PGPASSWORD/PGDATABASE).')
