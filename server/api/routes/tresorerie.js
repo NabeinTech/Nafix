@@ -2,7 +2,7 @@ const express = require('express')
 const tresorerieService = require('../../../core/services/tresorerieService')
 const { authentifier } = require('../middleware/authentification')
 const { verifierAbonnement } = require('../middleware/subscriptionGate')
-const { validerEntree } = require('../../../core/validation')
+const { validerEntree, messageErreurSur } = require('../../../core/validation')
 
 const router = express.Router()
 router.use(authentifier)
@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
     })
     res.status(201).json(await tresorerieService.create(req.body || {}, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.post('/cloturer', async (req, res) => {
@@ -40,7 +40,7 @@ router.post('/cloturer', async (req, res) => {
     const { date, cloturePar, notes } = req.body || {}
     res.json(await tresorerieService.cloturer(date, cloturePar, notes, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.put('/:id', async (req, res) => {
@@ -51,7 +51,7 @@ router.put('/:id', async (req, res) => {
     })
     res.json(await tresorerieService.update({ ...req.body, id: req.params.id }, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.delete('/:id', async (req, res) => {

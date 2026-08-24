@@ -3,7 +3,7 @@ const parametresService = require('../../../core/services/parametresService')
 const { authentifier } = require('../middleware/authentification')
 const { exigerRole } = require('../middleware/rbac')
 const { verifierAbonnement } = require('../middleware/subscriptionGate')
-const { validerEntree } = require('../../../core/validation')
+const { validerEntree, messageErreurSur } = require('../../../core/validation')
 
 const router = express.Router()
 router.use(authentifier)
@@ -29,7 +29,7 @@ router.post('/', exigerRole('parametres:save'), async (req, res) => {
     })
     res.json(await parametresService.save(req.body || {}, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.post('/reinitialiser', exigerRole('db:reinitialiser'), async (req, res) => {
@@ -45,7 +45,7 @@ router.post('/reinitialiser', exigerRole('db:reinitialiser'), async (req, res) =
     })
     res.json(await parametresService.reinitialiser(req.body || {}, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 

@@ -2,7 +2,7 @@ const express = require('express')
 const avoirsService = require('../../../core/services/avoirsService')
 const { authentifier } = require('../middleware/authentification')
 const { verifierAbonnement } = require('../middleware/subscriptionGate')
-const { validerEntree } = require('../../../core/validation')
+const { validerEntree, messageErreurSur } = require('../../../core/validation')
 
 const router = express.Router()
 router.use(authentifier)
@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
     })
     res.status(201).json(await avoirsService.creerCompte(req.body || {}, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.post('/:id/recharger', async (req, res) => {
@@ -36,7 +36,7 @@ router.post('/:id/recharger', async (req, res) => {
     validerEntree(req.body, { montant: { required: true, type: 'number', min: 0 } })
     res.json(await avoirsService.recharger({ ...req.body, avoir_id: req.params.id }, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.post('/:id/achat', async (req, res) => {
@@ -44,7 +44,7 @@ router.post('/:id/achat', async (req, res) => {
     validerEntree(req.body, { montant: { required: true, type: 'number', min: 0 } })
     res.json(await avoirsService.enregistrerAchat({ ...req.body, avoir_id: req.params.id }, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.put('/:id/cloturer', async (req, res) => {

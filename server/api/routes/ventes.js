@@ -2,7 +2,7 @@ const express = require('express')
 const ventesService = require('../../../core/services/ventesService')
 const { authentifier } = require('../middleware/authentification')
 const { verifierAbonnement } = require('../middleware/subscriptionGate')
-const { validerEntree } = require('../../../core/validation')
+const { validerEntree, messageErreurSur } = require('../../../core/validation')
 
 const router = express.Router()
 router.use(authentifier)
@@ -24,7 +24,7 @@ router.post('/', async (req, res) => {
     })
     res.status(201).json(await ventesService.create(req.body || {}, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 // Mise à jour partielle (montant_paye/montant_du/est_pret)
@@ -36,7 +36,7 @@ router.put('/:id', async (req, res) => {
     })
     res.json(await ventesService.update({ ...req.body, id: req.params.id }, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 // Mise à jour complète (panier, client, etc. — recalcule le stock)
@@ -51,7 +51,7 @@ router.put('/:id/complet', async (req, res) => {
     })
     res.json(await ventesService.fullUpdate({ ...req.body, id: req.params.id }, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.delete('/:id', async (req, res) => {

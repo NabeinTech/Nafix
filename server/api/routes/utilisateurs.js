@@ -7,7 +7,7 @@ const UtilisateursDAO = require('../../../dao/UtilisateursDAO')
 const { authentifier } = require('../middleware/authentification')
 const { verifierAbonnement } = require('../middleware/subscriptionGate')
 const { exigerRole } = require('../middleware/rbac')
-const { validerEntree } = require('../../../core/validation')
+const { validerEntree, messageErreurSur } = require('../../../core/validation')
 
 const router = express.Router()
 router.use(authentifier)
@@ -29,7 +29,7 @@ router.post('/', exigerRole('utilisateurs:create'), async (req, res) => {
     if (resultat?.erreur) return res.status(400).json(resultat)
     res.status(201).json(resultat)
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 
@@ -42,7 +42,7 @@ router.put('/:id/password', exigerRole('utilisateurs:updatePassword'), async (re
     validerEntree(req.body, { password: { required: true, type: 'string', maxLen: 200 } })
     res.json(await UtilisateursDAO.updatePassword(req.params.id, req.body.password, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 

@@ -9,7 +9,7 @@ const organisationsService = require('../../../core/services/organisationsServic
 const { authentifier } = require('../middleware/authentification')
 const { verifierAbonnement } = require('../middleware/subscriptionGate')
 const { exigerRole } = require('../middleware/rbac')
-const { validerEntree } = require('../../../core/validation')
+const { validerEntree, messageErreurSur } = require('../../../core/validation')
 
 const router = express.Router()
 router.use(authentifier)
@@ -27,7 +27,7 @@ router.put('/', verifierAbonnement, exigerRole('organisations:update'), async (r
     validerEntree(req.body, { nom: { required: true, type: 'string', maxLen: 200 } })
     res.json(await organisationsService.update(req.tenantContext.organisationId, { nom: req.body.nom }))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 

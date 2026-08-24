@@ -2,7 +2,7 @@ const express = require('express')
 const produitsService = require('../../../core/services/produitsService')
 const { authentifier } = require('../middleware/authentification')
 const { verifierAbonnement } = require('../middleware/subscriptionGate')
-const { validerEntree } = require('../../../core/validation')
+const { validerEntree, messageErreurSur } = require('../../../core/validation')
 
 const router = express.Router()
 router.use(authentifier)
@@ -22,7 +22,7 @@ router.post('/', async (req, res) => {
     if (resultat?.erreur) return res.status(400).json(resultat)
     res.status(201).json(resultat)
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.put('/:id', async (req, res) => {
@@ -33,7 +33,7 @@ router.put('/:id', async (req, res) => {
     })
     res.json(await produitsService.update({ ...req.body, id: req.params.id }, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.delete('/:id', async (req, res) => {

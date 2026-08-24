@@ -2,7 +2,7 @@ const express = require('express')
 const fournisseursService = require('../../../core/services/fournisseursService')
 const { authentifier } = require('../middleware/authentification')
 const { verifierAbonnement } = require('../middleware/subscriptionGate')
-const { validerEntree } = require('../../../core/validation')
+const { validerEntree, messageErreurSur } = require('../../../core/validation')
 
 const router = express.Router()
 router.use(authentifier)
@@ -16,7 +16,7 @@ router.post('/', async (req, res) => {
     validerEntree(req.body, { nom: { required: true, type: 'string', maxLen: 200 } })
     res.status(201).json(await fournisseursService.create(req.body || {}, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.put('/:id', async (req, res) => {
@@ -24,7 +24,7 @@ router.put('/:id', async (req, res) => {
     validerEntree(req.body, { nom: { required: true, type: 'string', maxLen: 200 } })
     res.json(await fournisseursService.update({ ...req.body, id: req.params.id }, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.delete('/:id', async (req, res) => {

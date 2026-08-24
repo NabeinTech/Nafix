@@ -10,7 +10,7 @@ const tokenService = require('../auth/tokenService')
 const organisationsService = require('../../../core/services/organisationsService')
 const passwordResetService = require('../../../core/services/passwordResetService')
 const { creerLimiteur } = require('../middleware/rateLimiter')
-const { validerEntree } = require('../../../core/validation')
+const { validerEntree, messageErreurSur } = require('../../../core/validation')
 
 const limiterConnexion = creerLimiteur({ maxTentatives: 10 })
 const limiterSignup = creerLimiteur({ maxTentatives: 5 }) // plus restrictif : creation de compte, pas juste une tentative de connexion
@@ -69,7 +69,7 @@ router.post('/signup', limiterSignup, async (req, res) => {
       email:    { type: 'email', maxLen: 200 }
     })
   } catch (e) {
-    return res.status(400).json({ erreur: e.message })
+    return res.status(400).json({ erreur: messageErreurSur(e) })
   }
   const { nom, adminNom, username, password, email } = req.body
   if (password.length < 6) {
@@ -93,7 +93,7 @@ router.post('/mot-de-passe-oublie', limiterMotDePasseOublie, async (req, res) =>
   try {
     validerEntree(req.body, { identifiant: { required: true, type: 'string', maxLen: 150 } })
   } catch (e) {
-    return res.status(400).json({ erreur: e.message })
+    return res.status(400).json({ erreur: messageErreurSur(e) })
   }
   res.json(await passwordResetService.demander(req.body.identifiant))
 })
@@ -109,7 +109,7 @@ router.post('/reinitialiser-mot-de-passe', limiterReinitialiser, async (req, res
       password: { required: true, type: 'string', maxLen: 200 }
     })
   } catch (e) {
-    return res.status(400).json({ erreur: e.message })
+    return res.status(400).json({ erreur: messageErreurSur(e) })
   }
   if (req.body.password.length < 6) {
     return res.status(400).json({ erreur: 'Le mot de passe doit contenir au moins 6 caractères' })

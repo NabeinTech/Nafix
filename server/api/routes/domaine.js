@@ -3,7 +3,7 @@ const domaineService = require('../../../core/services/domaineService')
 const { authentifier } = require('../middleware/authentification')
 const { exigerRole } = require('../middleware/rbac')
 const { verifierAbonnement } = require('../middleware/subscriptionGate')
-const { validerEntree } = require('../../../core/validation')
+const { validerEntree, messageErreurSur } = require('../../../core/validation')
 
 const router = express.Router()
 router.use(authentifier)
@@ -22,7 +22,7 @@ router.post('/', exigerRole('domaine:save'), async (req, res) => {
     })
     res.json(await domaineService.save(req.body || {}, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 

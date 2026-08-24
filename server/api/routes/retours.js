@@ -2,7 +2,7 @@ const express = require('express')
 const retoursService = require('../../../core/services/retoursService')
 const { authentifier } = require('../middleware/authentification')
 const { verifierAbonnement } = require('../middleware/subscriptionGate')
-const { validerEntree } = require('../../../core/validation')
+const { validerEntree, messageErreurSur } = require('../../../core/validation')
 
 const router = express.Router()
 router.use(authentifier)
@@ -24,7 +24,7 @@ router.post('/', async (req, res) => {
     })
     res.status(201).json(await retoursService.create(req.body || {}, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.put('/:id/approuver', async (req, res) => {
@@ -32,7 +32,7 @@ router.put('/:id/approuver', async (req, res) => {
     validerEntree(req.body, { approuvePar: { required: true, type: 'string', maxLen: 200 } })
     res.json(await retoursService.approuver(req.params.id, req.body?.approuvePar, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.put('/:id/rejeter', async (req, res) => {
@@ -40,7 +40,7 @@ router.put('/:id/rejeter', async (req, res) => {
     validerEntree(req.body, { approuvePar: { required: true, type: 'string', maxLen: 200 } })
     res.json(await retoursService.rejeter(req.params.id, req.body?.approuvePar, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 

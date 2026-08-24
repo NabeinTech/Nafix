@@ -2,7 +2,7 @@ const express = require('express')
 const commandesService = require('../../../core/services/commandesService')
 const { authentifier } = require('../middleware/authentification')
 const { verifierAbonnement } = require('../middleware/subscriptionGate')
-const { validerEntree } = require('../../../core/validation')
+const { validerEntree, messageErreurSur } = require('../../../core/validation')
 
 const router = express.Router()
 router.use(authentifier)
@@ -22,7 +22,7 @@ router.post('/', async (req, res) => {
     validerEntree(req.body, { client_nom: { required: true, type: 'string', maxLen: 200 } })
     res.status(201).json(await commandesService.create(req.body || {}, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.put('/:id/statut', async (req, res) => {
@@ -30,7 +30,7 @@ router.put('/:id/statut', async (req, res) => {
     validerEntree(req.body, { statut: { required: true, type: 'string' } })
     res.json(await commandesService.changerStatut(req.params.id, req.body?.statut, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.put('/:id/priorite', async (req, res) => {
@@ -38,7 +38,7 @@ router.put('/:id/priorite', async (req, res) => {
     validerEntree(req.body, { priorite: { required: true, type: 'string' } })
     res.json(await commandesService.setPriorite(req.params.id, req.body?.priorite, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.put('/:id/livraison', async (req, res) => {
@@ -46,7 +46,7 @@ router.put('/:id/livraison', async (req, res) => {
     validerEntree(req.body, { date: { required: true, type: 'string' } })
     res.json(await commandesService.setDateLivraison(req.params.id, req.body?.date, req.tenantContext.organisationId))
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 router.delete('/:id', async (req, res) => {

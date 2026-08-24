@@ -20,4 +20,23 @@ function validerEntree(data, rules) {
   }
 }
 
-module.exports = { validerEntree }
+// Audit final pre-production — les routes renvoient e.message tel quel dans
+// leur catch(e), un pattern qui sert aussi bien les erreurs de validerEntree()
+// ci-dessus que les erreurs metier deliberement levees par les services/DAO
+// (ex. VentesDAO : "Quantité invalide pour le produit...", destine a etre lu
+// par l'utilisateur - convention etablie dans tout le depot). Mais une vraie
+// erreur du driver PostgreSQL (contrainte violee, type invalide...) passe par
+// le meme chemin et fuit alors des details internes (noms de colonnes/tables/
+// contraintes, moteur de BDD) au client HTTP. Distinction fiable : le driver
+// pg pose toujours un e.code SQLSTATE (5 caracteres), qu'aucun `throw new
+// Error(...)` applicatif ne pose jamais (verifie par recherche exhaustive
+// dans le depot) — permet de filtrer sans casser les messages metier
+// existants, qui restent inchanges.
+function messageErreurSur(e) {
+  if (e && typeof e.code === 'string' && /^[0-9A-Z]{5}$/.test(e.code)) {
+    return 'Requête invalide'
+  }
+  return e.message
+}
+
+module.exports = { validerEntree, messageErreurSur }

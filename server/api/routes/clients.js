@@ -9,7 +9,7 @@ const express = require('express')
 const clientsService = require('../../../core/services/clientsService')
 const { authentifier } = require('../middleware/authentification')
 const { verifierAbonnement } = require('../middleware/subscriptionGate')
-const { validerEntree } = require('../../../core/validation')
+const { validerEntree, messageErreurSur } = require('../../../core/validation')
 
 const router = express.Router()
 router.use(authentifier)
@@ -27,7 +27,7 @@ router.post('/', async (req, res) => {
     if (resultat?.erreur) return res.status(400).json(resultat)
     res.status(201).json(resultat)
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 
@@ -37,7 +37,7 @@ router.put('/:id', async (req, res) => {
     const resultat = await clientsService.update({ ...req.body, id: req.params.id }, req.tenantContext.organisationId)
     res.json(resultat)
   } catch (e) {
-    res.status(400).json({ erreur: e.message })
+    res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
 
