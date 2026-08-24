@@ -45,6 +45,14 @@ const AchatsDAO = {
         ]
       )
       const panier = JSON.parse(achat.panier || '[]')
+      // Audit securite — meme classe de bug que VentesDAO.create (quantite
+      // negative non validee) mais en sens inverse : ici, une quantite
+      // negative DIMINUE le stock au lieu de l'augmenter sur un achat.
+      for (const item of panier) {
+        if (!isFinite(item.quantite) || item.quantite <= 0) {
+          throw new Error(`Quantité invalide pour le produit ${item.produit_id} : ${item.quantite}`)
+        }
+      }
       for (const item of panier) {
         await client.query(
           'UPDATE produits SET stock_actuel = stock_actuel + $1 WHERE id = $2 AND organisation_id = $3',

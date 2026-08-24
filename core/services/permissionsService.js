@@ -45,9 +45,26 @@ const CANAUX_RESTREINTS = {
   'abonnement:payer': ['administrateur']
 }
 
+// Liste des canaux IPC volontairement non restreints qui appellent quand
+// meme verifierPermission(canal, ...) pour une autre raison (ex. journaliser
+// qui est connecte) — a completer si un futur appel legitime en a besoin.
+// Vide aujourd'hui : tout appel a verifierPermission() suppose un canal
+// present dans CANAUX_RESTREINTS.
 function verifierPermission(canal, utilisateurConnecte) {
   const rolesAutorises = CANAUX_RESTREINTS[canal]
-  if (!rolesAutorises) return
+  // Audit securite — un canal absent de CANAUX_RESTREINTS faisait passer
+  // silencieusement (return sans verification), meme fail-open que celui
+  // corrige cote HTTP (server/api/middleware/rbac.js::exigerRole). Ce
+  // fichier est appele a l'interieur de chaque handler IPC (pas au
+  // chargement du module comme exigerRole, qui est une factory de
+  // middleware) — leve donc au premier appel reel plutot qu'au demarrage,
+  // mais avec le meme objectif : une faute de frappe dans le nom du canal
+  // ne doit jamais rendre une verification muette. Les 17 appels actuels
+  // (main.js) verifies tous corrects — aucun impact sur le comportement
+  // existant.
+  if (!rolesAutorises) {
+    throw new Error(`verifierPermission('${canal}') : canal inconnu de CANAUX_RESTREINTS — faute de frappe ou entree manquante`)
+  }
 
   if (!utilisateurConnecte) {
     throw new Error('Action non autorisée : aucune session active.')

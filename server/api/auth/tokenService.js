@@ -81,12 +81,23 @@ async function organisationEstActive(organisationId) {
   return !organisation || organisation.statut === 'active'
 }
 
+// Audit securite — un identifiant inconnu renvoyait immediatement, alors
+// qu'un identifiant connu avec un mauvais mot de passe attendait le cout
+// bcrypt (~50-150ms, deliberement lent). Corps et statut HTTP identiques
+// dans les deux cas, mais le temps de reponse ne l'etait pas — un canal
+// d'enumeration mesurable par mesure statistique. Hash bicrypte valide mais
+// jamais associe a un vrai compte, calcule une seule fois (meme cout que
+// AuthService.hashPassword, donc directement comparable).
+let hashFictifPromise = null
+function getHashFictif() {
+  if (!hashFictifPromise) hashFictifPromise = AuthService.hashPassword(crypto.randomBytes(24).toString('hex'))
+  return hashFictifPromise
+}
+
 async function connexion(username, password) {
   const utilisateur = await UtilisateursDAO.findByUsername(username)
-  if (!utilisateur) return { erreur: 'Identifiant ou mot de passe incorrect !' }
-
-  const motDePasseOk = await AuthService.verifyPassword(password, utilisateur.password)
-  if (!motDePasseOk) return { erreur: 'Identifiant ou mot de passe incorrect !' }
+  const motDePasseOk = await AuthService.verifyPassword(password, utilisateur ? utilisateur.password : await getHashFictif())
+  if (!utilisateur || !motDePasseOk) return { erreur: 'Identifiant ou mot de passe incorrect !' }
 
   if (!(await organisationEstActive(utilisateur.organisation_id))) {
     return { erreur: 'Votre organisation a été désactivée. Contactez votre administrateur.' }

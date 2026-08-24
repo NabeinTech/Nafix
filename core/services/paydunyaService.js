@@ -32,6 +32,15 @@ function enTetes() {
 // securite deja actee dans server/api/routes/abonnement.js : un administrateur
 // d'organisation ne doit jamais pouvoir s'auto-octroyer l'acces).
 async function creerFacture(organisationId, codePlan) {
+  // Audit securite — traiterWebhook() echoue deja proprement si
+  // PAYDUNYA_MASTER_KEY est absente ; creerFacture() n'avait aucun garde
+  // equivalent et enverrait silencieusement des en-tetes "undefined" a
+  // l'API reelle de PayDunya. Echoue tot avec un message clair plutot que
+  // de laisser PayDunya renvoyer une erreur opaque.
+  if (!process.env.PAYDUNYA_MASTER_KEY || !process.env.PAYDUNYA_PRIVATE_KEY || !process.env.PAYDUNYA_TOKEN) {
+    return { erreur: 'Configuration du prestataire de paiement incomplète.' }
+  }
+
   const { rows: [plan] } = await pool.query('SELECT * FROM plans WHERE code = $1 AND actif = 1', [codePlan])
   if (!plan) return { erreur: 'Plan introuvable' }
 

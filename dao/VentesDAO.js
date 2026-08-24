@@ -23,6 +23,19 @@ const VentesDAO = {
       await client.query('BEGIN')
       const panier = JSON.parse(vente.panier || '[]')
 
+      // Audit securite — une quantite negative/nulle/non numerique rendait la
+      // verification de stock (ligne "stock_actuel < quantiteTotale")
+      // toujours vraie (n'importe quel stock est >= une valeur negative), et
+      // l'UPDATE final ("stock_actuel = stock_actuel - $1") SOUSTRAIT une
+      // valeur negative, donc AUGMENTE le stock au lieu de le diminuer.
+      // Exploitable directement depuis la creation de vente normale (pas
+      // besoin de l'import Excel) en forgeant le JSON du panier.
+      for (const item of panier) {
+        if (!isFinite(item.quantite) || item.quantite <= 0) {
+          throw new Error(`Quantité invalide pour le produit ${item.produit_id} : ${item.quantite}`)
+        }
+      }
+
       // Sprint 10 — le client_id fourni doit appartenir à cette organisation
       // (sinon VentesDAO.getAll ferait fuiter son nom via le LEFT JOIN clients).
       if (vente.client_id) {
@@ -123,6 +136,14 @@ const VentesDAO = {
 
       // Vérifier le stock des nouveaux articles (verrou FOR UPDATE)
       const nouveauPanier = JSON.parse(vente.panier || '[]')
+      // Audit securite — meme garde-fou qu'a la creation (create()) : une
+      // quantite negative/nulle contournerait la verification de stock et
+      // inverserait l'effet du dernier UPDATE de cette fonction.
+      for (const item of nouveauPanier) {
+        if (!isFinite(item.quantite) || item.quantite <= 0) {
+          throw new Error(`Quantité invalide pour le produit ${item.produit_id} : ${item.quantite}`)
+        }
+      }
       for (const item of nouveauPanier) {
         const { rows: [prod] } = await client.query(
           'SELECT nom, stock_actuel FROM produits WHERE id = $1 AND organisation_id = $2 FOR UPDATE',

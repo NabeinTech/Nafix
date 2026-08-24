@@ -445,15 +445,25 @@ function registerAppHandlers() {
           categoriesConnues.add(normaliser(categorie))
         }
 
+        // Audit securite — `|| 0`/`|| 5` laissait passer un nombre negatif
+        // tel quel (truthy en JS, le repli ne se declenchait jamais) : un
+        // prix ou un stock negatif importe corrompait les calculs de marge
+        // et pouvait creer un produit avec un stock initial negatif. Meme
+        // correctif que devis:importerExcel (quantite/prix), applique ici
+        // aux 4 champs numeriques de l'import produits.
+        const positifOuDefaut = (val, defaut) => {
+          const n = parseFloat(val)
+          return (isFinite(n) && n >= 0) ? n : defaut
+        }
         const produit = {
           nom,
           reference: String(valeur(ligne, idxReference)).trim() || null,
           categorie,
           marque: String(valeur(ligne, idxMarque)).trim() || null,
-          prix_achat: parseFloat(valeur(ligne, idxPrixAchat)) || 0,
-          prix_vente: parseFloat(valeur(ligne, idxPrixVente)) || 0,
-          stock_actuel: parseFloat(valeur(ligne, idxStock)) || 0,
-          stock_minimum: parseFloat(valeur(ligne, idxStockMin)) || 5,
+          prix_achat: positifOuDefaut(valeur(ligne, idxPrixAchat), 0),
+          prix_vente: positifOuDefaut(valeur(ligne, idxPrixVente), 0),
+          stock_actuel: positifOuDefaut(valeur(ligne, idxStock), 0),
+          stock_minimum: positifOuDefaut(valeur(ligne, idxStockMin), 5),
           unite: String(valeur(ligne, idxUnite)).trim() || 'pièce'
         }
 

@@ -61,20 +61,28 @@ async function demander(identifiant) {
 
 async function reinitialiser(tokenClair, nouveauMotDePasse) {
   const tokenHash = crypto.createHash('sha256').update(tokenClair || '').digest('hex')
-  const { rows: [ligne] } = await pool.query('SELECT * FROM reinitialisations_mot_de_passe WHERE token_hash = $1', [tokenHash])
-  if (!ligne || ligne.utilise || new Date(ligne.expire_le) < new Date()) {
-    return { erreur: 'Lien invalide ou expiré' }
-  }
-
   const hash = await AuthService.hashPassword(nouveauMotDePasse)
-  // Audit securite — les 3 ecritures tournaient sur des pool.query()
-  // independants : un crash entre la mise a jour du mot de passe et la
-  // revocation des refresh tokens laissait une session volee (la raison meme
-  // du reset) valide malgre le changement de mot de passe. Meme pattern
-  // BEGIN/COMMIT que le reste du depot (OrganisationsDAO, RetoursDAO...).
+
+  // Audit securite — la lecture du token se faisait avant la transaction,
+  // sur une connexion separee, sans verrou : deux requetes concurrentes
+  // rejouant le MEME token valide passaient toutes les deux le controle
+  // "!ligne.utilise" avant qu'aucune n'ait commit, et changeaient toutes les
+  // deux le mot de passe — un token cense etre a usage unique pouvait donc
+  // servir deux fois. SELECT ... FOR UPDATE a l'interieur de la transaction
+  // verrouille la ligne : une deuxieme requete concurrente attend que la
+  // premiere commit, puis voit utilise=1 et est correctement rejetee.
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
+    const { rows: [ligne] } = await client.query(
+      'SELECT * FROM reinitialisations_mot_de_passe WHERE token_hash = $1 FOR UPDATE',
+      [tokenHash]
+    )
+    if (!ligne || ligne.utilise || new Date(ligne.expire_le) < new Date()) {
+      await client.query('ROLLBACK')
+      return { erreur: 'Lien invalide ou expiré' }
+    }
+
     await client.query('UPDATE utilisateurs SET password = $1 WHERE id = $2', [hash, ligne.utilisateur_id])
     await client.query('UPDATE reinitialisations_mot_de_passe SET utilise = 1 WHERE id = $1', [ligne.id])
     // Un reset de mot de passe doit fermer tous les acces existants — meme
