@@ -28,7 +28,7 @@
     "recharts": "^3.8.0",
     "sudo-prompt": "^9.2.1",
     "web-vitals": "^2.1.4",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.18.12/xlsx-0.18.12.tgz"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.19.3/xlsx-0.19.3.tgz"
   },
   "optionalDependencies": {
     "koffi": "^3.1.5",

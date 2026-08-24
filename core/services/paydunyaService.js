@@ -76,13 +76,20 @@ async function creerFacture(organisationId, codePlan) {
 // reconfirme via un appel serveur-a-serveur avant toute ecriture. Idempotent
 // (un invoice_token deja "complete" n'est jamais retraite).
 async function traiterWebhook(body) {
+  // Audit securite — sans PAYDUNYA_MASTER_KEY configuree, hashAttendu
+  // degradait silencieusement vers sha512('') : une constante publique et
+  // precalculable, que n'importe qui peut envoyer pour passer la
+  // verification. Echec ferme explicite plutot que de laisser la
+  // verification devenir un controle vide de sens.
+  if (!process.env.PAYDUNYA_MASTER_KEY) return { ignore: true, raison: 'PAYDUNYA_MASTER_KEY non configuree' }
+
   // Forme confirmee par un paiement reel en sandbox (22/08/2026) : PayDunya
   // poste en application/x-www-form-urlencoded (jamais JSON), champs
   // imbriques sous "data" (data[hash], data[invoice][token]...). Necessite
   // express.urlencoded({extended:true}) monte cote app.js pour que req.body
   // soit correctement peuple.
   const hashRecu = body?.data?.hash
-  const hashAttendu = crypto.createHash('sha512').update(process.env.PAYDUNYA_MASTER_KEY || '').digest('hex')
+  const hashAttendu = crypto.createHash('sha512').update(process.env.PAYDUNYA_MASTER_KEY).digest('hex')
   // Audit securite — comparaison a temps constant (crypto.timingSafeEqual)
   // plutot que !==, pour eviter un canal auxiliaire temporel sur un secret
   // partage. Longueur verifiee avant (timingSafeEqual leve si les tampons
@@ -112,12 +119,33 @@ async function traiterWebhook(body) {
     return { traite: true, statut: 'echoue' }
   }
 
-  await pool.query("UPDATE paiements SET statut = 'complete', complete_le = CURRENT_TIMESTAMP WHERE id = $1", [paiement.id])
-  await pool.query(
-    `UPDATE abonnements SET statut = 'actif', plan_id = $1, prochain_paiement_le = $2, updated_at = CURRENT_TIMESTAMP
-     WHERE organisation_id = $3`,
-    [paiement.plan_id, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), paiement.organisation_id]
-  )
+  // Audit securite — les 2 ecritures + le log d'audit tournaient sur des
+  // pool.query() independants : un crash entre les deux UPDATE laissait
+  // paiements.statut="complete" sans jamais activer l'abonnement, et le
+  // garde-fou d'idempotence (ligne ci-dessus) empechait tout rejeu du
+  // webhook de reparer cet etat — seule une intervention manuelle Platform
+  // Admin le pouvait. Meme pattern BEGIN/COMMIT que OrganisationsDAO/
+  // RetoursDAO/TresorerieDAO (deja etabli ailleurs dans le depot).
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    await client.query("UPDATE paiements SET statut = 'complete', complete_le = CURRENT_TIMESTAMP WHERE id = $1", [paiement.id])
+    await client.query(
+      `UPDATE abonnements SET statut = 'actif', plan_id = $1, prochain_paiement_le = $2, updated_at = CURRENT_TIMESTAMP
+       WHERE organisation_id = $3`,
+      [paiement.plan_id, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), paiement.organisation_id]
+    )
+    await client.query('COMMIT')
+  } catch (e) {
+    await client.query('ROLLBACK')
+    throw e
+  } finally {
+    client.release()
+  }
+
+  // Le log d'audit reste hors transaction (table separee, pas de contrainte
+  // d'integrite avec paiements/abonnements) — un echec ici ne doit pas faire
+  // annuler l'activation deja committee.
   await auditLogPlateformeService.journaliser({
     adminPlateformeId: null, // declenche par PayDunya, pas par un humain — colonne nullable
     action: 'abonnement:paiementConfirme',

@@ -53,7 +53,18 @@ router.put('/:id/role', exigerRole('utilisateurs:updateRole'), async (req, res) 
 })
 
 router.put('/:id/permissions', exigerRole('utilisateurs:updatePermissions'), async (req, res) => {
-  res.json(await UtilisateursDAO.updatePermissions(req.params.id, req.body?.permissions, req.tenantContext.organisationId))
+  // Audit securite — aucune validation auparavant (colonne JSONB purement
+  // d'affichage cote UI, jamais lue par le RBAC serveur, donc pas un vecteur
+  // d'elevation de privileges) : garde-fou minimal de forme/taille tout de
+  // meme, plutot que d'accepter n'importe quelle valeur telle quelle.
+  const permissions = req.body?.permissions
+  if (typeof permissions !== 'object' || permissions === null || Array.isArray(permissions)) {
+    return res.status(400).json({ erreur: 'permissions: doit être un objet' })
+  }
+  if (JSON.stringify(permissions).length > 10000) {
+    return res.status(400).json({ erreur: 'permissions: trop volumineux' })
+  }
+  res.json(await UtilisateursDAO.updatePermissions(req.params.id, permissions, req.tenantContext.organisationId))
 })
 
 module.exports = router

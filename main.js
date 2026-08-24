@@ -366,6 +366,15 @@ function registerAppHandlers() {
 
     try {
       const organisationId = await getOrganisationIdActive()
+      // Audit securite — aucune limite avant XLSX.readFile : un fichier
+      // enorme (ou un classeur compresse demesurement) bloquait le
+      // renderer et pouvait epuiser la memoire du process, sans aucun
+      // garde-fou. 20 Mo est tres au-dessus de tout catalogue produits
+      // realiste.
+      const TAILLE_MAX_IMPORT_OCTETS = 20 * 1024 * 1024
+      if (fs.statSync(resultatDialogue.filePaths[0]).size > TAILLE_MAX_IMPORT_OCTETS) {
+        return { erreur: 'Fichier trop volumineux (maximum 20 Mo).' }
+      }
       const XLSX = require('xlsx')
       const classeur = XLSX.readFile(resultatDialogue.filePaths[0])
       const feuille = classeur.Sheets[classeur.SheetNames[0]]
@@ -617,6 +626,14 @@ function registerAppHandlers() {
     }
 
     try {
+      // Audit securite — aucune limite avant JSON.parse : un fichier de
+      // sauvegarde enorme etait lu et parse integralement en memoire sans
+      // garde-fou. 50 Mo est tres au-dessus de ce qu'une sauvegarde
+      // realiste (donnees d'une seule organisation) peut peser.
+      const TAILLE_MAX_SAUVEGARDE_OCTETS = 50 * 1024 * 1024
+      if (fs.statSync(resultatDialogue.filePaths[0]).size > TAILLE_MAX_SAUVEGARDE_OCTETS) {
+        return { erreur: 'Fichier de sauvegarde trop volumineux (maximum 50 Mo).' }
+      }
       const contenu = fs.readFileSync(resultatDialogue.filePaths[0], 'utf8')
       const sauvegarde = JSON.parse(contenu)
       return await sauvegardeService.importer(sauvegarde, await getOrganisationIdActive())
@@ -683,6 +700,11 @@ function registerAppHandlers() {
 
     try {
       const organisationId = await getOrganisationIdActive()
+      // Audit securite — meme garde-fou que produits:importerExcel.
+      const TAILLE_MAX_IMPORT_OCTETS = 20 * 1024 * 1024
+      if (fs.statSync(resultatDialogue.filePaths[0]).size > TAILLE_MAX_IMPORT_OCTETS) {
+        return { erreur: 'Fichier trop volumineux (maximum 20 Mo).' }
+      }
       const XLSX = require('xlsx')
       const classeur = XLSX.readFile(resultatDialogue.filePaths[0])
       const feuille = classeur.Sheets[classeur.SheetNames[0]]
@@ -782,8 +804,17 @@ function registerAppHandlers() {
             continue
           }
 
-          const quantite = parseFloat(valeur(ligne, idxQuantite)) || 1
-          const prixUnitaire = parseFloat(valeur(ligne, idxPrix)) || produit.prix_vente || 0
+          // Audit securite — `|| 1` laissait passer une quantite negative
+          // telle quelle (un nombre negatif est "truthy" en JS, le repli ne
+          // se declenchait donc jamais) : un devis importe avec une quantite
+          // negative, une fois converti en vente (devis:convertir), pouvait
+          // AUGMENTER le stock au lieu de le diminuer (DevisDAO.convertir
+          // fait stock_actuel - item.quantite). N'accepte desormais qu'un
+          // nombre strictement positif, sinon repli sur la valeur par defaut.
+          const quantiteBrute = parseFloat(valeur(ligne, idxQuantite))
+          const quantite = (isFinite(quantiteBrute) && quantiteBrute > 0) ? quantiteBrute : 1
+          const prixBrut = parseFloat(valeur(ligne, idxPrix))
+          const prixUnitaire = (isFinite(prixBrut) && prixBrut >= 0) ? prixBrut : (produit.prix_vente || 0)
           panier.push({
             produit_id: produit.id,
             nom: produit.nom,

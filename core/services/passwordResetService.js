@@ -34,13 +34,25 @@ async function demander(identifiant) {
       [utilisateur.id, tokenHash, new Date(Date.now() + DUREE_TOKEN_MS)]
     )
     const lien = `${process.env.NAFIX_BASE_URL || 'https://nafix.digital'}/reinitialiser-mot-de-passe.html?token=${tokenClair}`
-    await emailService.envoyerEmail({
+    // Audit securite — deliberement PAS attendu, et l'echec est avale ici,
+    // jamais propage a l'appelant. Deux raisons : (1) un Resend en panne/mal
+    // configure ferait remonter une exception jusqu'a la route -> 500,
+    // distinguable du 200 renvoye quand le compte n'existe pas, ce qui casse
+    // la garantie anti-enumeration que cette fonction promet ; (2) attendre
+    // l'appel HTTP sortant introduit un ecart de temps de reponse mesurable
+    // entre "compte existe" et "compte inconnu" (celui-ci renvoie
+    // immediatement) — meme avec un corps de reponse identique, ca reste un
+    // canal d'enumeration. Ne pas attendre supprime ce canal pour la reponse
+    // HTTP elle-meme.
+    emailService.envoyerEmail({
       to: destinataire,
       subject: 'Réinitialisation de votre mot de passe Nafix',
       html: `<p>Bonjour ${utilisateur.nom},</p>
              <p>Cliquez sur ce lien pour choisir un nouveau mot de passe (valable 1 heure) :</p>
              <p><a href="${lien}">${lien}</a></p>
              <p>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email — votre mot de passe actuel reste inchangé.</p>`
+    }).catch((e) => {
+      console.error('Échec envoi email de réinitialisation :', e.message)
     })
   }
 
@@ -55,11 +67,26 @@ async function reinitialiser(tokenClair, nouveauMotDePasse) {
   }
 
   const hash = await AuthService.hashPassword(nouveauMotDePasse)
-  await pool.query('UPDATE utilisateurs SET password = $1 WHERE id = $2', [hash, ligne.utilisateur_id])
-  await pool.query('UPDATE reinitialisations_mot_de_passe SET utilise = 1 WHERE id = $1', [ligne.id])
-  // Un reset de mot de passe doit fermer tous les acces existants — meme
-  // principe que la detection de vol de refresh token (tokenService.js).
-  await pool.query('UPDATE refresh_tokens SET revoque = 1 WHERE utilisateur_id = $1 AND revoque = 0', [ligne.utilisateur_id])
+  // Audit securite — les 3 ecritures tournaient sur des pool.query()
+  // independants : un crash entre la mise a jour du mot de passe et la
+  // revocation des refresh tokens laissait une session volee (la raison meme
+  // du reset) valide malgre le changement de mot de passe. Meme pattern
+  // BEGIN/COMMIT que le reste du depot (OrganisationsDAO, RetoursDAO...).
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    await client.query('UPDATE utilisateurs SET password = $1 WHERE id = $2', [hash, ligne.utilisateur_id])
+    await client.query('UPDATE reinitialisations_mot_de_passe SET utilise = 1 WHERE id = $1', [ligne.id])
+    // Un reset de mot de passe doit fermer tous les acces existants — meme
+    // principe que la detection de vol de refresh token (tokenService.js).
+    await client.query('UPDATE refresh_tokens SET revoque = 1 WHERE utilisateur_id = $1 AND revoque = 0', [ligne.utilisateur_id])
+    await client.query('COMMIT')
+  } catch (e) {
+    await client.query('ROLLBACK')
+    throw e
+  } finally {
+    client.release()
+  }
 
   return { succes: true }
 }
