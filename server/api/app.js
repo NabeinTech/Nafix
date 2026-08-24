@@ -32,6 +32,9 @@ const statistiquesRoutes = require('./routes/statistiques')
 
 function creerApp() {
   const app = express()
+  // Audit securite — evite de reveler la techno serveur en reconnaissance
+  // passive (en-tete par defaut d'Express sur chaque reponse).
+  app.disable('x-powered-by')
   // Audit du 22/08/2026 — corrigé de `false` à `1` : le process tourne
   // derrière le proxy d'edge de Railway (un seul saut entre l'internet public
   // et ce container). Avec `false`, req.ip valait l'adresse interne du proxy
