@@ -12,21 +12,21 @@ const passwordResetService = require('../../../core/services/passwordResetServic
 const { creerLimiteur } = require('../middleware/rateLimiter')
 const { validerEntree, messageErreurSur } = require('../../../core/validation')
 
-const limiterConnexion = creerLimiteur({ maxTentatives: 10 })
-const limiterSignup = creerLimiteur({ maxTentatives: 5 }) // plus restrictif : creation de compte, pas juste une tentative de connexion
+const limiterConnexion = creerLimiteur({ nom: 'auth:login', maxTentatives: 10 })
+const limiterSignup = creerLimiteur({ nom: 'auth:signup', maxTentatives: 5 }) // plus restrictif : creation de compte, pas juste une tentative de connexion
 // Budget large : un client légitime rafraîchit automatiquement toutes les
 // ~15 min (durée de vie de l'access token), potentiellement pour plusieurs
 // utilisateurs derrière la même IP (petit bureau) — mais reste borné pour
 // éviter un flood applicatif sur cette route (audit de clôture, aucun
 // rate limiter n'y était appliqué jusqu'ici).
-const limiterRefresh = creerLimiteur({ maxTentatives: 30 })
-const limiterMotDePasseOublie = creerLimiteur({ maxTentatives: 5 })
+const limiterRefresh = creerLimiteur({ nom: 'auth:refresh', maxTentatives: 30 })
+const limiterMotDePasseOublie = creerLimiteur({ nom: 'auth:mot-de-passe-oublie', maxTentatives: 5 })
 // Instance dediee, pas de partage avec limiterMotDePasseOublie : un
 // utilisateur legitime demande un lien PUIS soumet son nouveau mot de passe
 // (2 requetes, sur 2 routes differentes) — un seul compteur partage entre
 // les deux routes ferait consommer le meme budget deux fois pour un usage
 // parfaitement normal.
-const limiterReinitialiser = creerLimiteur({ maxTentatives: 5 })
+const limiterReinitialiser = creerLimiteur({ nom: 'auth:reinitialiser-mot-de-passe', maxTentatives: 5 })
 
 const router = express.Router()
 

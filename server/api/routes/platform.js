@@ -12,9 +12,9 @@ const paydunyaService = require('../../../core/services/paydunyaService')
 const { authentifierPlateforme } = require('../middleware/authentifierPlateforme')
 const { creerLimiteur } = require('../middleware/rateLimiter')
 
-const limiterConnexionPlateforme = creerLimiteur({ maxTentatives: 5 })
+const limiterConnexionPlateforme = creerLimiteur({ nom: 'platform:auth:login', maxTentatives: 5 })
 // Audit de clôture — aucun rate limiter n'était appliqué sur cette route.
-const limiterRefreshPlateforme = creerLimiteur({ maxTentatives: 20 })
+const limiterRefreshPlateforme = creerLimiteur({ nom: 'platform:auth:refresh', maxTentatives: 20 })
 
 const router = express.Router()
 

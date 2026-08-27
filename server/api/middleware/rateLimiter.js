@@ -1,51 +1,77 @@
-// Sprint 15 — limiteur de tentatives minimal, en mémoire, par IP. Suffisant
-// pour un MVP à faible volume (pas de Redis — choix déjà tranché à l'audit
-// Sprint 13 : "infrastructure la plus simple capable de supporter le MVP").
-// À remplacer par une solution partagée entre process si l'API tourne un
-// jour derrière plusieurs instances.
-//
+// Sprint 15 — limiteur de tentatives par IP.
 // Sprint 17 — transformé en fabrique pour donner à chaque route sensible son
 // propre compteur indépendant (signup plus restrictif que login, par
 // exemple) : un pic de tentatives sur l'une ne doit jamais consommer le
 // budget de l'autre.
-function creerLimiteur({ fenetreMs = 15 * 60 * 1000, maxTentatives = 10 } = {}) {
-  const tentatives = new Map()
+//
+// Validation finale pre-production — jusqu'ici stocké dans une Map en
+// mémoire du process : un redémarrage (redéploiement Railway) remettait tous
+// les compteurs à zéro, et une future 2e instance derrière un load balancer
+// aurait eu son propre budget indépendant (contournement trivial : alterner
+// entre instances). Bascule vers PostgreSQL — déjà la seule dépendance
+// d'infrastructure du projet ("infrastructure la plus simple capable de
+// supporter le MVP", décision actée à l'audit Sprint 13) plutôt que
+// d'ajouter Redis pour ce seul besoin. Un compteur par (limiteur, ip),
+// incrémenté par un UPSERT atomique en un aller-retour — la fenêtre glissante
+// se réinitialise dans la même requête SQL, sans lecture-puis-écriture
+// séparée qui recréerait la race condition que l'atomicité vise à éviter.
+const pool = require('../../../db/pool')
 
-  // Audit onboarding — les entrées n'étaient jamais retirées de la Map,
-  // seulement réinitialisées en place à leur prochain accès : sur une route
-  // publique comme /auth/signup (bien plus d'IP uniques au fil du temps que
-  // /auth/login), la mémoire croît sans borne pour la durée de vie du
-  // process. Balayage périodique des entrées dont la fenêtre est expirée et
-  // qui n'ont pas été retouchées depuis — .unref() pour ne jamais empêcher
-  // le process de s'arrêter proprement (SIGTERM, tests).
+function creerLimiteur({ nom, fenetreMs = 15 * 60 * 1000, maxTentatives = 10 }) {
+  if (!nom) throw new Error('creerLimiteur({ nom }) : nom requis — sert de clé de partition dans la table partagee limites_tentatives')
+
+  // Balayage périodique — même rôle que l'ancien setInterval sur la Map,
+  // purge les lignes dont la fenêtre est expirée pour ce limiteur précis.
+  // .unref() : ne doit jamais empêcher le process de s'arrêter proprement
+  // (SIGTERM, tests).
   const balayage = setInterval(() => {
-    const maintenant = Date.now()
-    for (const [ip, entree] of tentatives) {
-      if (maintenant - entree.depuis > fenetreMs) tentatives.delete(ip)
-    }
+    pool.query(
+      "DELETE FROM limites_tentatives WHERE limiteur = $1 AND now() - depuis > ($2::int * interval '1 millisecond')",
+      [nom, fenetreMs]
+    ).catch((e) => console.error(`Purge rate limiter (${nom}) échouée :`, e.message))
   }, fenetreMs)
   balayage.unref()
 
-  function limiter(req, res, next) {
+  async function limiter(req, res, next) {
     const ip = req.ip
-    const maintenant = Date.now()
-    const entree = tentatives.get(ip) || { compte: 0, depuis: maintenant }
-    if (maintenant - entree.depuis > fenetreMs) {
-      entree.compte = 0
-      entree.depuis = maintenant
+    try {
+      // UPSERT atomique : incrémente si la fenêtre est toujours valide,
+      // repart à 1 si elle a expiré — un seul aller-retour, verrouillage de
+      // ligne géré par Postgres lui-même (pas de lecture puis écriture
+      // séparées, qui laisserait passer 2 requêtes concurrentes sur le même
+      // compte avant qu'aucune n'ait commité).
+      const { rows: [ligne] } = await pool.query(
+        `INSERT INTO limites_tentatives (limiteur, cle, compte, depuis)
+         VALUES ($1, $2, 1, now())
+         ON CONFLICT (limiteur, cle) DO UPDATE SET
+           compte = CASE WHEN now() - limites_tentatives.depuis > ($3::int * interval '1 millisecond')
+                         THEN 1 ELSE limites_tentatives.compte + 1 END,
+           depuis = CASE WHEN now() - limites_tentatives.depuis > ($3::int * interval '1 millisecond')
+                         THEN now() ELSE limites_tentatives.depuis END
+         RETURNING compte`,
+        [nom, ip, fenetreMs]
+      )
+      if (ligne.compte > maxTentatives) {
+        return res.status(429).json({ erreur: 'Trop de tentatives, réessayez plus tard' })
+      }
+      next()
+    } catch (e) {
+      // Échec ouvert plutôt que fermé : une panne PostgreSQL momentanée
+      // bloque de toute façon la quasi-totalité de l'application (même
+      // pool que tout le reste) — ne pas transformer un défaut de
+      // disponibilité de la base en un blocage supplémentaire de la
+      // protection anti-bruteforce elle-même.
+      console.error(`Rate limiter (${nom}) échoué, requête autorisée par défaut :`, e.message)
+      next()
     }
-    entree.compte++
-    tentatives.set(ip, entree)
-    if (entree.compte > maxTentatives) {
-      return res.status(429).json({ erreur: 'Trop de tentatives, réessayez plus tard' })
-    }
-    next()
   }
+
   // Introspection pour les tests uniquement (aucun effet sur le comportement
-  // de limitation lui-même) — vérifier que la Map ne croît pas indéfiniment
-  // nécessite de voir sa taille réelle, pas seulement le comportement du
-  // compteur par IP (déjà correct avant ce correctif).
-  limiter.tailleInterne = () => tentatives.size
+  // de limitation lui-même).
+  limiter.tailleInterne = async () => {
+    const { rows: [r] } = await pool.query('SELECT count(*)::int AS n FROM limites_tentatives WHERE limiteur = $1', [nom])
+    return r.n
+  }
   return limiter
 }
 

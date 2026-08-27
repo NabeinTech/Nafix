@@ -505,6 +505,20 @@ async function runMigrations() {
     `)
     await client.query('CREATE INDEX IF NOT EXISTS idx_reinitialisations_utilisateur ON reinitialisations_mot_de_passe(utilisateur_id)')
 
+    // Validation finale pre-production — remplace la Map en memoire du
+    // rate limiter (server/api/middleware/rateLimiter.js) : partagee entre
+    // toutes les instances du process API et persistante a travers un
+    // redemarrage, contrairement a une Map locale au process.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS limites_tentatives (
+        limiteur  TEXT NOT NULL,
+        cle       TEXT NOT NULL,
+        compte    INTEGER NOT NULL DEFAULT 1,
+        depuis    TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (limiteur, cle)
+      )
+    `)
+
     console.log('✅ Migrations terminées')
   } catch (err) {
     console.error('❌ Erreur migration:', err.message)
