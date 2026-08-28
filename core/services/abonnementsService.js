@@ -38,4 +38,8 @@ async function quotaUtilisateursAtteint(organisationId) {
   return nb >= abonnement.max_utilisateurs
 }
 
-module.exports = { getByOrganisation, getPlans, changerPlan, changerStatut, accesAutorise, quotaUtilisateursAtteint }
+function expirerEssaisPasses() {
+  return AbonnementsDAO.expirerEssaisPasses()
+}
+
+module.exports = { getByOrganisation, getPlans, changerPlan, changerStatut, accesAutorise, quotaUtilisateursAtteint, expirerEssaisPasses }

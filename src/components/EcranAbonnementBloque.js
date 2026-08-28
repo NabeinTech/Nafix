@@ -6,6 +6,7 @@ const ipcRenderer = typeof window !== 'undefined' ? window.ipcRenderer : null
 
 const LIBELLES_STATUT = {
   essai: 'Période d\'essai terminée',
+  essai_expire: 'Période d\'essai terminée',
   suspendu: 'Abonnement suspendu',
   annule: 'Abonnement annulé',
   impaye: 'Paiement en retard'

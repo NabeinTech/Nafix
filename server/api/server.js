@@ -71,7 +71,16 @@ const PORT = process.env.PORT || 3001
 // planter tout le process — un superviseur externe verrait alors un
 // crash-loop plutôt qu'un état "démarré mais dégradé" diagnostiquable.
 runMigrations()
-  .then(() => logger.info('migrations_ok'))
+  .then(() => {
+    logger.info('migrations_ok')
+    // Synchronise abonnements.statut pour les essais dont la date est
+    // depassee (voir core/services/expirationEssaiJob.js — l'acces est deja
+    // bloque a la volee sans ce job, purement cosmetique pour Platform
+    // Admin). Demarre seulement apres confirmation que la table existe
+    // (migrations appliquees), un premier cycle immediat puis toutes les
+    // heures.
+    require('../../core/services/expirationEssaiJob').demarrer()
+  })
   .catch(err => logger.erreur('migrations_echouees', { message: err.message, stack: err.stack }))
 
 const app = creerApp()

@@ -31,7 +31,7 @@ const AbonnementsDAO = {
   },
 
   async changerStatut(organisationId, statut) {
-    const statutsValides = ['essai', 'actif', 'impaye', 'suspendu', 'annule']
+    const statutsValides = ['essai', 'essai_expire', 'actif', 'impaye', 'suspendu', 'annule']
     if (!statutsValides.includes(statut)) return { erreur: 'Statut invalide' }
     const { rows: [abonnement] } = await pool.query(
       'UPDATE abonnements SET statut = $1, updated_at = CURRENT_TIMESTAMP WHERE organisation_id = $2 RETURNING *',
@@ -44,6 +44,23 @@ const AbonnementsDAO = {
   async compterUtilisateurs(organisationId) {
     const { rows: [{ n }] } = await pool.query('SELECT COUNT(*)::int AS n FROM utilisateurs WHERE organisation_id = $1', [organisationId])
     return n
+  },
+
+  // Job d'expiration des essais — abonnementsService.accesAutorise() bloque
+  // deja l'acces des la date depassee (calcul a la volee, correct meme sans
+  // ce job), mais la ligne restait affichee "essai" en base indefiniment :
+  // Platform Admin ne pouvait pas distinguer un essai encore actif d'un
+  // essai deja bloque sans recalculer la date lui-meme. Bascule en masse,
+  // en un aller-retour, tous les abonnements essai dont la date est
+  // depassee vers un statut dedie — renvoie les organisation_id affectes
+  // pour journalisation.
+  async expirerEssaisPasses() {
+    const { rows } = await pool.query(
+      `UPDATE abonnements SET statut = 'essai_expire', updated_at = CURRENT_TIMESTAMP
+       WHERE statut = 'essai' AND fin_essai_le IS NOT NULL AND fin_essai_le < now()
+       RETURNING organisation_id`
+    )
+    return rows.map(r => r.organisation_id)
   }
 }
 

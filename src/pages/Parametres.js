@@ -821,8 +821,8 @@ function Parametres({ utilisateur }) {
   const organisationActive = organisation?.statut === 'active'
   const confirmationAttendue = organisationActive ? 'DÉSACTIVER' : 'RÉACTIVER'
 
-  const LIBELLE_STATUT_ABONNEMENT = { essai: 'Essai', actif: 'Actif', impaye: 'Paiement en retard', suspendu: 'Suspendu', annule: 'Annulé' }
-  const COULEUR_STATUT_ABONNEMENT = { essai: 'gold', actif: 'green', impaye: 'orange', suspendu: 'red', annule: 'red' }
+  const LIBELLE_STATUT_ABONNEMENT = { essai: 'Essai', essai_expire: 'Essai expiré', actif: 'Actif', impaye: 'Paiement en retard', suspendu: 'Suspendu', annule: 'Annulé' }
+  const COULEUR_STATUT_ABONNEMENT = { essai: 'gold', essai_expire: 'red', actif: 'green', impaye: 'orange', suspendu: 'red', annule: 'red' }
 
   const tabOrganisation = (
     <div>
@@ -870,10 +870,10 @@ function Parametres({ utilisateur }) {
             </Col>
             <Col span={12}>
               <Text style={{ display: 'block', color: '#888', fontSize: 12 }}>
-                {abonnement.statut === 'essai' ? 'Fin de la période d\'essai' : 'Prochain paiement'}
+                {['essai', 'essai_expire'].includes(abonnement.statut) ? 'Fin de la période d\'essai' : 'Prochain paiement'}
               </Text>
               <Text strong>
-                {abonnement.statut === 'essai'
+                {['essai', 'essai_expire'].includes(abonnement.statut)
                   ? (abonnement.fin_essai_le ? dayjs(abonnement.fin_essai_le).format('DD/MM/YYYY') : '—')
                   : (abonnement.prochain_paiement_le ? dayjs(abonnement.prochain_paiement_le).format('DD/MM/YYYY') : '—')}
               </Text>
@@ -889,7 +889,7 @@ function Parametres({ utilisateur }) {
             onClick={payerAbonnement}
             style={{ marginTop: 16 }}
           >
-            {abonnement.statut === 'essai' ? 'Passer à un abonnement payant' : 'Renouveler maintenant'}
+            {['essai', 'essai_expire'].includes(abonnement.statut) ? 'Passer à un abonnement payant' : 'Renouveler maintenant'}
           </Button>
         )}
         <Text style={{ display: 'block', marginTop: 16, color: '#aaa', fontSize: 12 }}>

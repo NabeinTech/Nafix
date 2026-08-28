@@ -338,8 +338,8 @@
     return new Date(iso).toLocaleDateString('fr-FR')
   }
 
-  const LIBELLES_ABONNEMENT = { essai: 'Essai', actif: 'Actif', impaye: 'Impayé', suspendu: 'Suspendu', annule: 'Annulé' }
-  const COULEURS_ABONNEMENT = { essai: 'badge-or', actif: 'badge-vert', impaye: 'badge-or', suspendu: 'badge-rouge', annule: 'badge-rouge' }
+  const LIBELLES_ABONNEMENT = { essai: 'Essai', essai_expire: 'Essai expiré', actif: 'Actif', impaye: 'Impayé', suspendu: 'Suspendu', annule: 'Annulé' }
+  const COULEURS_ABONNEMENT = { essai: 'badge-or', essai_expire: 'badge-rouge', actif: 'badge-vert', impaye: 'badge-or', suspendu: 'badge-rouge', annule: 'badge-rouge' }
 
   function dessinerTableau() {
     corpsTableau.innerHTML = ''
@@ -469,7 +469,7 @@
   }
 
   function panneauChangerAbonnement(org) {
-    const statuts = ['essai', 'actif', 'impaye', 'suspendu', 'annule']
+    const statuts = ['essai', 'essai_expire', 'actif', 'impaye', 'suspendu', 'annule']
     panneau.innerHTML = `
       <h2>Statut d'abonnement</h2>
       <p class="sous-titre">${echapper(org.nom)} — actuel : ${echapper(LIBELLES_ABONNEMENT[org.abonnement_statut] || org.abonnement_statut || '—')}</p>
