@@ -80,6 +80,9 @@ runMigrations()
     // (migrations appliquees), un premier cycle immediat puis toutes les
     // heures.
     require('../../core/services/expirationEssaiJob').demarrer()
+    // Chantier emails transactionnels — relance les administrateurs dont
+    // l'essai approche de sa fin (voir core/services/relanceEssaiJob.js).
+    require('../../core/services/relanceEssaiJob').demarrer()
   })
   .catch(err => logger.erreur('migrations_echouees', { message: err.message, stack: err.stack }))
 

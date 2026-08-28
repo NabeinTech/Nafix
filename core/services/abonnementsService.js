@@ -42,4 +42,15 @@ function expirerEssaisPasses() {
   return AbonnementsDAO.expirerEssaisPasses()
 }
 
-module.exports = { getByOrganisation, getPlans, changerPlan, changerStatut, accesAutorise, quotaUtilisateursAtteint, expirerEssaisPasses }
+function getEssaisAExpirerBientot(joursAvant) {
+  return AbonnementsDAO.getEssaisAExpirerBientot(joursAvant)
+}
+
+function marquerRelanceEnvoyee(organisationId) {
+  return AbonnementsDAO.marquerRelanceEnvoyee(organisationId)
+}
+
+module.exports = {
+  getByOrganisation, getPlans, changerPlan, changerStatut, accesAutorise, quotaUtilisateursAtteint,
+  expirerEssaisPasses, getEssaisAExpirerBientot, marquerRelanceEnvoyee
+}

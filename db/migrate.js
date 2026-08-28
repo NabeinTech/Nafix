@@ -519,6 +519,11 @@ async function runMigrations() {
       )
     `)
 
+    // Chantier emails transactionnels — trace l'envoi de la relance avant
+    // fin d'essai (core/services/relanceEssaiJob.js) pour garantir un envoi
+    // unique par essai, meme pattern defensif que le job d'expiration.
+    await client.query('ALTER TABLE abonnements ADD COLUMN IF NOT EXISTS relance_essai_envoyee_le TIMESTAMP')
+
     console.log('✅ Migrations terminées')
   } catch (err) {
     console.error('❌ Erreur migration:', err.message)

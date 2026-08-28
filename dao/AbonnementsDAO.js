@@ -61,6 +61,31 @@ const AbonnementsDAO = {
        RETURNING organisation_id`
     )
     return rows.map(r => r.organisation_id)
+  },
+
+  // Chantier emails transactionnels — essais encore actifs dont la fin
+  // approche (fenetre [now, now+joursAvant]), jamais deja relances
+  // (relance_essai_envoyee_le IS NULL garantit un envoi unique par essai).
+  async getEssaisAExpirerBientot(joursAvant) {
+    const { rows } = await pool.query(
+      `SELECT a.organisation_id, a.fin_essai_le, o.nom AS organisation_nom
+       FROM abonnements a
+       JOIN organisations o ON o.id = a.organisation_id
+       WHERE a.statut = 'essai'
+         AND a.relance_essai_envoyee_le IS NULL
+         AND a.fin_essai_le IS NOT NULL
+         AND a.fin_essai_le BETWEEN now() AND now() + ($1::int * interval '1 day')`,
+      [joursAvant]
+    )
+    return rows
+  },
+
+  // Marque la relance comme envoyee que l'envoi Resend ait reussi ou non —
+  // un seul essai par periode d'essai, pas de retry storm si Resend est
+  // indisponible (meme choix que expirerEssaisPasses : ce job ne re-tente
+  // jamais une action deja tentee).
+  async marquerRelanceEnvoyee(organisationId) {
+    await pool.query('UPDATE abonnements SET relance_essai_envoyee_le = now() WHERE organisation_id = $1', [organisationId])
   }
 }
 

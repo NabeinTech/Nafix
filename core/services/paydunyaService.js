@@ -12,6 +12,8 @@
 const crypto = require('crypto')
 const pool = require('../../db/pool')
 const auditLogPlateformeService = require('./auditLogPlateformeService')
+const UtilisateursDAO = require('../../dao/UtilisateursDAO')
+const emailService = require('./emailService')
 
 const BASE_URL = process.env.PAYDUNYA_MODE === 'live'
   ? 'https://app.paydunya.com/api/v1'
@@ -125,6 +127,19 @@ async function traiterWebhook(body) {
 
   if (confirmation.status !== 'completed') {
     await pool.query("UPDATE paiements SET statut = 'echoue' WHERE id = $1", [paiement.id])
+    // Chantier emails transactionnels — fire-and-forget, n'affecte jamais la
+    // reponse au webhook (toujours 200 vers PayDunya, meme si l'envoi echoue
+    // ou si aucun administrateur n'a d'email renseigne).
+    UtilisateursDAO.getAdministrateursAvecEmail(paiement.organisation_id).then((administrateurs) => {
+      for (const admin of administrateurs) {
+        emailService.envoyerEmail({
+          to: admin.email,
+          subject: 'Échec de votre paiement Nafix',
+          html: `<p>Bonjour ${admin.nom},</p>
+                 <p>Votre paiement d'abonnement n'a pas pu être confirmé. Merci de réessayer depuis l'onglet Paramètres.</p>`
+        }).catch((e) => console.error('Échec envoi email de paiement échoué :', e.message))
+      }
+    }).catch((e) => console.error('Recherche des administrateurs (email paiement echoue) echouee :', e.message))
     return { traite: true, statut: 'echoue' }
   }
 

@@ -71,6 +71,18 @@ const UtilisateursDAO = {
       [JSON.stringify(permissions), id, organisationId]
     )
     return { succes: true }
+  },
+
+  // Chantier emails transactionnels — destinataires des notifications
+  // d'organisation (relance essai, echec de paiement) : les administrateurs
+  // qui ont renseigne un email (optionnel a l'inscription/creation de
+  // compte). Generalement un seul, mais pas de suppositions sur le nombre.
+  async getAdministrateursAvecEmail(organisationId) {
+    const { rows } = await pool.query(
+      "SELECT nom, email FROM utilisateurs WHERE organisation_id = $1 AND role = 'administrateur' AND email IS NOT NULL",
+      [organisationId]
+    )
+    return rows
   }
 }
 

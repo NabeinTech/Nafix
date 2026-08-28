@@ -9,6 +9,7 @@ const express = require('express')
 const tokenService = require('../auth/tokenService')
 const organisationsService = require('../../../core/services/organisationsService')
 const passwordResetService = require('../../../core/services/passwordResetService')
+const emailService = require('../../../core/services/emailService')
 const { creerLimiteur } = require('../middleware/rateLimiter')
 const { validerEntree, messageErreurSur } = require('../../../core/validation')
 
@@ -87,6 +88,22 @@ router.post('/signup', limiterSignup, async (req, res) => {
 
   const creation = await organisationsService.creerAvecAdmin({ nom, adminNom, username, password, email })
   if (creation.erreur) return res.status(400).json({ erreur: creation.erreur })
+
+  // Chantier emails transactionnels — fire-and-forget, meme convention que
+  // passwordResetService.demander() : un Resend en panne/mal configure ne
+  // doit jamais faire echouer l'inscription elle-meme. Seulement si l'email
+  // a ete renseigne (optionnel a l'inscription).
+  if (creation.succes.utilisateur.email) {
+    emailService.envoyerEmail({
+      to: creation.succes.utilisateur.email,
+      subject: 'Bienvenue sur Nafix',
+      html: `<p>Bonjour ${creation.succes.utilisateur.nom},</p>
+             <p>Votre compte <strong>${creation.succes.organisation.nom}</strong> est prêt. Vous bénéficiez de 14 jours d'essai gratuit pour découvrir Nafix.</p>
+             <p>Connectez-vous dès maintenant pour commencer.</p>`
+    }).catch((e) => {
+      console.error('Échec envoi email de bienvenue :', e.message)
+    })
+  }
 
   // Auto-connexion — évite de faire ressaisir le mot de passe qui vient
   // d'être choisi (même principe que le flux desktop Sprint 11).
