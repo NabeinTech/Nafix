@@ -12,21 +12,30 @@ const passwordResetService = require('../../../core/services/passwordResetServic
 const { creerLimiteur } = require('../middleware/rateLimiter')
 const { validerEntree, messageErreurSur } = require('../../../core/validation')
 
-const limiterConnexion = creerLimiteur({ nom: 'auth:login', maxTentatives: 10 })
-const limiterSignup = creerLimiteur({ nom: 'auth:signup', maxTentatives: 5 }) // plus restrictif : creation de compte, pas juste une tentative de connexion
+// Contre-audit rate limiter — echecFerme distingue selon ce qui est devine :
+// un secret CHOISI PAR UN HUMAIN (mot de passe, identifiant/email) est a
+// faible entropie, le rate limiter EST la defense primaire -> echec ferme
+// (503) si la verification elle-meme est indisponible, jamais d'acces
+// illimite silencieux. Un secret ALEATOIRE HAUTE ENTROPIE presente par le
+// client (refresh token, token de reset — 256/384 bits) rend le bruteforce
+// deja infaisable independamment du rate limiter, qui n'y joue qu'un role
+// de confort/anti-DoS -> echec ouvert, pour ne pas bloquer un usage legitime
+// sur un simple accroc PostgreSQL sans benefice de securite reel.
+const limiterConnexion = creerLimiteur({ nom: 'auth:login', maxTentatives: 10, echecFerme: true })
+const limiterSignup = creerLimiteur({ nom: 'auth:signup', maxTentatives: 5, echecFerme: true }) // plus restrictif : creation de compte, pas juste une tentative de connexion
 // Budget large : un client légitime rafraîchit automatiquement toutes les
 // ~15 min (durée de vie de l'access token), potentiellement pour plusieurs
 // utilisateurs derrière la même IP (petit bureau) — mais reste borné pour
 // éviter un flood applicatif sur cette route (audit de clôture, aucun
 // rate limiter n'y était appliqué jusqu'ici).
-const limiterRefresh = creerLimiteur({ nom: 'auth:refresh', maxTentatives: 30 })
-const limiterMotDePasseOublie = creerLimiteur({ nom: 'auth:mot-de-passe-oublie', maxTentatives: 5 })
+const limiterRefresh = creerLimiteur({ nom: 'auth:refresh', maxTentatives: 30 }) // echecFerme: false (defaut) — token oppose a haute entropie
+const limiterMotDePasseOublie = creerLimiteur({ nom: 'auth:mot-de-passe-oublie', maxTentatives: 5, echecFerme: true }) // identifiant/email devinable
 // Instance dediee, pas de partage avec limiterMotDePasseOublie : un
 // utilisateur legitime demande un lien PUIS soumet son nouveau mot de passe
 // (2 requetes, sur 2 routes differentes) — un seul compteur partage entre
 // les deux routes ferait consommer le meme budget deux fois pour un usage
 // parfaitement normal.
-const limiterReinitialiser = creerLimiteur({ nom: 'auth:reinitialiser-mot-de-passe', maxTentatives: 5 })
+const limiterReinitialiser = creerLimiteur({ nom: 'auth:reinitialiser-mot-de-passe', maxTentatives: 5 }) // echecFerme: false (defaut) — token de reset a haute entropie
 
 const router = express.Router()
 

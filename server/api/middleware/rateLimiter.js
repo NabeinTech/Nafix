@@ -17,7 +17,30 @@
 // séparée qui recréerait la race condition que l'atomicité vise à éviter.
 const pool = require('../../../db/pool')
 
-function creerLimiteur({ nom, fenetreMs = 15 * 60 * 1000, maxTentatives = 10 }) {
+// Contre-audit rate limiter — le fail-open uniforme (toute panne PostgreSQL
+// laisse passer, sans distinction de route) sous-estimait un scenario reel :
+// une degradation PARTIELLE du pool de connexions (contention/timeout sur
+// CETTE requete precise, pas une coupure totale) peut survenir PENDANT
+// qu'un afflux de requetes malveillantes sature le pool — exactement le
+// moment ou la protection est la plus necessaire, et exactement le moment ou
+// elle se desactivait silencieusement. Une coupure TOTALE de PostgreSQL ne
+// pose pas ce risque (login/signup echouent de toute facon, aucune verification
+// de mot de passe n'est possible sans base) ; c'est la degradation partielle,
+// isolee a la requete du limiteur, qui est le vrai scenario a couvrir.
+//
+// Politique : echecFerme est explicite par instance, pas un comportement
+// global implicite.
+// - true  (routes de devinette d'identifiants — login/signup/reset, ou la
+//   protection EST la defense primaire face a des mots de passe choisis par
+//   des humains) : une panne du limiteur bloque la requete (503), plutot que
+//   de retirer silencieusement la seule protection anti-bruteforce en place.
+// - false, par defaut (routes de refresh token) : le jeton oppose est
+//   aleatoire haute entropie (48 octets / 384 bits) — le bruteforcer est
+//   deja impossible independamment du rate limiting, qui n'y joue qu'un role
+//   de confort/anti-DoS, pas de defense primaire. Bloquer un rafraichissement
+//   legitime sur un simple accroc PostgreSQL degraderait l'experience sans
+//   benefice de securite reel.
+function creerLimiteur({ nom, fenetreMs = 15 * 60 * 1000, maxTentatives = 10, echecFerme = false }) {
   if (!nom) throw new Error('creerLimiteur({ nom }) : nom requis — sert de clé de partition dans la table partagee limites_tentatives')
 
   // Balayage périodique — même rôle que l'ancien setInterval sur la Map,
@@ -56,12 +79,10 @@ function creerLimiteur({ nom, fenetreMs = 15 * 60 * 1000, maxTentatives = 10 }) 
       }
       next()
     } catch (e) {
-      // Échec ouvert plutôt que fermé : une panne PostgreSQL momentanée
-      // bloque de toute façon la quasi-totalité de l'application (même
-      // pool que tout le reste) — ne pas transformer un défaut de
-      // disponibilité de la base en un blocage supplémentaire de la
-      // protection anti-bruteforce elle-même.
-      console.error(`Rate limiter (${nom}) échoué, requête autorisée par défaut :`, e.message)
+      console.error(`Rate limiter (${nom}) échoué, requête ${echecFerme ? 'refusée (échec fermé)' : 'autorisée par défaut (échec ouvert)'} :`, e.message)
+      if (echecFerme) {
+        return res.status(503).json({ erreur: 'Service temporairement indisponible, réessayez dans un instant.' })
+      }
       next()
     }
   }

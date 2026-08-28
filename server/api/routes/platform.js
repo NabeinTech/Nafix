@@ -12,7 +12,10 @@ const paydunyaService = require('../../../core/services/paydunyaService')
 const { authentifierPlateforme } = require('../middleware/authentifierPlateforme')
 const { creerLimiteur } = require('../middleware/rateLimiter')
 
-const limiterConnexionPlateforme = creerLimiteur({ nom: 'platform:auth:login', maxTentatives: 5 })
+// Contre-audit rate limiter — meme repartition echecFerme que server/api/routes/auth.js :
+// mot de passe (faible entropie, rate limiter = defense primaire) -> echec ferme ;
+// refresh token (haute entropie, bruteforce deja infaisable) -> echec ouvert (defaut).
+const limiterConnexionPlateforme = creerLimiteur({ nom: 'platform:auth:login', maxTentatives: 5, echecFerme: true })
 // Audit de clôture — aucun rate limiter n'était appliqué sur cette route.
 const limiterRefreshPlateforme = creerLimiteur({ nom: 'platform:auth:refresh', maxTentatives: 20 })
 
