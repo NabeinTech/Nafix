@@ -135,7 +135,7 @@ async function traiterWebhook(body) {
         emailService.envoyerEmail({
           to: admin.email,
           subject: 'Échec de votre paiement Nafix',
-          html: `<p>Bonjour ${admin.nom},</p>
+          html: `<p>Bonjour ${emailService.echapperHtml(admin.nom)},</p>
                  <p>Votre paiement d'abonnement n'a pas pu être confirmé. Merci de réessayer depuis l'onglet Paramètres.</p>`
         }).catch((e) => console.error('Échec envoi email de paiement échoué :', e.message))
       }

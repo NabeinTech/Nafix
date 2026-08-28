@@ -22,8 +22,8 @@ async function executerCycle() {
       await emailService.envoyerEmail({
         to: admin.email,
         subject: 'Votre essai Nafix se termine bientôt',
-        html: `<p>Bonjour ${admin.nom},</p>
-               <p>La période d'essai gratuit de <strong>${essai.organisation_nom}</strong> se termine le <strong>${dateFin}</strong>.</p>
+        html: `<p>Bonjour ${emailService.echapperHtml(admin.nom)},</p>
+               <p>La période d'essai gratuit de <strong>${emailService.echapperHtml(essai.organisation_nom)}</strong> se termine le <strong>${dateFin}</strong>.</p>
                <p>Passez à un abonnement payant dès maintenant pour ne pas perdre l'accès à Nafix.</p>`
       }).catch((e) => {
         console.error(`Échec envoi relance essai (organisation ${essai.organisation_id}) :`, e.message)

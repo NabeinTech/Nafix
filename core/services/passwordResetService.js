@@ -47,7 +47,7 @@ async function demander(identifiant) {
     emailService.envoyerEmail({
       to: destinataire,
       subject: 'Réinitialisation de votre mot de passe Nafix',
-      html: `<p>Bonjour ${utilisateur.nom},</p>
+      html: `<p>Bonjour ${emailService.echapperHtml(utilisateur.nom)},</p>
              <p>Cliquez sur ce lien pour choisir un nouveau mot de passe (valable 1 heure) :</p>
              <p><a href="${lien}">${lien}</a></p>
              <p>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email — votre mot de passe actuel reste inchangé.</p>`

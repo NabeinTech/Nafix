@@ -97,8 +97,8 @@ router.post('/signup', limiterSignup, async (req, res) => {
     emailService.envoyerEmail({
       to: creation.succes.utilisateur.email,
       subject: 'Bienvenue sur Nafix',
-      html: `<p>Bonjour ${creation.succes.utilisateur.nom},</p>
-             <p>Votre compte <strong>${creation.succes.organisation.nom}</strong> est prêt. Vous bénéficiez de 14 jours d'essai gratuit pour découvrir Nafix.</p>
+      html: `<p>Bonjour ${emailService.echapperHtml(creation.succes.utilisateur.nom)},</p>
+             <p>Votre compte <strong>${emailService.echapperHtml(creation.succes.organisation.nom)}</strong> est prêt. Vous bénéficiez de 14 jours d'essai gratuit pour découvrir Nafix.</p>
              <p>Connectez-vous dès maintenant pour commencer.</p>`
     }).catch((e) => {
       console.error('Échec envoi email de bienvenue :', e.message)

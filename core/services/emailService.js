@@ -23,4 +23,20 @@ async function envoyerEmail({ to, subject, html }) {
   }
 }
 
-module.exports = { envoyerEmail }
+// Audit securite (revue generale) — variante du meme probleme corrige pour
+// NafixAIChat (Cycle 1) : les templates d'email interpolent des noms
+// choisis par l'utilisateur (nom de compte, nom d'organisation) directement
+// dans du HTML, sans echappement. Risque reel faible ici (le destinataire
+// est toujours proprietaire de la donnee affichee, et les clients email
+// n'executent pas de JavaScript), mais cout de correction nul et coherent
+// avec la politique appliquee partout ailleurs dans le depot.
+function echapperHtml(valeur) {
+  return String(valeur ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+module.exports = { envoyerEmail, echapperHtml }
