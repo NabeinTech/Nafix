@@ -945,8 +945,8 @@ function Devis({ utilisateur }) {
 const DEVIS_COULEUR_SOMBRE = '#132743'
 const DEVIS_COULEUR_ACCENT = '#0d9488'
 const DEVIS_COULEUR_LABEL = '#2f6fed'
-const DEVIS_COULEUR_TEXTE = '#1f2937'
-const DEVIS_COULEUR_TEXTE_ATTENUE = '#6b7280'
+const DEVIS_COULEUR_TEXTE = '#111827'
+const DEVIS_COULEUR_TEXTE_ATTENUE = '#374151'
 
 function DevisApercu({ devis, parametres }) {
   const panier = typeof devis.panier === 'string' ? JSON.parse(devis.panier || '[]') : devis.panier || []

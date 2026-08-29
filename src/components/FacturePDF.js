@@ -9,8 +9,8 @@ import { montantEnLettresFCFA } from '../utils/nombreEnLettres'
 const COULEUR_SOMBRE = '#132743'
 const COULEUR_ACCENT = '#0d9488'
 const COULEUR_LABEL = '#2f6fed'
-const COULEUR_TEXTE = '#1f2937'
-const COULEUR_TEXTE_ATTENUE = '#6b7280'
+const COULEUR_TEXTE = '#111827'
+const COULEUR_TEXTE_ATTENUE = '#374151'
 
 function FacturePDF({ facture, parametres }) {
   const date = new Date(facture.created_at || Date.now()).toLocaleDateString('fr-FR')
