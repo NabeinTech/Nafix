@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import {
   Typography, Table, Button, Modal, Form,
   Select, InputNumber, Space, Tag, Card,
-  Divider, Row, Col, message, Input, DatePicker
+  Divider, Row, Col, message, Input, DatePicker, Popconfirm
 } from 'antd'
 import {
   PlusOutlined, DeleteOutlined, CheckOutlined,
@@ -17,6 +17,7 @@ import NouveauClientModal from '../components/NouveauClientModal'
 import NouveauProduitRapideModal from '../components/NouveauProduitRapideModal'
 import FiltresPeriode from '../components/FiltresPeriode'
 import dayjs from 'dayjs'
+import { peutFaireSurDevis } from '../utils/permissions'
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -26,7 +27,7 @@ const { RangePicker } = DatePicker
 const ipcRenderer = typeof window !== 'undefined' ? window.ipcRenderer : null
 
 function Devis({ utilisateur }) {
- 
+  const role = utilisateur?.role || 'caissier'
 
   const [devisList, setDevisList] = useState([])
   const [devisFiltres, setDevisFiltres] = useState([])
@@ -40,6 +41,7 @@ function Devis({ utilisateur }) {
   const [rechercheProduit, setRechercheProduit] = useState('')
   const [apercuVisible, setApercuVisible] = useState(false)
   const [devisSelectionne, setDevisSelectionne] = useState(null)
+  const [editingDevis, setEditingDevis] = useState(null)
   const [panier, setPanier] = useState([])
   const [impression, setImpression] = useState(false)
   const [enregistrement, setEnregistrement] = useState(false)
@@ -255,6 +257,26 @@ function Devis({ utilisateur }) {
     try {
       const panierStr = JSON.stringify(panier)
       const total = calculerTotal()
+
+      if (editingDevis) {
+        const resultat = await ipcRenderer.invoke('devis:update', {
+          id: editingDevis.id,
+          client_id: values.client_id || null,
+          validite: values.validite || 30,
+          notes: values.notes || '',
+          montant_total: total,
+          panier: panierStr
+        })
+        if (resultat?.erreur) { message.error(`❌ ${resultat.erreur}`); return }
+        message.success('✅ Devis mis à jour !')
+        setPanier([])
+        form.resetFields()
+        setEditingDevis(null)
+        setModalVisible(false)
+        chargerDevis()
+        return
+      }
+
       const result = await ipcRenderer.invoke('devis:create', {
         client_id: values.client_id || null,
         validite: values.validite || 30,
@@ -295,6 +317,49 @@ function Devis({ utilisateur }) {
       message.error(`❌ Erreur : ${e.message}`)
     } finally {
       setEnregistrement(false)
+    }
+  }
+
+  // Reouvre le modal "Nouveau Devis" en mode edition, pre-rempli avec le
+  // devis existant. Bloque sur un devis deja converti (voir
+  // DevisDAO.update — meme regle cote serveur, verifiee ici seulement pour
+  // eviter d'ouvrir un formulaire qui echouera de toute facon a la
+  // soumission).
+  const ouvrirModificationDevis = (devis) => {
+    if (!peutFaireSurDevis(role, 'modifier')) {
+      message.error('❌ Vous n\'avez pas la permission de modifier un devis')
+      return
+    }
+    if (devis.converti === 1) {
+      message.warning('Devis déjà converti en facture, non modifiable')
+      return
+    }
+    const panierExistant = typeof devis.panier === 'string' ? JSON.parse(devis.panier || '[]') : (devis.panier || [])
+    setPanier(panierExistant)
+    setEditingDevis(devis)
+    form.setFieldsValue({
+      client_id: devis.client_id || undefined,
+      validite: devis.validite || 30,
+      notes: devis.notes || ''
+    })
+    setModalVisible(true)
+  }
+
+  const supprimerDevis = async (id) => {
+    if (!peutFaireSurDevis(role, 'supprimer')) {
+      message.error('❌ Vous n\'avez pas la permission de supprimer un devis')
+      return
+    }
+    if (!ipcRenderer) {
+      message.error('Impossible de communiquer avec le service de données.')
+      return
+    }
+    try {
+      await ipcRenderer.invoke('devis:delete', id)
+      message.success('✅ Devis supprimé')
+      chargerDevis()
+    } catch (e) {
+      message.error(`❌ Erreur : ${e.message}`)
     }
   }
 
@@ -461,6 +526,22 @@ function Devis({ utilisateur }) {
               Facture
             </Button>
           )}
+          {peutFaireSurDevis(role, 'modifier') && record.converti !== 1 && (
+            <Button size="small" icon={<EditOutlined />}
+              style={{ borderRadius: 6 }}
+              onClick={() => ouvrirModificationDevis(record)}>
+              Modifier
+            </Button>
+          )}
+          {peutFaireSurDevis(role, 'supprimer') && (
+            <Popconfirm title="Supprimer ce devis ?"
+              onConfirm={() => supprimerDevis(record.id)}
+              okText="Oui" cancelText="Non">
+              <Button danger size="small" icon={<DeleteOutlined />} style={{ borderRadius: 6 }}>
+                Supprimer
+              </Button>
+            </Popconfirm>
+          )}
         </Space>
       )
     }
@@ -574,7 +655,7 @@ function Devis({ utilisateur }) {
           </Text>
         </div>
         <Button icon={<PlusOutlined />} size="large"
-          onClick={() => setModalVisible(true)}
+          onClick={() => { setEditingDevis(null); setPanier([]); form.resetFields(); setModalVisible(true) }}
           style={{
             borderRadius: 10, fontWeight: 'bold', height: 44,
             background: 'rgba(255,255,255,0.15)',
@@ -661,9 +742,9 @@ function Devis({ utilisateur }) {
           pagination={{ pageSize: 10, showTotal: (t) => `${t} devis au total` }} />
       </Card>
 
-      {/* Modal Nouveau Devis */}
-      <Modal title="📝 Nouveau Devis" open={modalVisible}
-        onCancel={() => { setModalVisible(false); setPanier([]) }}
+      {/* Modal Nouveau Devis / Modification (formulaire partagé, voir editingDevis) */}
+      <Modal title={editingDevis ? `📝 Modifier Devis D-${String(editingDevis.id).padStart(4, '0')}` : '📝 Nouveau Devis'} open={modalVisible}
+        onCancel={() => { setModalVisible(false); setPanier([]); setEditingDevis(null); form.resetFields() }}
         footer={null} width={820}>
         <Form form={form} layout="vertical" onFinish={creerDevis}>
           <Row gutter={16}>
@@ -788,13 +869,13 @@ function Devis({ utilisateur }) {
 
           <Form.Item>
             <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
-              <Button onClick={() => { setModalVisible(false); setPanier([]) }}>
+              <Button onClick={() => { setModalVisible(false); setPanier([]); setEditingDevis(null); form.resetFields() }}>
                 Annuler
               </Button>
               <Button type="primary" htmlType="submit" icon={<FileDoneOutlined />} size="large"
                 loading={enregistrement}
                 style={{ background: 'linear-gradient(135deg, #722ed1, #1890ff)', border: 'none' }}>
-                Créer le Devis — {calculerTotal().toLocaleString()} FCFA
+                {editingDevis ? 'Mettre à jour' : 'Créer le Devis'} — {calculerTotal().toLocaleString()} FCFA
               </Button>
             </Space>
           </Form.Item>

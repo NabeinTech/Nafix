@@ -19,4 +19,12 @@ function convertir(facture, organisationId) {
   return DevisDAO.convertir(facture, organisationId)
 }
 
-module.exports = { getAll, create, updateStatut, convertir }
+function update(devis, organisationId) {
+  return DevisDAO.update(devis, organisationId)
+}
+
+function deleteDevis(id, organisationId) {
+  return DevisDAO.delete(id, organisationId)
+}
+
+module.exports = { getAll, create, updateStatut, convertir, update, delete: deleteDevis }

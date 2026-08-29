@@ -35,6 +35,41 @@ const DevisDAO = {
     return { succes: true }
   },
 
+  // Un devis deja converti a genere une vente reelle (stock deja deduit) —
+  // modifier son contenu apres coup laisserait le devis et la vente
+  // incoherents entre eux, sans aucun moyen de les reconcilier. La
+  // suppression n'a pas cette contrainte (CommandesDAO.delete/ClientsDAO.delete
+  // n'en ont pas non plus) : elle ne fait que retirer le document, la vente
+  // deja enregistree n'est pas affectee.
+  async update(devis, organisationId) {
+    const { rows: [devisExistant] } = await pool.query(
+      'SELECT converti FROM devis WHERE id = $1 AND organisation_id = $2',
+      [devis.id, organisationId]
+    )
+    if (!devisExistant) return { erreur: 'Devis introuvable' }
+    if (devisExistant.converti === 1) return { erreur: 'Devis déjà converti en facture, non modifiable' }
+
+    if (devis.client_id) {
+      const { rows: [clientOk] } = await pool.query(
+        'SELECT id FROM clients WHERE id = $1 AND organisation_id = $2',
+        [devis.client_id, organisationId]
+      )
+      if (!clientOk) return { erreur: 'Client introuvable' }
+    }
+
+    const { rows: [misAJour] } = await pool.query(
+      `UPDATE devis SET client_id = $1, validite = $2, notes = $3, montant_total = $4, panier = $5
+       WHERE id = $6 AND organisation_id = $7 RETURNING *`,
+      [devis.client_id || null, devis.validite, devis.notes, devis.montant_total, devis.panier, devis.id, organisationId]
+    )
+    return { succes: misAJour }
+  },
+
+  async delete(id, organisationId) {
+    await pool.query('DELETE FROM devis WHERE id = $1 AND organisation_id = $2', [id, organisationId])
+    return { succes: true }
+  },
+
   async convertir(facture, organisationId) {
     const client = await pool.connect()
     try {

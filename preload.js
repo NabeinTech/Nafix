@@ -12,7 +12,7 @@ const INVOKE_CHANNELS = [
   'stats:getAll',
   'parametres:get', 'parametres:save', 'parametres:exporterSauvegarde', 'parametres:importerSauvegarde',
   'dashboard:getAll',
-  'devis:getAll', 'devis:create', 'devis:updateStatut', 'devis:convertir',
+  'devis:getAll', 'devis:create', 'devis:updateStatut', 'devis:convertir', 'devis:update', 'devis:delete',
   'devis:exporterModeleExcel', 'devis:importerExcel',
   'fournisseurs:getAll', 'fournisseurs:create', 'fournisseurs:update', 'fournisseurs:delete',
   'achats:getAll', 'achats:create', 'achats:update', 'achats:delete', 'achats:changerEtape',

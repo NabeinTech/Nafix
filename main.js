@@ -660,6 +660,8 @@ function registerAppHandlers() {
   ipcMain.handle('devis:create', async (_, d) => devisService.create(d, await getOrganisationIdActive()))
   ipcMain.handle('devis:updateStatut', async (_, { id, statut }) => devisService.updateStatut(id, statut, await getOrganisationIdActive()))
   ipcMain.handle('devis:convertir', async (_, f) => devisService.convertir(f, await getOrganisationIdActive()))
+  ipcMain.handle('devis:update', async (_, d) => devisService.update(d, await getOrganisationIdActive()))
+  ipcMain.handle('devis:delete', async (_, id) => devisService.delete(id, await getOrganisationIdActive()))
 
   // Modèle Excel à télécharger pour l'import de devis en masse — mêmes
   // en-têtes que celles reconnues par devis:importerExcel, avec un exemple.
