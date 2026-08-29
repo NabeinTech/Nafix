@@ -18,6 +18,7 @@ import NouveauProduitRapideModal from '../components/NouveauProduitRapideModal'
 import FiltresPeriode from '../components/FiltresPeriode'
 import dayjs from 'dayjs'
 import { peutFaireSurDevis } from '../utils/permissions'
+import { montantEnLettresFCFA } from '../utils/nombreEnLettres'
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -937,6 +938,16 @@ function Devis({ utilisateur }) {
 }
 
 // ── Aperçu PDF ───────────────────────────────────────────
+// Meme identite visuelle "premium" que src/components/FacturePDF.js
+// (en-tete sombre, bandeau d'accent teal, tableau a en-tete fonce,
+// "arretee a la somme de", signatures) — demandee explicitement par
+// l'utilisateur pour le devis, comme pour la facture.
+const DEVIS_COULEUR_SOMBRE = '#132743'
+const DEVIS_COULEUR_ACCENT = '#0d9488'
+const DEVIS_COULEUR_LABEL = '#2f6fed'
+const DEVIS_COULEUR_TEXTE = '#1f2937'
+const DEVIS_COULEUR_TEXTE_ATTENUE = '#6b7280'
+
 function DevisApercu({ devis, parametres }) {
   const panier = typeof devis.panier === 'string' ? JSON.parse(devis.panier || '[]') : devis.panier || []
   const date = new Date(devis.created_at).toLocaleDateString('fr-FR')
@@ -946,109 +957,178 @@ function DevisApercu({ devis, parametres }) {
   const numero = `D-${String(devis.id).padStart(4, '0')}`
   const tvaTaux = parametres?.tva_taux != null ? parseFloat(parametres.tva_taux) : 18
   const tva = tvaTaux / 100
-  const montantHT = tva ? devis.montant_total / (1 + tva) : devis.montant_total
-  const montantTVA = devis.montant_total - montantHT
+  const montantHT = Math.round(tva ? devis.montant_total / (1 + tva) : devis.montant_total)
+  const montantTVA = Math.round(devis.montant_total - montantHT)
+
+  const ligneSeparation = (couleur = '#e5e7eb', epaisseur = '1px', marge = '20px 0') => (
+    <div style={{ borderTop: `${epaisseur} solid ${couleur}`, margin: marge }} />
+  )
+
+  const statut = devis.statut === 'accepte'
+    ? { texte: '✅ ACCEPTÉ', fond: '#f0fdfa', couleur: DEVIS_COULEUR_ACCENT }
+    : devis.statut === 'refuse'
+      ? { texte: '❌ REFUSÉ', fond: '#fff2f0', couleur: '#ff4d4f' }
+      : { texte: '⏳ EN ATTENTE', fond: '#fffbe6', couleur: '#d48806' }
 
   return (
     <div id="devis-pdf" style={{
-      width: '210mm', minHeight: '297mm',
-      padding: '20mm', background: 'white', boxSizing: 'border-box',
-      fontFamily: 'Arial, sans-serif', fontSize: 12, color: '#333'
+      width: '210mm',
+      minHeight: '297mm',
+      background: 'white',
+      boxSizing: 'border-box',
+      fontFamily: '"Segoe UI", Arial, sans-serif',
+      color: DEVIS_COULEUR_TEXTE,
+      fontSize: '13px',
+      lineHeight: '1.6'
     }}>
-      {/* En-tête */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 32 }}>
-        <div>
-          {parametres?.logo_base64 && (
-            <img src={parametres.logo_base64} alt="Logo"
-              style={{ height: 60, objectFit: 'contain', marginBottom: 8, display: 'block' }} />
+      {/* ── En-tête sombre pleine largeur ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'stretch' }}>
+        <div style={{ background: DEVIS_COULEUR_SOMBRE, color: 'white', padding: '26px 30px', flex: '0 0 60%' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '0.5px', marginBottom: '2px' }}>
+            {(parametres?.nom_entreprise || 'NAFIMAX STORE').toUpperCase()}
+          </div>
+          {parametres?.slogan && (
+            <div style={{ fontSize: '12.5px', color: '#b8c4d9', marginBottom: '14px', letterSpacing: '0.3px' }}>
+              {parametres.slogan}
+            </div>
           )}
-          <div style={{
-            background: '#722ed1', color: 'white',
-            padding: '10px 20px', borderRadius: 8,
-            fontSize: 20, fontWeight: 'bold', marginBottom: 8
-          }}>
-            {parametres?.nom_entreprise || 'Nafimax Store'}
+          <div style={{ fontSize: '12px', color: '#dce3f0', lineHeight: '1.9' }}>
+            {parametres?.adresse && <div>📍 {parametres.adresse}</div>}
+            <div>
+              📞 {parametres?.telephone || 'Non configuré'}
+              {parametres?.telephone_secondaire ? ` • ${parametres.telephone_secondaire}` : ''}
+            </div>
+            {parametres?.email && <div>✉️ {parametres.email}</div>}
           </div>
-          {parametres?.slogan && <p style={{ margin: '4px 0', color: '#888' }}>{parametres.slogan}</p>}
-          {parametres?.telephone && <p style={{ margin: '4px 0' }}>📞 {parametres.telephone}</p>}
-          {parametres?.telephone_secondaire && <p style={{ margin: '4px 0' }}>📞 {parametres.telephone_secondaire}</p>}
-          {parametres?.email && <p style={{ margin: '4px 0' }}>✉️ {parametres.email}</p>}
-          {parametres?.adresse && <p style={{ margin: '4px 0' }}>📍 {parametres.adresse}</p>}
-          {parametres?.ninea && <p style={{ margin: '4px 0' }}>🏢 NINEA: {parametres.ninea}</p>}
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 28, fontWeight: 'bold', color: '#722ed1', marginBottom: 8 }}>DEVIS</div>
-          <p style={{ margin: '4px 0' }}><strong>N° :</strong> {numero}</p>
-          <p style={{ margin: '4px 0' }}><strong>Date :</strong> {date}</p>
-          <p style={{ margin: '4px 0' }}><strong>Valide jusqu'au :</strong> {dateExpiration}</p>
+        <div style={{ flex: 1, padding: '26px 30px', textAlign: 'right' }}>
+          <div style={{ fontSize: '38px', fontWeight: 800, color: DEVIS_COULEUR_SOMBRE, letterSpacing: '1px' }}>DEVIS</div>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: DEVIS_COULEUR_LABEL, marginTop: '6px' }}>N° {numero}</div>
+          <div style={{ fontSize: '11.5px', color: DEVIS_COULEUR_TEXTE_ATTENUE, marginTop: '4px' }}>Émis le {date}</div>
+          <div style={{ fontSize: '11.5px', color: DEVIS_COULEUR_TEXTE_ATTENUE }}>Valide jusqu'au {dateExpiration}</div>
         </div>
       </div>
 
-      {/* Ligne de separation en div stylee (pas <Divider/> d'antd) : ce
-          template est capture via outerHTML puis imprime dans une fenetre
-          sans feuille de style antd chargee (voir main.js,
-          impression:imprimerHTML) — un <Divider/> s'y imprimerait sans sa
-          bordure. Meme approche que src/components/FacturePDF.js, qui
-          n'utilise aucun composant antd dans son template imprimable. */}
-      <div style={{ borderTop: '1px solid #e8e8e8', margin: '16px 0' }} />
+      {/* ── Bandeau d'accent ── */}
+      <div style={{ height: '6px', background: DEVIS_COULEUR_ACCENT }} />
 
-      <div style={{ background: '#f9f0ff', padding: 16, borderRadius: 8, marginBottom: 24 }}>
-        <strong>Client :</strong> {devis.client_nom || 'Client anonyme'}
-      </div>
+      <div style={{ padding: '26px 30px' }}>
+        {/* ── Client + détails ── */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '30px', marginBottom: '4px' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: DEVIS_COULEUR_LABEL, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '6px' }}>
+              Adressé à
+            </div>
+            <div style={{ fontSize: '15px', fontWeight: 700 }}>
+              {devis.client_nom || 'CLIENT ANONYME'}
+            </div>
+          </div>
+          <div style={{ flex: 1, textAlign: 'right' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: DEVIS_COULEUR_LABEL, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '6px' }}>
+              Informations légales
+            </div>
+            <div style={{ fontSize: '12px', color: DEVIS_COULEUR_TEXTE, lineHeight: '1.8' }}>
+              {parametres?.ninea && <div><strong>NINEA :</strong> {parametres.ninea}</div>}
+              {parametres?.registre_commerce && <div><strong>RC :</strong> {parametres.registre_commerce}</div>}
+              <div><strong>Devise :</strong> Franc CFA (XOF)</div>
+            </div>
+          </div>
+        </div>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24 }}>
-        <thead>
-          <tr style={{ background: '#722ed1', color: 'white' }}>
-            <th style={{ padding: 10, textAlign: 'left' }}>Produit</th>
-            <th style={{ padding: 10, textAlign: 'center' }}>Qté</th>
-            <th style={{ padding: 10, textAlign: 'right' }}>Prix Unit.</th>
-            <th style={{ padding: 10, textAlign: 'right' }}>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {panier.map((item, i) => (
-            <tr key={i} style={{
-              background: i % 2 === 0 ? '#fafafa' : 'white',
-              borderBottom: '1px solid #eee'
-            }}>
-              <td style={{ padding: 10 }}>{item.nom}</td>
-              <td style={{ padding: 10, textAlign: 'center' }}>{item.quantite}</td>
-              <td style={{ padding: 10, textAlign: 'right' }}>{item.prix_unitaire?.toLocaleString()} FCFA</td>
-              <td style={{ padding: 10, textAlign: 'right' }}>{item.total?.toLocaleString()} FCFA</td>
+        {ligneSeparation()}
+
+        {/* ── Statut ── */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '18px' }}>
+          <span style={{ background: statut.fond, color: statut.couleur, padding: '6px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700 }}>
+            {statut.texte}
+          </span>
+        </div>
+
+        {/* ── Articles ── */}
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '4px' }}>
+          <thead>
+            <tr style={{ background: DEVIS_COULEUR_SOMBRE, color: 'white' }}>
+              <th style={{ padding: '13px 14px', textAlign: 'left', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Désignation</th>
+              <th style={{ padding: '13px 14px', textAlign: 'center', fontSize: '11.5px', width: '70px' }}>Qté</th>
+              <th style={{ padding: '13px 14px', textAlign: 'right', fontSize: '11.5px', width: '110px' }}>Prix unitaire</th>
+              <th style={{ padding: '13px 14px', textAlign: 'right', fontSize: '11.5px', width: '120px' }}>Montant</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {panier.map((item, i) => (
+              <tr key={i} style={{ background: i % 2 === 0 ? '#ffffff' : '#f6f8fb', borderBottom: '1px solid #ececec' }}>
+                <td style={{ padding: '12px 14px', fontWeight: 700, fontSize: '13px' }}>{item.nom}</td>
+                <td style={{ padding: '12px 14px', textAlign: 'center', color: DEVIS_COULEUR_TEXTE_ATTENUE }}>{item.quantite}</td>
+                <td style={{ padding: '12px 14px', textAlign: 'right', color: DEVIS_COULEUR_TEXTE_ATTENUE }}>{item.prix_unitaire?.toLocaleString()} FCFA</td>
+                <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 700, color: DEVIS_COULEUR_SOMBRE }}>{item.total?.toLocaleString()} FCFA</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
-        <div style={{ width: 280 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
-            <span>Montant HT :</span>
-            <span>{Math.round(montantHT).toLocaleString()} FCFA</span>
+        {/* ── Conditions + Totaux ── */}
+        <div style={{ display: 'flex', gap: '24px', marginTop: '22px' }}>
+          <div style={{ flex: 1, background: '#f6f8fb', borderRadius: '8px', padding: '16px 18px', border: '1px solid #ececec' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: DEVIS_COULEUR_LABEL, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+              Conditions
+            </div>
+            <div style={{ fontSize: '12px', color: DEVIS_COULEUR_TEXTE }}>
+              {devis.notes || 'Devis valable jusqu\'à la date indiquée ci-dessus. Merci de rappeler le numéro de devis lors de votre confirmation.'}
+            </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
-            <span>TVA ({parametres?.tva_taux || 18}%) :</span>
-            <span>{Math.round(montantTVA).toLocaleString()} FCFA</span>
-          </div>
-          <div style={{ borderTop: '1px solid #e8e8e8', margin: '8px 0' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 'bold', color: '#722ed1' }}>
-            <span>TOTAL TTC :</span>
-            <span>{devis.montant_total?.toLocaleString()} FCFA</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: '12.5px' }}>
+              <span>Montant HT :</span>
+              <span style={{ fontWeight: 700 }}>{montantHT.toLocaleString()} FCFA</span>
+            </div>
+            {ligneSeparation('#e5e7eb', '1px', '0')}
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: '12.5px' }}>
+              <span>TVA ({parametres?.tva_taux || 18}%) :</span>
+              <span style={{ fontWeight: 700 }}>{montantTVA.toLocaleString()} FCFA</span>
+            </div>
+            {ligneSeparation(DEVIS_COULEUR_ACCENT, '2px', '0 0 12px 0')}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', background: DEVIS_COULEUR_ACCENT, color: 'white',
+              borderRadius: '8px', padding: '13px 16px', fontSize: '17px', fontWeight: 800
+            }}>
+              <span>TOTAL TTC</span>
+              <span>{devis.montant_total?.toLocaleString()} FCFA</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {devis.notes && (
-        <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 8, marginBottom: 16 }}>
-          <strong>Notes :</strong> {devis.notes}
+        {/* ── Arrêtée à la somme de ── */}
+        <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: '8px', padding: '14px 18px', margin: '22px 0' }}>
+          <div style={{ fontSize: '10.5px', fontWeight: 700, color: '#0f766e', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '5px' }}>
+            Arrêtée à la somme de
+          </div>
+          <div style={{ fontSize: '13px', fontWeight: 600, fontStyle: 'italic' }}>
+            {montantEnLettresFCFA(devis.montant_total || 0)}
+          </div>
         </div>
-      )}
 
-      <div style={{
-        borderTop: '2px solid #722ed1', paddingTop: 16,
-        textAlign: 'center', color: '#888', fontStyle: 'italic'
-      }}>
-        {parametres?.mention_facture || 'Merci pour votre confiance !'}
+        {/* ── Signatures ── */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '40px', paddingTop: '10px' }}>
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: DEVIS_COULEUR_TEXTE_ATTENUE, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Le client
+            </div>
+            <div style={{ borderTop: '1px solid #d1d5db', width: '160px', margin: '46px auto 0' }} />
+          </div>
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: DEVIS_COULEUR_TEXTE_ATTENUE, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Pour {parametres?.nom_entreprise || 'Nafimax'}
+            </div>
+            <div style={{ borderTop: '1px solid #d1d5db', width: '160px', margin: '46px auto 0' }} />
+          </div>
+        </div>
+
+        {ligneSeparation('#e5e7eb', '1px', '24px 0 14px 0')}
+
+        {/* ── Pied de page ── */}
+        <div style={{ textAlign: 'center', fontSize: '10.5px', color: DEVIS_COULEUR_TEXTE_ATTENUE, fontStyle: 'italic' }}>
+          {parametres?.mention_facture || 'Merci pour votre confiance !'}
+        </div>
       </div>
     </div>
   )
