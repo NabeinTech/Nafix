@@ -870,7 +870,8 @@ function DevisApercu({ devis, parametres }) {
 
   return (
     <div id="devis-pdf" style={{
-      padding: '20mm', background: 'white',
+      width: '210mm', minHeight: '297mm',
+      padding: '20mm', background: 'white', boxSizing: 'border-box',
       fontFamily: 'Arial, sans-serif', fontSize: 12, color: '#333'
     }}>
       {/* En-tête */}
@@ -902,7 +903,13 @@ function DevisApercu({ devis, parametres }) {
         </div>
       </div>
 
-      <Divider />
+      {/* Ligne de separation en div stylee (pas <Divider/> d'antd) : ce
+          template est capture via outerHTML puis imprime dans une fenetre
+          sans feuille de style antd chargee (voir main.js,
+          impression:imprimerHTML) — un <Divider/> s'y imprimerait sans sa
+          bordure. Meme approche que src/components/FacturePDF.js, qui
+          n'utilise aucun composant antd dans son template imprimable. */}
+      <div style={{ borderTop: '1px solid #e8e8e8', margin: '16px 0' }} />
 
       <div style={{ background: '#f9f0ff', padding: 16, borderRadius: 8, marginBottom: 24 }}>
         <strong>Client :</strong> {devis.client_nom || 'Client anonyme'}
@@ -942,7 +949,7 @@ function DevisApercu({ devis, parametres }) {
             <span>TVA ({parametres?.tva_taux || 18}%) :</span>
             <span>{Math.round(montantTVA).toLocaleString()} FCFA</span>
           </div>
-          <Divider style={{ margin: '8px 0' }} />
+          <div style={{ borderTop: '1px solid #e8e8e8', margin: '8px 0' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 'bold', color: '#722ed1' }}>
             <span>TOTAL TTC :</span>
             <span>{devis.montant_total?.toLocaleString()} FCFA</span>
