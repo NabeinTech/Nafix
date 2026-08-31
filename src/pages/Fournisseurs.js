@@ -3,7 +3,7 @@ import {
   Typography, Table, Button, Modal, Form, Input, InputNumber,
   Select, Space, Popconfirm, Tag, message, Row, Col, Card,
   Statistic, Tabs, Drawer, Divider, DatePicker, Badge, Alert,
-  Descriptions, Steps, Tooltip, Progress, Checkbox
+  Descriptions, Tooltip, Progress, Checkbox
 } from 'antd'
 import {
   PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined,
