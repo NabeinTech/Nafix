@@ -15,6 +15,7 @@ import {
 import * as XLSX from 'xlsx'
 import { peutAjouter, peutModifier, peutSupprimer } from '../utils/permissions'
 import { getDomaine, getDomainTheme, UNITES_DECIMALES } from '../utils/domainConfig'
+import { analyserGrilleProduits, normaliser } from '../utils/importExcelProduits'
 
 const { Title, Text } = Typography
 const { Option, OptGroup } = Select
@@ -266,6 +267,27 @@ function Produits({ utilisateur }) {
   const [modeleEnCours, setModeleEnCours] = useState(false)
   const telechargerModele = async () => {
     if (!ipcRenderer) return
+    // Web : dialog.showSaveDialog n'existe pas dans un navigateur —
+    // on génère le classeur côté client et on déclenche un téléchargement
+    // (même technique que exporterExcel ci-dessus).
+    if (window.NAFIX_ENV_WEB) {
+      const entetes = ['Nom', 'Référence', 'Catégorie', 'Marque', 'Prix Achat', 'Prix Vente', 'Stock Actuel', 'Stock Minimum', 'Unité']
+      const exemple = ['Riz parfumé 25kg', 'RIZ-001', 'Céréales & Graines', 'Sundia', 5000, 7500, 100, 10, 'sac']
+      const feuille = XLSX.utils.aoa_to_sheet([entetes, exemple])
+      feuille['!cols'] = entetes.map(() => ({ wch: 20 }))
+      const classeur = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(classeur, feuille, 'Produits')
+      const buffer = XLSX.write(classeur, { bookType: 'xlsx', type: 'array' })
+      const blob = new Blob([buffer], { type: 'application/octet-stream' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'modele_import_produits.xlsx'
+      a.click()
+      window.URL.revokeObjectURL(url)
+      message.success('✅ Modèle téléchargé !')
+      return
+    }
     setModeleEnCours(true)
     try {
       const resultat = await ipcRenderer.invoke('produits:exporterModeleExcel')
@@ -279,36 +301,96 @@ function Produits({ utilisateur }) {
 
   // ── Import Excel ─────────────────────────────────────────
   const [importEnCours, setImportEnCours] = useState(false)
+  const inputImportExcelRef = useRef(null)
+  const TAILLE_MAX_IMPORT_OCTETS = 20 * 1024 * 1024
+
+  // Affiche le résultat { importes, ignores, erreurs }, quelle que soit la
+  // plateforme qui l'a produit (dialog Electron ou parsing navigateur).
+  const traiterResultatImport = (resultat) => {
+    if (resultat?.annule) return
+    if (resultat?.erreur) { message.error(`❌ ${resultat.erreur}`); return }
+    const { importes, ignores, erreurs } = resultat
+    if (importes > 0) {
+      message.success(`✅ ${importes} produit(s) importé(s) !`)
+      chargerProduits()
+      chargerCategories()
+    }
+    if (ignores > 0) {
+      message.warning(`⚠️ ${ignores} ligne(s) ignorée(s) (nom manquant)`)
+    }
+    if (erreurs?.length) {
+      Modal.warning({
+        title: `${erreurs.length} ligne(s) non importée(s)`,
+        content: (
+          <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+            {erreurs.map((e, i) => <div key={i} style={{ fontSize: 12, marginBottom: 4 }}>{e}</div>)}
+          </div>
+        ),
+        width: 480
+      })
+    }
+    if (importes === 0 && ignores === 0 && !erreurs?.length) {
+      message.info('Aucune ligne trouvée dans le fichier')
+    }
+  }
+
   const importerExcel = async () => {
     if (!ipcRenderer) return
+    // Web : pas de dialog.showOpenDialog — on déclenche le sélecteur de
+    // fichier natif du navigateur, géré par gererFichierExcelSelectionne.
+    if (window.NAFIX_ENV_WEB) {
+      inputImportExcelRef.current?.click()
+      return
+    }
     setImportEnCours(true)
     try {
       const resultat = await ipcRenderer.invoke('produits:importerExcel')
-      if (resultat?.annule) return
-      if (resultat?.erreur) { message.error(`❌ ${resultat.erreur}`); return }
-      const { importes, ignores, erreurs } = resultat
-      if (importes > 0) {
-        message.success(`✅ ${importes} produit(s) importé(s) !`)
-        chargerProduits()
-        chargerCategories()
+      traiterResultatImport(resultat)
+    } finally {
+      setImportEnCours(false)
+    }
+  }
+
+  // Web uniquement : lecture + parsing du fichier choisi, puis reproduction
+  // de la même logique que produits:importerExcel côté Electron (main.js) —
+  // catégorie auto-créée si inconnue, un produit créé par ligne valide.
+  const gererFichierExcelSelectionne = async (e) => {
+    const fichier = e.target.files?.[0]
+    e.target.value = '' // permet de resélectionner le même fichier plus tard
+    if (!fichier) return
+    if (fichier.size > TAILLE_MAX_IMPORT_OCTETS) {
+      message.error('❌ Fichier trop volumineux (maximum 20 Mo).')
+      return
+    }
+    setImportEnCours(true)
+    try {
+      const buffer = await fichier.arrayBuffer()
+      const classeur = XLSX.read(buffer, { type: 'array' })
+      const feuille = classeur.Sheets[classeur.SheetNames[0]]
+      const grille = XLSX.utils.sheet_to_json(feuille, { header: 1, defval: '', blankrows: false })
+      const { produits: produitsAImporter, ignores, indexEntete } = analyserGrilleProduits(grille)
+
+      const categoriesConnues = new Set(categories.map(c => normaliser(c.nom)))
+      let importes = 0
+      const erreurs = []
+
+      for (let i = 0; i < produitsAImporter.length; i++) {
+        const produit = produitsAImporter[i]
+        if (!categoriesConnues.has(normaliser(produit.categorie))) {
+          await ipcRenderer.invoke('categories:create', { nom: produit.categorie, icone: '📦', couleur: 'blue', domaine: domaineActive })
+          categoriesConnues.add(normaliser(produit.categorie))
+        }
+        const resultatCreation = await ipcRenderer.invoke('produits:create', produit)
+        if (resultatCreation?.erreur) {
+          erreurs.push(`Ligne ${indexEntete + i + 2} (${produit.nom}) : ${resultatCreation.erreur}`)
+        } else {
+          importes++
+        }
       }
-      if (ignores > 0) {
-        message.warning(`⚠️ ${ignores} ligne(s) ignorée(s) (nom manquant)`)
-      }
-      if (erreurs?.length) {
-        Modal.warning({
-          title: `${erreurs.length} ligne(s) non importée(s)`,
-          content: (
-            <div style={{ maxHeight: 300, overflowY: 'auto' }}>
-              {erreurs.map((e, i) => <div key={i} style={{ fontSize: 12, marginBottom: 4 }}>{e}</div>)}
-            </div>
-          ),
-          width: 480
-        })
-      }
-      if (importes === 0 && ignores === 0 && !erreurs?.length) {
-        message.info('Aucune ligne trouvée dans le fichier')
-      }
+
+      traiterResultatImport({ succes: true, importes, ignores, erreurs })
+    } catch (err) {
+      message.error(`❌ Fichier illisible : ${err.message}`)
     } finally {
       setImportEnCours(false)
     }
@@ -901,6 +983,8 @@ function Produits({ utilisateur }) {
             onClick={exporterExcel} style={{ borderRadius: 8 }}>
             Exporter Excel
           </Button>
+          <input type="file" accept=".xlsx,.xls,.csv" ref={inputImportExcelRef}
+            onChange={gererFichierExcelSelectionne} style={{ display: 'none' }} />
           <Button icon={<UploadOutlined />} size="large" loading={importEnCours}
             onClick={importerExcel} disabled={!domaineActive}
             style={{ borderRadius: 8 }}>

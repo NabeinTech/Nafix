@@ -11,6 +11,15 @@
 (function () {
   if (window.ipcRenderer) return
 
+  // Exception ciblée à la règle "aucune modification de src/" ci-dessus :
+  // ce script n'a pas accès au bundle webpack (donc pas à la lib xlsx), il
+  // ne peut donc pas implémenter lui-même l'import/export Excel des
+  // produits (lecture de fichier + parsing). Ce drapeau permet à
+  // src/pages/Produits.js de détecter le mode web et de faire ce travail
+  // lui-même (input file + XLSX déjà importé côté React), au lieu de
+  // passer par les canaux natifs Electron (dialog.showOpenDialog).
+  window.NAFIX_ENV_WEB = true
+
   // Préfixe explicite par window.location.origin plutôt qu'un chemin relatif
   // nu : le fetch() de Node ne résout pas les URL relatives (pas de document
   // de référence), ce qui rendrait ce fichier impossible à tester en Node.
