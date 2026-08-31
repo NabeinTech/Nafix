@@ -9,8 +9,8 @@ import { montantEnLettresFCFA } from '../utils/nombreEnLettres'
 const COULEUR_SOMBRE = '#132743'
 const COULEUR_ACCENT = '#0d9488'
 const COULEUR_LABEL = '#2f6fed'
-const COULEUR_TEXTE = '#111827'
-const COULEUR_TEXTE_ATTENUE = '#374151'
+const COULEUR_TEXTE = '#000000'
+const COULEUR_TEXTE_ATTENUE = '#1c1c1c'
 // Demande explicite de l'utilisateur : le tableau des articles garde
 // toujours un minimum de lignes (comme un carnet de factures pre-imprime),
 // meme si seuls 1-3 articles sont reellement enregistres — complete avec
