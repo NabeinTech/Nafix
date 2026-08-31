@@ -82,24 +82,28 @@ function FacturePDF({ facture, parametres }) {
       <div style={{ height: '6px', background: COULEUR_ACCENT }} />
 
       <div style={{ padding: '18px 30px' }}>
-        {/* ── Client + détails ── */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '30px', marginBottom: '4px' }}>
+        {/* ── Client + détails, encadré ── */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', gap: '30px',
+          border: '1px solid #d1d5db', borderRadius: '8px', padding: '12px 18px', marginBottom: '10px'
+        }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: COULEUR_LABEL, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '6px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: COULEUR_LABEL, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '4px' }}>
               Facturé à
             </div>
-            <div style={{ fontSize: '15px', fontWeight: 700, marginBottom: '4px' }}>
+            <div style={{ fontSize: '15px', fontWeight: 700, marginBottom: '2px' }}>
               {facture.client_nom || 'CLIENT ANONYME'}
             </div>
             {facture.vendeur && (
               <div style={{ fontSize: '12px', color: COULEUR_TEXTE_ATTENUE }}>Servi par {facture.vendeur}</div>
             )}
           </div>
+          <div style={{ flex: '0 0 1px', background: '#e5e7eb' }} />
           <div style={{ flex: 1, textAlign: 'right' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: COULEUR_LABEL, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '6px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: COULEUR_LABEL, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '4px' }}>
               Informations légales
             </div>
-            <div style={{ fontSize: '12px', color: COULEUR_TEXTE, lineHeight: '1.8' }}>
+            <div style={{ fontSize: '12px', color: COULEUR_TEXTE, lineHeight: '1.6' }}>
               {parametres?.ninea && <div><strong>NINEA :</strong> {parametres.ninea}</div>}
               {parametres?.registre_commerce && <div><strong>RC :</strong> {parametres.registre_commerce}</div>}
               <div><strong>Devise :</strong> Franc CFA (XOF)</div>
@@ -107,17 +111,16 @@ function FacturePDF({ facture, parametres }) {
           </div>
         </div>
 
-        {ligneSeparation()}
-
         {/* ── Statut ── */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
-          <span style={{ background: statut.fond, color: statut.couleur, padding: '6px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
+          <span style={{ background: statut.fond, color: statut.couleur, padding: '6px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, border: `1px solid ${statut.couleur}` }}>
             {statut.texte}
           </span>
         </div>
 
-        {/* ── Articles ── */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '4px' }}>
+        {/* ── Articles, tableau encadre avec une ligne de separation nette
+             entre chaque article (pas seulement l'alternance de fond) ── */}
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '4px', border: '1px solid #d1d5db' }}>
           <thead>
             <tr style={{ background: COULEUR_SOMBRE, color: 'white' }}>
               <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Désignation</th>
@@ -128,7 +131,7 @@ function FacturePDF({ facture, parametres }) {
           </thead>
           <tbody>
             {panier.map((item, i) => (
-              <tr key={i} style={{ background: i % 2 === 0 ? '#ffffff' : '#f6f8fb', borderBottom: '1px solid #ececec' }}>
+              <tr key={i} style={{ background: i % 2 === 0 ? '#ffffff' : '#f6f8fb', borderBottom: '1px solid #cbd5e1' }}>
                 <td style={{ padding: '8px 14px', fontWeight: 700, fontSize: '13px' }}>{item.nom}</td>
                 <td style={{ padding: '8px 14px', textAlign: 'center', color: COULEUR_TEXTE_ATTENUE }}>{item.quantite}</td>
                 <td style={{ padding: '8px 14px', textAlign: 'right', color: COULEUR_TEXTE_ATTENUE }}>{item.prix_unitaire?.toLocaleString()} FCFA</td>
@@ -136,7 +139,7 @@ function FacturePDF({ facture, parametres }) {
               </tr>
             ))}
             {Array.from({ length: nombreLignesVides }).map((_, i) => (
-              <tr key={`vide-${i}`} style={{ background: (panier.length + i) % 2 === 0 ? '#ffffff' : '#f6f8fb', borderBottom: '1px solid #ececec' }}>
+              <tr key={`vide-${i}`} style={{ background: (panier.length + i) % 2 === 0 ? '#ffffff' : '#f6f8fb', borderBottom: '1px solid #cbd5e1' }}>
                 <td style={{ padding: '8px 14px' }}>&nbsp;</td>
                 <td style={{ padding: '8px 14px' }}>&nbsp;</td>
                 <td style={{ padding: '8px 14px' }}>&nbsp;</td>
@@ -160,7 +163,7 @@ function FacturePDF({ facture, parametres }) {
               Espèces • Wave • Orange Money • Virement • Chèque
             </div>
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, border: '1px solid #ececec', borderRadius: '8px', padding: '10px 14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: '12.5px' }}>
               <span>Montant HT :</span>
               <span style={{ fontWeight: 700 }}>{montantHT.toLocaleString()} FCFA</span>
@@ -234,7 +237,9 @@ function FacturePDF({ facture, parametres }) {
           </div>
         </div>
 
-        {ligneSeparation('#e5e7eb', '1px', '12px 0 8px 0')}
+        {/* Barre d'accent en pied de page, symetrique du bandeau sous
+            l'en-tete — delimite clairement la zone d'informations finales. */}
+        {ligneSeparation(COULEUR_ACCENT, '3px', '12px 0 8px 0')}
 
         {/* ── Pied de page ── */}
         <div style={{ textAlign: 'center', fontSize: '10.5px', color: COULEUR_TEXTE_ATTENUE, fontStyle: 'italic' }}>

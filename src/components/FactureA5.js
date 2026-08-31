@@ -76,22 +76,26 @@ function FactureA5({ facture, parametres }) {
       <div style={{ height: '4px', background: COULEUR_ACCENT }} />
 
       <div style={{ padding: '10px 14px 12px' }}>
-        {/* ── Client + statut ── */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* ── Client + statut, encadre ── */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          border: '1px solid #d1d5db', borderRadius: '6px', padding: '7px 10px'
+        }}>
           <div>
             <div style={{ fontSize: '9px', fontWeight: 700, color: COULEUR_LABEL, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Facturé à</div>
             <div style={{ fontSize: '13px', fontWeight: 700 }}>{facture.client_nom || 'CLIENT ANONYME'}</div>
             {facture.vendeur && <div style={{ fontSize: '10px', color: COULEUR_TEXTE_ATTENUE }}>Servi par {facture.vendeur}</div>}
           </div>
-          <span style={{ background: statut.fond, color: statut.couleur, padding: '5px 11px', borderRadius: '5px', fontSize: '10px', fontWeight: 700 }}>
+          <span style={{ background: statut.fond, color: statut.couleur, padding: '5px 11px', borderRadius: '5px', fontSize: '10px', fontWeight: 700, border: `1px solid ${statut.couleur}` }}>
             {statut.texte}
           </span>
         </div>
 
-        {ligneSeparation('#e5e7eb', '1px', '12px 0')}
+        {ligneSeparation('#e5e7eb', '1px', '10px 0')}
 
-        {/* ── Articles ── */}
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        {/* ── Articles, tableau encadre avec ligne de separation nette
+             entre chaque article ── */}
+        <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #d1d5db' }}>
           <thead>
             <tr style={{ background: COULEUR_SOMBRE, color: 'white' }}>
               <th style={{ padding: '5px 9px', textAlign: 'left', fontSize: '9.5px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Désignation</th>
@@ -102,7 +106,7 @@ function FactureA5({ facture, parametres }) {
           </thead>
           <tbody>
             {panier.map((item, i) => (
-              <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#f6f8fb', borderBottom: '1px solid #ececec' }}>
+              <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#f6f8fb', borderBottom: '1px solid #cbd5e1' }}>
                 <td style={{ padding: '4px 9px', fontWeight: 700, fontSize: '11.5px' }}>{item.nom}</td>
                 <td style={{ padding: '4px 9px', textAlign: 'center', color: COULEUR_TEXTE_ATTENUE, fontSize: '11px' }}>{item.quantite}</td>
                 <td style={{ padding: '4px 9px', textAlign: 'right', color: COULEUR_TEXTE_ATTENUE, fontSize: '11px' }}>{item.prix_unitaire?.toLocaleString()}</td>
@@ -110,7 +114,7 @@ function FactureA5({ facture, parametres }) {
               </tr>
             ))}
             {Array.from({ length: nombreLignesVides }).map((_, i) => (
-              <tr key={`vide-${i}`} style={{ background: (panier.length + i) % 2 === 0 ? '#fff' : '#f6f8fb', borderBottom: '1px solid #ececec' }}>
+              <tr key={`vide-${i}`} style={{ background: (panier.length + i) % 2 === 0 ? '#fff' : '#f6f8fb', borderBottom: '1px solid #cbd5e1' }}>
                 <td style={{ padding: '4px 9px' }}>&nbsp;</td>
                 <td style={{ padding: '4px 9px' }}>&nbsp;</td>
                 <td style={{ padding: '4px 9px' }}>&nbsp;</td>
@@ -122,8 +126,8 @@ function FactureA5({ facture, parametres }) {
 
         {ligneSeparation('#e5e7eb', '1px', '8px 0')}
 
-        {/* ── Totaux ── */}
-        <div>
+        {/* ── Totaux, encadre ── */}
+        <div style={{ border: '1px solid #ececec', borderRadius: '6px', padding: '6px 10px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: '11px' }}>
             <span>Montant HT :</span>
             <span style={{ fontWeight: 700 }}>{montantHT.toLocaleString()} FCFA</span>
@@ -180,7 +184,9 @@ function FactureA5({ facture, parametres }) {
           </div>
         </div>
 
-        {ligneSeparation('#e5e7eb', '1px', '10px 0')}
+        {/* Barre d'accent en pied de page, symetrique du bandeau sous
+            l'en-tete. */}
+        {ligneSeparation(COULEUR_ACCENT, '2px', '10px 0 6px 0')}
 
         {/* ── Pied de page ── */}
         <div style={{ color: COULEUR_TEXTE_ATTENUE, fontSize: '9px', textAlign: 'center', fontStyle: 'italic' }}>

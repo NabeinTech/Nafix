@@ -1013,21 +1013,25 @@ function DevisApercu({ devis, parametres }) {
       <div style={{ height: '6px', background: DEVIS_COULEUR_ACCENT }} />
 
       <div style={{ padding: '26px 30px' }}>
-        {/* ── Client + détails ── */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '30px', marginBottom: '4px' }}>
+        {/* ── Client + détails, encadré ── */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', gap: '30px',
+          border: '1px solid #d1d5db', borderRadius: '8px', padding: '12px 18px', marginBottom: '10px'
+        }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: DEVIS_COULEUR_LABEL, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '6px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: DEVIS_COULEUR_LABEL, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '4px' }}>
               Adressé à
             </div>
             <div style={{ fontSize: '15px', fontWeight: 700 }}>
               {devis.client_nom || 'CLIENT ANONYME'}
             </div>
           </div>
+          <div style={{ flex: '0 0 1px', background: '#e5e7eb' }} />
           <div style={{ flex: 1, textAlign: 'right' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: DEVIS_COULEUR_LABEL, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '6px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: DEVIS_COULEUR_LABEL, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '4px' }}>
               Informations légales
             </div>
-            <div style={{ fontSize: '12px', color: DEVIS_COULEUR_TEXTE, lineHeight: '1.8' }}>
+            <div style={{ fontSize: '12px', color: DEVIS_COULEUR_TEXTE, lineHeight: '1.6' }}>
               {parametres?.ninea && <div><strong>NINEA :</strong> {parametres.ninea}</div>}
               {parametres?.registre_commerce && <div><strong>RC :</strong> {parametres.registre_commerce}</div>}
               <div><strong>Devise :</strong> Franc CFA (XOF)</div>
@@ -1035,17 +1039,16 @@ function DevisApercu({ devis, parametres }) {
           </div>
         </div>
 
-        {ligneSeparation()}
-
         {/* ── Statut ── */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '18px' }}>
-          <span style={{ background: statut.fond, color: statut.couleur, padding: '6px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
+          <span style={{ background: statut.fond, color: statut.couleur, padding: '6px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, border: `1px solid ${statut.couleur}` }}>
             {statut.texte}
           </span>
         </div>
 
-        {/* ── Articles ── */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '4px' }}>
+        {/* ── Articles, tableau encadre avec ligne de separation nette
+             entre chaque article ── */}
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '4px', border: '1px solid #d1d5db' }}>
           <thead>
             <tr style={{ background: DEVIS_COULEUR_SOMBRE, color: 'white' }}>
               <th style={{ padding: '13px 14px', textAlign: 'left', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Désignation</th>
@@ -1056,7 +1059,7 @@ function DevisApercu({ devis, parametres }) {
           </thead>
           <tbody>
             {panier.map((item, i) => (
-              <tr key={i} style={{ background: i % 2 === 0 ? '#ffffff' : '#f6f8fb', borderBottom: '1px solid #ececec' }}>
+              <tr key={i} style={{ background: i % 2 === 0 ? '#ffffff' : '#f6f8fb', borderBottom: '1px solid #cbd5e1' }}>
                 <td style={{ padding: '12px 14px', fontWeight: 700, fontSize: '13px' }}>{item.nom}</td>
                 <td style={{ padding: '12px 14px', textAlign: 'center', color: DEVIS_COULEUR_TEXTE_ATTENUE }}>{item.quantite}</td>
                 <td style={{ padding: '12px 14px', textAlign: 'right', color: DEVIS_COULEUR_TEXTE_ATTENUE }}>{item.prix_unitaire?.toLocaleString()} FCFA</td>
@@ -1076,7 +1079,7 @@ function DevisApercu({ devis, parametres }) {
               {devis.notes || 'Devis valable jusqu\'à la date indiquée ci-dessus. Merci de rappeler le numéro de devis lors de votre confirmation.'}
             </div>
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, border: '1px solid #ececec', borderRadius: '8px', padding: '10px 14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: '12.5px' }}>
               <span>Montant HT :</span>
               <span style={{ fontWeight: 700 }}>{montantHT.toLocaleString()} FCFA</span>
@@ -1123,7 +1126,9 @@ function DevisApercu({ devis, parametres }) {
           </div>
         </div>
 
-        {ligneSeparation('#e5e7eb', '1px', '24px 0 14px 0')}
+        {/* Barre d'accent en pied de page, symetrique du bandeau sous
+            l'en-tete. */}
+        {ligneSeparation(DEVIS_COULEUR_ACCENT, '3px', '24px 0 14px 0')}
 
         {/* ── Pied de page ── */}
         <div style={{ textAlign: 'center', fontSize: '10.5px', color: DEVIS_COULEUR_TEXTE_ATTENUE, fontStyle: 'italic' }}>
