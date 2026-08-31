@@ -13,16 +13,21 @@ const COULEUR_ACCENT = '#0d9488'
 const COULEUR_LABEL = '#2f6fed'
 const COULEUR_TEXTE = '#111827'
 const COULEUR_TEXTE_ATTENUE = '#374151'
+// Demande explicite de l'utilisateur : le tableau des articles garde
+// toujours un minimum de lignes (comme un carnet de factures pre-imprime),
+// meme si seuls 1-3 articles sont reellement enregistres.
+const LIGNES_MINIMUM_ARTICLES = 6
 
 function FactureA5({ facture, parametres }) {
   const date = new Date(facture.created_at || Date.now()).toLocaleDateString('fr-FR')
   const numero = `F-${String(facture.id).padStart(4, '0')}`
   const panier = JSON.parse(facture.panier || '[]')
+  const nombreLignesVides = Math.max(0, LIGNES_MINIMUM_ARTICLES - panier.length)
   const tva = parseFloat(parametres?.tva_taux || 18) / 100
   const montantHT = Math.round(facture.montant_total / (1 + tva))
   const montantTVA = Math.round(facture.montant_total - montantHT)
 
-  const ligneSeparation = (couleur = '#e5e7eb', epaisseur = '1px', marge = '14px 0') => (
+  const ligneSeparation = (couleur = '#e5e7eb', epaisseur = '1px', marge = '8px 0') => (
     <div style={{ borderTop: `${epaisseur} solid ${couleur}`, margin: marge }} />
   )
 
@@ -47,9 +52,9 @@ function FactureA5({ facture, parametres }) {
       }}
     >
       {/* ── En-tête sombre pleine largeur ── */}
-      <div style={{ background: COULEUR_SOMBRE, color: 'white', padding: '16px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ background: COULEUR_SOMBRE, color: 'white', padding: '11px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '0.3px', marginBottom: '3px' }}>
+          <div style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '0.3px', marginBottom: '3px' }}>
             {(parametres?.nom_entreprise || 'NAFIMAX TECHNOLOGY').toUpperCase()}
           </div>
           {parametres?.slogan && (
@@ -70,7 +75,7 @@ function FactureA5({ facture, parametres }) {
       {/* ── Bandeau d'accent ── */}
       <div style={{ height: '4px', background: COULEUR_ACCENT }} />
 
-      <div style={{ padding: '14px 14px 16px' }}>
+      <div style={{ padding: '10px 14px 12px' }}>
         {/* ── Client + statut ── */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
@@ -89,25 +94,33 @@ function FactureA5({ facture, parametres }) {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: COULEUR_SOMBRE, color: 'white' }}>
-              <th style={{ padding: '8px 9px', textAlign: 'left', fontSize: '9.5px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Désignation</th>
-              <th style={{ padding: '8px 9px', textAlign: 'center', fontSize: '9.5px', width: '38px' }}>Qté</th>
-              <th style={{ padding: '8px 9px', textAlign: 'right', fontSize: '9.5px', width: '58px' }}>P.U.</th>
-              <th style={{ padding: '8px 9px', textAlign: 'right', fontSize: '9.5px', width: '66px' }}>Montant</th>
+              <th style={{ padding: '5px 9px', textAlign: 'left', fontSize: '9.5px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Désignation</th>
+              <th style={{ padding: '5px 9px', textAlign: 'center', fontSize: '9.5px', width: '38px' }}>Qté</th>
+              <th style={{ padding: '5px 9px', textAlign: 'right', fontSize: '9.5px', width: '58px' }}>P.U.</th>
+              <th style={{ padding: '5px 9px', textAlign: 'right', fontSize: '9.5px', width: '66px' }}>Montant</th>
             </tr>
           </thead>
           <tbody>
             {panier.map((item, i) => (
               <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#f6f8fb', borderBottom: '1px solid #ececec' }}>
-                <td style={{ padding: '7px 9px', fontWeight: 700, fontSize: '11.5px' }}>{item.nom}</td>
-                <td style={{ padding: '7px 9px', textAlign: 'center', color: COULEUR_TEXTE_ATTENUE, fontSize: '11px' }}>{item.quantite}</td>
-                <td style={{ padding: '7px 9px', textAlign: 'right', color: COULEUR_TEXTE_ATTENUE, fontSize: '11px' }}>{item.prix_unitaire?.toLocaleString()}</td>
-                <td style={{ padding: '7px 9px', textAlign: 'right', fontWeight: 700, color: COULEUR_SOMBRE, fontSize: '11px' }}>{item.total?.toLocaleString()}</td>
+                <td style={{ padding: '4px 9px', fontWeight: 700, fontSize: '11.5px' }}>{item.nom}</td>
+                <td style={{ padding: '4px 9px', textAlign: 'center', color: COULEUR_TEXTE_ATTENUE, fontSize: '11px' }}>{item.quantite}</td>
+                <td style={{ padding: '4px 9px', textAlign: 'right', color: COULEUR_TEXTE_ATTENUE, fontSize: '11px' }}>{item.prix_unitaire?.toLocaleString()}</td>
+                <td style={{ padding: '4px 9px', textAlign: 'right', fontWeight: 700, color: COULEUR_SOMBRE, fontSize: '11px' }}>{item.total?.toLocaleString()}</td>
+              </tr>
+            ))}
+            {Array.from({ length: nombreLignesVides }).map((_, i) => (
+              <tr key={`vide-${i}`} style={{ background: (panier.length + i) % 2 === 0 ? '#fff' : '#f6f8fb', borderBottom: '1px solid #ececec' }}>
+                <td style={{ padding: '4px 9px' }}>&nbsp;</td>
+                <td style={{ padding: '4px 9px' }}>&nbsp;</td>
+                <td style={{ padding: '4px 9px' }}>&nbsp;</td>
+                <td style={{ padding: '4px 9px' }}>&nbsp;</td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        {ligneSeparation('#e5e7eb', '1px', '14px 0')}
+        {ligneSeparation('#e5e7eb', '1px', '8px 0')}
 
         {/* ── Totaux ── */}
         <div>
@@ -158,7 +171,7 @@ function FactureA5({ facture, parametres }) {
         </div>
 
         {/* ── Arrêtée à la somme de ── */}
-        <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: '6px', padding: '10px 12px', margin: '14px 0' }}>
+        <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: '6px', padding: '8px 12px', margin: '8px 0' }}>
           <div style={{ fontSize: '8.5px', fontWeight: 700, color: '#0f766e', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '3px' }}>
             Arrêtée à la somme de
           </div>
