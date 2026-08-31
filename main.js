@@ -963,7 +963,11 @@ function registerAppHandlers() {
       const documentComplet = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0">${html}</body></html>`
       fenetreImpression.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(documentComplet))
       fenetreImpression.webContents.once('did-finish-load', () => {
-        fenetreImpression.webContents.print({ silent: false, printBackground: true }, (succes, raisonEchec) => {
+        // Demande explicite : les factures s'impriment en noir et blanc
+        // (économie d'encre couleur/toner) — repérées via `numero`, seul
+        // champ que les deux écrans facture (Ventes.js, Factures.js)
+        // renseignent ; les devis (numero absent) restent en couleur.
+        fenetreImpression.webContents.print({ silent: false, printBackground: true, color: !numero }, (succes, raisonEchec) => {
           if (!fenetreImpression.isDestroyed()) fenetreImpression.close()
           // Seules les factures (numero fourni) sont journalisées — pas les devis.
           if (succes && numero) journaliserImpression({ numero, client, montant, utilisateur })

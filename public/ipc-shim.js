@@ -235,10 +235,18 @@
     'utilisateurs:updatePermissions': (u) => api('PUT', '/utilisateurs/' + u.id + '/permissions', { permissions: u.permissions }),
 
     // ── impression — vrai comportement navigateur, pas un stub ──
-    'impression:imprimerHTML': async ({ html }) => {
+    'impression:imprimerHTML': async ({ html, numero }) => {
       const fenetre = window.open('', '_blank')
       if (!fenetre) return { succes: false, erreur: 'Fenêtre bloquée (autorisez les pop-ups pour ce site).' }
-      fenetre.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0">' + html + '</body></html>')
+      // Demande explicite : les factures s'impriment en noir et blanc (même
+      // repère `numero` que main.js côté Electron — absent pour les devis,
+      // qui restent en couleur). window.print() n'a pas d'option "color"
+      // programmable comme Electron, d'où ce filtre CSS appliqué seulement
+      // au moment de l'impression (jamais à l'écran).
+      const styleImpressionNB = numero
+        ? '<style>@media print { html { filter: grayscale(1); } }</style>'
+        : ''
+      fenetre.document.write('<!DOCTYPE html><html><head><meta charset="utf-8">' + styleImpressionNB + '</head><body style="margin:0">' + html + '</body></html>')
       fenetre.document.close()
       fenetre.onload = () => fenetre.print()
       setTimeout(() => { try { fenetre.print() } catch (e) {} }, 300) // filet si onload ne tire pas assez tôt
