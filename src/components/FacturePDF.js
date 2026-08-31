@@ -133,8 +133,8 @@ function FacturePDF({ facture, parametres }) {
             {panier.map((item, i) => (
               <tr key={i} style={{ background: i % 2 === 0 ? '#ffffff' : '#f6f8fb', borderBottom: '1px solid #cbd5e1' }}>
                 <td style={{ padding: '8px 14px', fontWeight: 700, fontSize: '13px' }}>{item.nom}</td>
-                <td style={{ padding: '8px 14px', textAlign: 'center', color: COULEUR_TEXTE_ATTENUE }}>{item.quantite}</td>
-                <td style={{ padding: '8px 14px', textAlign: 'right', color: COULEUR_TEXTE_ATTENUE }}>{item.prix_unitaire?.toLocaleString()} FCFA</td>
+                <td style={{ padding: '8px 14px', textAlign: 'center', color: COULEUR_TEXTE, fontWeight: 600 }}>{item.quantite}</td>
+                <td style={{ padding: '8px 14px', textAlign: 'right', color: COULEUR_TEXTE, fontWeight: 600 }}>{item.prix_unitaire?.toLocaleString()} FCFA</td>
                 <td style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 700, color: COULEUR_SOMBRE }}>{item.total?.toLocaleString()} FCFA</td>
               </tr>
             ))}

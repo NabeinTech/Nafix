@@ -108,8 +108,8 @@ function FactureA5({ facture, parametres }) {
             {panier.map((item, i) => (
               <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#f6f8fb', borderBottom: '1px solid #cbd5e1' }}>
                 <td style={{ padding: '4px 9px', fontWeight: 700, fontSize: '11.5px' }}>{item.nom}</td>
-                <td style={{ padding: '4px 9px', textAlign: 'center', color: COULEUR_TEXTE_ATTENUE, fontSize: '11px' }}>{item.quantite}</td>
-                <td style={{ padding: '4px 9px', textAlign: 'right', color: COULEUR_TEXTE_ATTENUE, fontSize: '11px' }}>{item.prix_unitaire?.toLocaleString()}</td>
+                <td style={{ padding: '4px 9px', textAlign: 'center', color: COULEUR_TEXTE, fontWeight: 600, fontSize: '11px' }}>{item.quantite}</td>
+                <td style={{ padding: '4px 9px', textAlign: 'right', color: COULEUR_TEXTE, fontWeight: 600, fontSize: '11px' }}>{item.prix_unitaire?.toLocaleString()}</td>
                 <td style={{ padding: '4px 9px', textAlign: 'right', fontWeight: 700, color: COULEUR_SOMBRE, fontSize: '11px' }}>{item.total?.toLocaleString()}</td>
               </tr>
             ))}
