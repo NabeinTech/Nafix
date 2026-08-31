@@ -31,8 +31,7 @@
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.19.3/xlsx-0.19.3.tgz"
   },
   "optionalDependencies": {
-    "koffi": "^3.1.5",
-    "vosk": "^0.3.39"
+    "koffi": "^3.1.5"
   },
   "scripts": {
     "start": "cd /d C:\\ && cd /d \"C:\\Users\\HP\\Desktop\\Nafix5\\Nafix\" && react-scripts start",
