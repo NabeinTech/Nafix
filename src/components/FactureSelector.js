@@ -4,22 +4,18 @@ import FactureA5 from './FactureA5'
 import FactureTicket from './FactureTicket'
 import FactureBTP from './FactureBTP'
 
-// Mapping domaine → format de facture par défaut ("auto")
-const FORMAT_PAR_DOMAINE = {
-  alimentaire: 'ticket',
-  restauration: 'ticket',
-  informatique: 'standard',
-  textile: 'standard',
-  general: 'standard',
-  quincaillerie: 'btp',
-  btp: 'btp',
-}
-
-// formatManuel : choix explicite de l'utilisateur (Paramètres → Facturation).
-// 'auto' (ou absent) conserve le comportement historique déduit du domaine.
+// Demande explicite : la facture premium (A4, même identité visuelle que le
+// devis — en-tête sombre, bandeau teal, arrêtée à la somme de) s'applique
+// par défaut sur tous les domaines métiers, plus de variation implicite par
+// domaine (ticket pour alimentaire/restauration, btp pour quincaillerie...).
+//
+// formatManuel : choix explicite de l'utilisateur (Paramètres → Facturation)
+// reste respecté — un commerce qui imprime réellement sur un ticket
+// thermique ou une demi-page A5 peut toujours le sélectionner lui-même ;
+// seul le comportement "auto" (ou absent) change.
 export const getFormatFacture = (domaine, formatManuel) => {
   if (formatManuel && formatManuel !== 'auto') return formatManuel
-  return FORMAT_PAR_DOMAINE[domaine] || 'standard'
+  return 'standard'
 }
 
 function FactureSelector({ facture, parametres, domaine, formatManuel }) {
