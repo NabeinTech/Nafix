@@ -152,6 +152,8 @@
     'devis:getAll': () => api('GET', '/devis'),
     'devis:create': (d) => api('POST', '/devis', d),
     'devis:updateStatut': (d) => api('PUT', '/devis/' + d.id + '/statut', { statut: d.statut }),
+    'devis:update': (d) => api('PUT', '/devis/' + d.id, d),
+    'devis:delete': (id) => api('DELETE', '/devis/' + id),
     'devis:convertir': (f) => api('POST', '/devis/convertir', f), // devis_id déjà dans le corps, pas dans l'URL
     'devis:importerExcel': nonDisponibleWeb('Import Excel'),
     'devis:exporterModeleExcel': nonDisponibleWeb('Export modèle Excel'),

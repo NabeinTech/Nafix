@@ -30,6 +30,20 @@ router.put('/:id/statut', async (req, res) => {
     res.status(400).json({ erreur: messageErreurSur(e) })
   }
 })
+router.put('/:id', async (req, res) => {
+  try {
+    validerEntree(req.body, {
+      montant_total: { required: true, type: 'number', min: 0 },
+      panier:        { required: true, type: 'string' }
+    })
+    res.json(await devisService.update({ ...req.body, id: req.params.id }, req.tenantContext.organisationId))
+  } catch (e) {
+    res.status(400).json({ erreur: messageErreurSur(e) })
+  }
+})
+router.delete('/:id', async (req, res) => {
+  res.json(await devisService.delete(req.params.id, req.tenantContext.organisationId))
+})
 router.post('/convertir', async (req, res) => {
   try {
     validerEntree(req.body, {
