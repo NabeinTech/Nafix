@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import {
   Typography, Table, Button, Modal, Form,
   Select, InputNumber, Space, Tag, Card,
@@ -13,12 +13,15 @@ import {
 } from '@ant-design/icons'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
+import * as XLSX from 'xlsx'
 import NouveauClientModal from '../components/NouveauClientModal'
 import NouveauProduitRapideModal from '../components/NouveauProduitRapideModal'
 import FiltresPeriode from '../components/FiltresPeriode'
 import dayjs from 'dayjs'
 import { peutFaireSurDevis } from '../utils/permissions'
 import { montantEnLettresFCFA } from '../utils/nombreEnLettres'
+import { normaliser } from '../utils/importExcelProduits'
+import { analyserGrilleDevis, trouverProduit } from '../utils/importExcelDevis'
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -158,8 +161,33 @@ function Devis({ utilisateur }) {
   }
 
   // ── Import Excel — génère automatiquement un ou plusieurs devis ──────
+  const inputImportDevisExcelRef = useRef(null)
+  const TAILLE_MAX_IMPORT_OCTETS = 20 * 1024 * 1024
+
   const telechargerModeleDevis = async () => {
     if (!ipcRenderer) return
+    // Web : dialog.showSaveDialog n'existe pas dans un navigateur — on
+    // génère le classeur côté client et on déclenche un téléchargement
+    // (même modèle que main.js : mêmes en-têtes, mêmes exemples).
+    if (window.NAFIX_ENV_WEB) {
+      const entetes = ['Client', 'Produit', 'Quantité', 'Prix Unitaire', 'Remise %', 'Validité Jours', 'Notes']
+      const exemple1 = ['Oumar Ndiaye', 'Ciment CEM II 50kg', 10, 6500, 5, 30, 'Livraison sous 48h']
+      const exemple2 = ['Oumar Ndiaye', 'Fer à béton 12mm', 20, 4000, 5, 30, '']
+      const feuille = XLSX.utils.aoa_to_sheet([entetes, exemple1, exemple2])
+      feuille['!cols'] = entetes.map(() => ({ wch: 20 }))
+      const classeur = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(classeur, feuille, 'Devis')
+      const buffer = XLSX.write(classeur, { bookType: 'xlsx', type: 'array' })
+      const blob = new Blob([buffer], { type: 'application/octet-stream' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'modele_import_devis.xlsx'
+      a.click()
+      window.URL.revokeObjectURL(url)
+      message.success('✅ Modèle téléchargé !')
+      return
+    }
     setModeleEnCours(true)
     try {
       const resultat = await ipcRenderer.invoke('devis:exporterModeleExcel')
@@ -171,30 +199,142 @@ function Devis({ utilisateur }) {
     }
   }
 
+  // Affiche le résultat { devisCrees, clientsCrees, erreurs }, quelle que
+  // soit la plateforme qui l'a produit (dialog Electron ou parsing navigateur).
+  const traiterResultatImportDevis = (resultat) => {
+    if (resultat?.annule) return
+    if (resultat?.erreur) { message.error(`❌ ${resultat.erreur}`); return }
+    const { devisCrees, clientsCrees, erreurs } = resultat
+    if (devisCrees > 0) {
+      message.success(`✅ ${devisCrees} devis créé(s)${clientsCrees > 0 ? ` (dont ${clientsCrees} nouveau(x) client(s))` : ''} !`)
+      chargerDevis()
+    } else {
+      message.warning('⚠️ Aucun devis créé à partir de ce fichier')
+    }
+    if (erreurs?.length) {
+      Modal.warning({
+        title: `${erreurs.length} ligne(s) non importée(s)`,
+        content: (
+          <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+            {erreurs.map((e, i) => <div key={i} style={{ fontSize: 12, marginBottom: 4 }}>{e}</div>)}
+          </div>
+        )
+      })
+    }
+  }
+
   const importerDevisExcel = async () => {
     if (!ipcRenderer) return
+    // Web : pas de dialog.showOpenDialog — déclenche le sélecteur de
+    // fichier natif du navigateur, géré par gererFichierDevisExcelSelectionne.
+    if (window.NAFIX_ENV_WEB) {
+      inputImportDevisExcelRef.current?.click()
+      return
+    }
     setImportEnCours(true)
     try {
       const resultat = await ipcRenderer.invoke('devis:importerExcel')
-      if (resultat?.annule) return
-      if (resultat?.erreur) { message.error(`❌ ${resultat.erreur}`); return }
-      const { devisCrees, clientsCrees, erreurs } = resultat
-      if (devisCrees > 0) {
-        message.success(`✅ ${devisCrees} devis créé(s)${clientsCrees > 0 ? ` (dont ${clientsCrees} nouveau(x) client(s))` : ''} !`)
-        chargerDevis()
-      } else {
-        message.warning('⚠️ Aucun devis créé à partir de ce fichier')
-      }
-      if (erreurs?.length) {
-        Modal.warning({
-          title: `${erreurs.length} ligne(s) non importée(s)`,
-          content: (
-            <div style={{ maxHeight: 300, overflowY: 'auto' }}>
-              {erreurs.map((e, i) => <div key={i} style={{ fontSize: 12, marginBottom: 4 }}>{e}</div>)}
-            </div>
-          )
+      traiterResultatImportDevis(resultat)
+    } finally {
+      setImportEnCours(false)
+    }
+  }
+
+  // Web uniquement : lecture + parsing du fichier choisi, puis reproduction
+  // de la même logique que devis:importerExcel côté Electron (main.js) —
+  // un client par groupe de lignes, produit résolu par correspondance
+  // approximative (jamais créé automatiquement), devis créé par client.
+  const gererFichierDevisExcelSelectionne = async (e) => {
+    const fichier = e.target.files?.[0]
+    e.target.value = '' // permet de resélectionner le même fichier plus tard
+    if (!fichier) return
+    if (fichier.size > TAILLE_MAX_IMPORT_OCTETS) {
+      message.error('❌ Fichier trop volumineux (maximum 20 Mo).')
+      return
+    }
+    setImportEnCours(true)
+    try {
+      const buffer = await fichier.arrayBuffer()
+      const classeur = XLSX.read(buffer, { type: 'array' })
+      const feuille = classeur.Sheets[classeur.SheetNames[0]]
+      const grille = XLSX.utils.sheet_to_json(feuille, { header: 1, defval: '', blankrows: false })
+      const { groupes } = analyserGrilleDevis(grille)
+
+      const clientsParNom = new Map(clients.map(c => [normaliser(c.nom), c]))
+      let devisCrees = 0
+      let clientsCrees = 0
+      const erreurs = []
+
+      for (const { clientNom, lignes } of groupes) {
+        let client = clientsParNom.get(normaliser(clientNom))
+        if (!client) {
+          const resultatClient = await ipcRenderer.invoke('clients:create', { nom: clientNom, type: 'particulier' })
+          if (resultatClient?.erreur) {
+            erreurs.push(`Client "${clientNom}" : ${resultatClient.erreur}`)
+            continue
+          }
+          client = resultatClient.succes || resultatClient
+          clientsParNom.set(normaliser(clientNom), client)
+          clientsCrees++
+        }
+
+        const panier = []
+        let remisePourcent = 0
+        let validite = 30
+        const notesLignes = []
+
+        for (const { produitTexte, quantiteBrute, prixBrut, remiseBrute, validiteBrute, noteBrute, numeroLigne } of lignes) {
+          if (!produitTexte) { erreurs.push(`Ligne ${numeroLigne} : produit manquant`); continue }
+          const produit = trouverProduit(produitTexte, produits)
+          if (!produit) {
+            erreurs.push(`Ligne ${numeroLigne} (${clientNom}) : produit "${produitTexte}" introuvable au catalogue`)
+            continue
+          }
+          const quantiteNum = parseFloat(quantiteBrute)
+          const quantite = (isFinite(quantiteNum) && quantiteNum > 0) ? quantiteNum : 1
+          const prixNum = parseFloat(prixBrut)
+          const prixUnitaire = (isFinite(prixNum) && prixNum >= 0) ? prixNum : (produit.prix_vente || 0)
+          panier.push({
+            produit_id: produit.id,
+            nom: produit.nom,
+            unite: produit.unite || 'pièce',
+            quantite,
+            prix_unitaire: prixUnitaire,
+            prix_catalogue: produit.prix_vente,
+            total: quantite * prixUnitaire
+          })
+          const remiseLigne = parseFloat(remiseBrute)
+          if (!isNaN(remiseLigne) && remiseLigne > 0) remisePourcent = remiseLigne
+          const validiteLigne = parseInt(validiteBrute, 10)
+          if (!isNaN(validiteLigne) && validiteLigne > 0) validite = validiteLigne
+          if (noteBrute) notesLignes.push(noteBrute)
+        }
+
+        if (panier.length === 0) continue
+
+        const sousTotal = panier.reduce((s, it) => s + it.total, 0)
+        const remiseMontant = Math.round(sousTotal * remisePourcent / 100)
+        const montantTotal = sousTotal - remiseMontant
+        const notes = [
+          '[Importé depuis Excel]',
+          remisePourcent > 0 ? `Remise : ${remisePourcent}% (-${remiseMontant.toLocaleString('fr-FR')} FCFA)` : null,
+          ...notesLignes
+        ].filter(Boolean).join(' — ')
+
+        const resultat = await ipcRenderer.invoke('devis:create', {
+          client_id: client.id,
+          validite,
+          notes,
+          montant_total: montantTotal,
+          panier: JSON.stringify(panier),
+          statut: 'en_attente'
         })
+        if (resultat && !resultat.erreur) devisCrees++
       }
+
+      traiterResultatImportDevis({ succes: true, devisCrees, clientsCrees, erreurs })
+    } catch (err) {
+      message.error(`❌ Fichier illisible : ${err.message}`)
     } finally {
       setImportEnCours(false)
     }
@@ -726,6 +866,8 @@ function Devis({ utilisateur }) {
         <FiltresPeriode onFiltreChange={setFiltrePeriode} />
         <Divider style={{ margin: '12px 0' }} />
         <Space wrap size={8}>
+          <input type="file" accept=".xlsx,.xls,.csv" ref={inputImportDevisExcelRef}
+            onChange={gererFichierDevisExcelSelectionne} style={{ display: 'none' }} />
           <Button icon={<UploadOutlined />} size="large" loading={importEnCours}
             onClick={importerDevisExcel} style={{ borderRadius: 8 }}>
             Importer Excel
