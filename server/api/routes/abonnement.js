@@ -28,6 +28,18 @@ router.get('/plans', async (req, res) => {
   res.json(await abonnementsService.getPlans())
 })
 
+// Historique de facturation de l'organisation connectee -- meme requete que
+// platform.js (GET /platform/organisations/:id/paiements, reserve au
+// Platform Admin), mais scopee au tenant authentifie via req.tenantContext
+// plutot qu'a un :id arbitraire dans l'URL : aucune donnee d'une autre
+// organisation ne peut fuiter par ce chemin. Ouvert a tout membre
+// authentifie de l'organisation, meme convention que GET / ci-dessus
+// (consulter son propre statut/historique n'est pas une action de
+// facturation -- seul /payer, qui en est une, exige un role specifique).
+router.get('/paiements', async (req, res) => {
+  res.json(await paydunyaService.getParOrganisation(req.tenantContext.organisationId))
+})
+
 // Chantier PayDunya — cree une facture de paiement et renvoie l'URL de
 // checkout hebergee vers laquelle rediriger. N'ecrit jamais abonnements.statut
 // elle-meme (voir l'en-tete du fichier) : seul le webhook PayDunya, verifie

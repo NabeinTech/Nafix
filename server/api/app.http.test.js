@@ -43,7 +43,7 @@ async function main() {
   const port = serveur.address().port
   const base = `http://127.0.0.1:${port}`
 
-  let orgAId, orgBId, produitId
+  let orgAId, orgBId, produitId, paiementId
 
   try {
     // ---- A. Route protégée sans token -> 401 ----
@@ -174,7 +174,33 @@ async function main() {
       await pool.query("UPDATE abonnements SET statut = 'essai' WHERE organisation_id = $1", [orgAId]).catch(() => {})
     }
 
-    // ---- K. Route inconnue -> 404 propre ----
+    // ---- K. Historique de facturation — vide pour une organisation neuve,
+    // isolé entre organisations via HTTP ----
+    try {
+      const rVide = await fetch(`${base}/abonnement/paiements`, { headers: { Authorization: `Bearer ${tokenA}` } })
+      const corpsVide = await rVide.json()
+      assert.strictEqual(rVide.status, 200)
+      assert.ok(Array.isArray(corpsVide) && corpsVide.length === 0, 'aucun paiement pour une organisation neuve')
+
+      const { rows: [abonnementA] } = await pool.query('SELECT plan_id FROM abonnements WHERE organisation_id = $1', [orgAId])
+      const { rows: [paiement] } = await pool.query(
+        "INSERT INTO paiements (organisation_id, plan_id, montant, invoice_token, statut) VALUES ($1,$2,$3,$4,'complete') RETURNING id",
+        [orgAId, abonnementA.plan_id, 15000, `test_token_${SUFFIXE}`]
+      )
+      paiementId = paiement.id
+
+      const rA = await fetch(`${base}/abonnement/paiements`, { headers: { Authorization: `Bearer ${tokenA}` } })
+      const corpsA = await rA.json()
+      assert.ok(corpsA.some(p => p.id === paiementId), 'le paiement de A doit apparaître dans son propre historique')
+
+      const rB = await fetch(`${base}/abonnement/paiements`, { headers: { Authorization: `Bearer ${tokenB}` } })
+      const corpsB = await rB.json()
+      assert.ok(!corpsB.some(p => p.id === paiementId), 'le paiement de A ne doit jamais apparaître dans l\'historique de B')
+
+      ok('HISTORIQUE FACTURATION — vide pour une organisation neuve, scopé par organisation via HTTP')
+    } catch (e) { fail('HISTORIQUE FACTURATION', e) }
+
+    // ---- L. Route inconnue -> 404 propre ----
     try {
       const r = await fetch(`${base}/route-qui-nexiste-pas`, { headers: { Authorization: `Bearer ${tokenA}` } })
       const corps = await r.json()
@@ -184,6 +210,7 @@ async function main() {
     } catch (e) { fail('ROUTE INCONNUE', e) }
   } finally {
     if (produitId) await pool.query('DELETE FROM produits WHERE id = $1', [produitId]).catch(() => {})
+    if (paiementId) await pool.query('DELETE FROM paiements WHERE id = $1', [paiementId]).catch(() => {})
     for (const orgId of [orgAId, orgBId]) {
       if (!orgId) continue
       await pool.query('DELETE FROM utilisateurs WHERE organisation_id = $1', [orgId]).catch(() => {})

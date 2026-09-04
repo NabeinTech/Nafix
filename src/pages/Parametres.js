@@ -35,6 +35,7 @@ function Parametres({ utilisateur }) {
   const [parametres, setParametres] = useState({})
   const [organisation, setOrganisation] = useState(null)
   const [abonnement, setAbonnement] = useState(null)
+  const [paiements, setPaiements] = useState([])
   const [chargementPaiementAbonnement, setChargementPaiementAbonnement] = useState(false)
   const [organisationLoading, setOrganisationLoading] = useState(false)
   const [statutModalVisible, setStatutModalVisible] = useState(false)
@@ -117,6 +118,19 @@ function Parametres({ utilisateur }) {
     }
   }, [])
 
+  // Historique de facturation — visible même abonnement bloqué, même
+  // principe que chargerAbonnement ci-dessus (un utilisateur bloqué doit
+  // pouvoir consulter ses propres paiements passés).
+  const chargerPaiements = useCallback(async () => {
+    if (!ipcRenderer) return
+    try {
+      const data = await ipcRenderer.invoke('abonnement:getPaiements')
+      setPaiements(Array.isArray(data) ? data : [])
+    } catch {
+      setPaiements([])
+    }
+  }, [])
+
   // Chantier PayDunya — renouvellement/passage au payant depuis les
   // Paramètres, sans attendre d'être bloqué (même canal que
   // EcranAbonnementBloque, paie toujours le plan courant, pas de
@@ -146,7 +160,8 @@ function Parametres({ utilisateur }) {
     chargerDomaine()
     chargerOrganisation()
     chargerAbonnement()
-  }, [chargerParametres, chargerUtilisateurs, chargerDomaine, chargerOrganisation, chargerAbonnement])
+    chargerPaiements()
+  }, [chargerParametres, chargerUtilisateurs, chargerDomaine, chargerOrganisation, chargerAbonnement, chargerPaiements])
 
   // ── Sauvegarder entreprise ───────────────────────────────
   const sauvegarderEntreprise = async (values) => {
@@ -895,6 +910,31 @@ function Parametres({ utilisateur }) {
         <Text style={{ display: 'block', marginTop: 16, color: '#aaa', fontSize: 12 }}>
           Pour changer de plan, contactez votre administrateur plateforme.
         </Text>
+
+        {paiements.length > 0 && (
+          <>
+            <Divider style={{ margin: '20px 0 12px' }} />
+            <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 8 }}>Historique de facturation</Text>
+            <Table
+              size="small"
+              pagination={false}
+              rowKey="id"
+              dataSource={paiements}
+              columns={[
+                { title: 'Date', dataIndex: 'created_at', render: (v) => dayjs(v).format('DD/MM/YYYY') },
+                { title: 'Plan', dataIndex: 'plan_nom' },
+                { title: 'Montant', dataIndex: 'montant', render: (v) => `${Number(v).toLocaleString('fr-FR')} FCFA` },
+                {
+                  title: 'Statut', dataIndex: 'statut', render: (v) => (
+                    <Tag color={v === 'complete' ? 'green' : v === 'echoue' ? 'red' : 'gold'} style={{ borderRadius: 12 }}>
+                      {v === 'complete' ? 'Payé' : v === 'echoue' ? 'Échoué' : 'En attente'}
+                    </Tag>
+                  )
+                }
+              ]}
+            />
+          </>
+        )}
       </Card>
 
       <Card style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 16 }}>

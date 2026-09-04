@@ -227,6 +227,7 @@
     // lui-meme vers la page de paiement (main.js ouvre deja le navigateur
     // systeme cote Electron, la page appelante n'a rien a faire de plus).
     'abonnement:payer': (donnees) => api('POST', '/abonnement/payer', donnees),
+    'abonnement:getPaiements': () => api('GET', '/abonnement/paiements'),
 
     // ── utilisateurs (routes neuves, cf. server/api/routes/utilisateurs.js) ──
     'utilisateurs:getAll': () => api('GET', '/utilisateurs'),

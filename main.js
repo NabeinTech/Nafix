@@ -1077,6 +1077,14 @@ function registerAppHandlers() {
     const abonnement = await abonnementsService.getByOrganisation(organisationId)
     return { ...abonnement, accesAutorise: abonnementsService.accesAutorise(abonnement) }
   })
+  // Historique de facturation de l'organisation courante -- equivalent
+  // Desktop de GET /abonnement/paiements cote API, meme portee (jamais
+  // bloquee par ignorerAbonnement, comme abonnement:getStatut ci-dessus :
+  // un utilisateur bloque doit pouvoir consulter son propre historique).
+  ipcMain.handle('abonnement:getPaiements', async () => {
+    const organisationId = await getOrganisationIdActive({ ignorerAbonnement: true })
+    return paydunyaService.getParOrganisation(organisationId)
+  })
   // Chantier PayDunya — cree la facture puis ouvre le paiement hebergee dans
   // le navigateur systeme (shell.openExternal), jamais dans la fenetre
   // Electron elle-meme. N'ecrit jamais abonnements.statut (voir
