@@ -1108,6 +1108,19 @@ function registerAppHandlers() {
     verifierPermission('organisations:setStatut', utilisateurConnecte)
     return organisationsService.setStatut(await getOrganisationIdActive(), statut)
   })
+  // Chantier RGPD — export complet des donnees de l'organisation, en JSON.
+  // Desktop a deja parametres:exporterSauvegarde (dump complet, pense pour
+  // une restauration) ; celui-ci sert un besoin different : une copie
+  // lisible, scopee a cette seule organisation, pour la portabilite des
+  // donnees. Pas de demande de suppression cote Desktop : db:reinitialiser
+  // (deja existant) couvre deja ce besoin localement, et le concept de
+  // "demande visible cote Platform Admin" n'a pas de sens pour une
+  // installation mono-organisation.
+  ipcMain.handle('organisations:export', async () => {
+    verifierPermission('organisations:update', utilisateurConnecte)
+    const exportDonneesService = require('./core/services/exportDonneesService')
+    return exportDonneesService.exporterTout(await getOrganisationIdActive({ ignorerAbonnement: true }))
+  })
 
   // Onboarding self-service (écran de connexion) — appelé AVANT toute session,
   // donc ni getOrganisationIdActive() ni verifierPermission() ici : c'est

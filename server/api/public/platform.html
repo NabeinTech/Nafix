@@ -353,7 +353,7 @@
       const statutAboBadge = COULEURS_ABONNEMENT[org.abonnement_statut] || 'badge-gris'
       const statutAboLibelle = LIBELLES_ABONNEMENT[org.abonnement_statut] || (org.abonnement_statut || '—')
       tr.innerHTML = `
-        <td><strong>${echapper(org.nom)}</strong>${org.code ? `<br><span style="color:var(--texte-att);font-size:11px">${echapper(org.code)}</span>` : ''}</td>
+        <td><strong>${echapper(org.nom)}</strong>${org.code ? `<br><span style="color:var(--texte-att);font-size:11px">${echapper(org.code)}</span>` : ''}${org.suppression_demandee_le ? `<br><span class="badge badge-rouge" style="margin-top:4px">🗑 Suppression demandée le ${formaterDate(org.suppression_demandee_le)}</span>` : ''}</td>
         <td><span class="badge ${statutOrgBadge}">${org.statut === 'active' ? 'Active' : 'Inactive'}</span></td>
         <td>${echapper(org.plan_nom || '—')}</td>
         <td><span class="badge ${statutAboBadge}">${statutAboLibelle}</span></td>

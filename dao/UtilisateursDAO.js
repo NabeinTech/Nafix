@@ -21,6 +21,18 @@ const UtilisateursDAO = {
     return rows[0] || null
   },
 
+  // Chantier RGPD — re-confirmation par mot de passe avant une action
+  // irreversible (demande de suppression d'organisation) : scope par
+  // organisation par prudence, meme si id vient toujours du token verifie
+  // (req.tenantContext.userId), jamais d'une valeur fournie par le client.
+  async getByIdAvecPassword(id, organisationId) {
+    const { rows } = await pool.query(
+      'SELECT id, password FROM utilisateurs WHERE id = $1 AND organisation_id = $2',
+      [id, organisationId]
+    )
+    return rows[0] || null
+  },
+
   async create(user, organisationId) {
     const existant = await pool.query(
       'SELECT id FROM utilisateurs WHERE username = $1',

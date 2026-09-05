@@ -40,6 +40,10 @@ function Parametres({ utilisateur }) {
   const [chargementPaiementAbonnement, setChargementPaiementAbonnement] = useState(false)
   const [organisationLoading, setOrganisationLoading] = useState(false)
   const [statutModalVisible, setStatutModalVisible] = useState(false)
+  const [suppressionModalVisible, setSuppressionModalVisible] = useState(false)
+  const [suppressionPassword, setSuppressionPassword] = useState('')
+  const [suppressionActionLoading, setSuppressionActionLoading] = useState(false)
+  const [exportLoading, setExportLoading] = useState(false)
   const [statutConfirmText, setStatutConfirmText] = useState('')
   const [statutActionLoading, setStatutActionLoading] = useState(false)
   const [nouvelleOrgModalVisible, setNouvelleOrgModalVisible] = useState(false)
@@ -390,6 +394,55 @@ function Parametres({ utilisateur }) {
       setStatutConfirmText('')
     } finally {
       setStatutActionLoading(false)
+    }
+  }
+
+  // ── Chantier RGPD ────────────────────────────────────────
+  const exporterDonnees = async () => {
+    if (!ipcRenderer) return
+    setExportLoading(true)
+    try {
+      const donnees = await ipcRenderer.invoke('organisations:export')
+      const blob = new Blob([JSON.stringify(donnees, null, 2)], { type: 'application/json' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `nafix-export-${dayjs().format('YYYY-MM-DD')}.json`
+      a.click()
+      window.URL.revokeObjectURL(url)
+      message.success('✅ Export téléchargé !')
+    } catch (e) {
+      message.error(`❌ ${e.message}`)
+    } finally {
+      setExportLoading(false)
+    }
+  }
+
+  const demanderSuppressionCompte = async () => {
+    if (!ipcRenderer || !suppressionPassword) return
+    setSuppressionActionLoading(true)
+    try {
+      const result = await ipcRenderer.invoke('organisations:demanderSuppression', { password: suppressionPassword })
+      if (result?.erreur) { message.error(`❌ ${result.erreur}`); return }
+      setOrganisation(result.succes)
+      message.success('✅ Suppression demandée. Votre organisation est désactivée — vous pouvez annuler tant que vos données n\'ont pas été retirées.')
+      setSuppressionModalVisible(false)
+      setSuppressionPassword('')
+    } finally {
+      setSuppressionActionLoading(false)
+    }
+  }
+
+  const annulerSuppressionCompte = async () => {
+    if (!ipcRenderer) return
+    setSuppressionActionLoading(true)
+    try {
+      const result = await ipcRenderer.invoke('organisations:annulerSuppression')
+      if (result?.erreur) { message.error(`❌ ${result.erreur}`); return }
+      setOrganisation(result.succes)
+      message.success('✅ Demande de suppression annulée, organisation réactivée.')
+    } finally {
+      setSuppressionActionLoading(false)
     }
   }
 
@@ -982,6 +1035,19 @@ function Parametres({ utilisateur }) {
 
       <Card style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+          <CloudDownloadOutlined style={{ color: '#1890ff', fontSize: 16 }} />
+          <Text strong style={{ fontSize: 15 }}>Exporter mes données</Text>
+        </div>
+        <Text style={{ display: 'block', marginBottom: 16, color: '#666' }}>
+          Téléchargez une copie complète de vos données (produits, clients, ventes, devis, achats…) au format JSON.
+        </Text>
+        <Button icon={<CloudDownloadOutlined />} loading={exportLoading} style={{ borderRadius: 8 }} onClick={exporterDonnees}>
+          Exporter mes données
+        </Button>
+      </Card>
+
+      <Card style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
           <ApartmentOutlined style={{ color: '#1890ff', fontSize: 16 }} />
           <Text strong style={{ fontSize: 15 }}>Nouvelle organisation</Text>
         </div>
@@ -1011,6 +1077,33 @@ function Parametres({ utilisateur }) {
           onClick={() => setStatutModalVisible(true)}>
           {organisationActive ? 'Désactiver l\'organisation' : 'Réactiver l\'organisation'}
         </Button>
+
+        <Divider style={{ margin: '20px 0' }} />
+
+        {organisation?.suppression_demandee_le ? (
+          <>
+            <Text style={{ display: 'block', marginBottom: 16, color: '#666' }}>
+              Suppression demandée le {dayjs(organisation.suppression_demandee_le).format('DD/MM/YYYY à HH:mm')}.
+              Votre organisation est désactivée. Vous pouvez annuler cette demande tant que vos données n'ont pas encore été retirées.
+            </Text>
+            <Button type="primary" icon={<CheckOutlined />} loading={suppressionActionLoading}
+              style={{ borderRadius: 8 }} onClick={annulerSuppressionCompte}>
+              Annuler la demande de suppression
+            </Button>
+          </>
+        ) : (
+          <>
+            <Text style={{ display: 'block', marginBottom: 16, color: '#666' }}>
+              Demander la suppression de votre compte désactive immédiatement l'accès (comme ci-dessus) et
+              signale la demande à la plateforme, qui procédera au retrait définitif de vos données.
+              Pensez à exporter vos données avant si vous en avez besoin.
+            </Text>
+            <Button danger icon={<DeleteOutlined />} style={{ borderRadius: 8 }}
+              onClick={() => setSuppressionModalVisible(true)}>
+              Demander la suppression de mon compte
+            </Button>
+          </>
+        )}
       </Card>
     </div>
   )
@@ -2098,6 +2191,52 @@ function Parametres({ utilisateur }) {
             style={{ borderRadius: 8, fontWeight: 'bold' }}
           >
             {organisationActive ? 'Désactiver' : 'Réactiver'}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* ── Modal Demande de suppression de compte ── */}
+      <Modal
+        title={
+          <Space>
+            <ExclamationCircleOutlined style={{ color: '#ff4d4f', fontSize: 20 }} />
+            <Text strong style={{ color: '#cf1322', fontSize: 16 }}>Demander la suppression de mon compte</Text>
+          </Space>
+        }
+        open={suppressionModalVisible}
+        onCancel={() => { setSuppressionModalVisible(false); setSuppressionPassword('') }}
+        footer={null}
+        width={480}
+        centered
+      >
+        <div style={{ background: '#fff2f0', borderRadius: 10, border: '1px solid #ffa39e', padding: '16px', marginBottom: 20 }}>
+          <Text style={{ color: '#cf1322', display: 'block', marginBottom: 10, fontWeight: 600 }}>
+            ⚠️ Votre organisation sera immédiatement désactivée (plus personne ne pourra se connecter), puis vos
+            données seront définitivement retirées par la plateforme. Confirmez avec votre mot de passe :
+          </Text>
+          <Input.Password
+            value={suppressionPassword}
+            onChange={e => setSuppressionPassword(e.target.value)}
+            placeholder="Votre mot de passe actuel"
+            size="large"
+            style={{ borderRadius: 8 }}
+          />
+        </div>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+          <Button size="large" style={{ borderRadius: 8 }}
+            onClick={() => { setSuppressionModalVisible(false); setSuppressionPassword('') }}>
+            Annuler
+          </Button>
+          <Button
+            danger type="primary"
+            size="large"
+            loading={suppressionActionLoading}
+            disabled={!suppressionPassword}
+            icon={<DeleteOutlined />}
+            onClick={demanderSuppressionCompte}
+            style={{ borderRadius: 8, fontWeight: 'bold' }}
+          >
+            Confirmer la demande
           </Button>
         </div>
       </Modal>

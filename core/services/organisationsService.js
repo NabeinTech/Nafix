@@ -28,6 +28,14 @@ function setStatut(organisationId, statut) {
   return OrganisationsDAO.setStatut(organisationId, statut)
 }
 
+function demanderSuppression(organisationId) {
+  return OrganisationsDAO.demanderSuppression(organisationId)
+}
+
+function annulerSuppression(organisationId) {
+  return OrganisationsDAO.annulerSuppression(organisationId)
+}
+
 function creerAvecAdmin(donnees) {
   return OrganisationsDAO.creerAvecAdmin(donnees)
 }
@@ -38,4 +46,7 @@ function getAllPourPlateforme() {
   return OrganisationsDAO.getAllPourPlateforme()
 }
 
-module.exports = { getOrganisationActive, getById, update, setStatut, creerAvecAdmin, getAllPourPlateforme }
+module.exports = {
+  getOrganisationActive, getById, update, setStatut, creerAvecAdmin, getAllPourPlateforme,
+  demanderSuppression, annulerSuppression
+}

@@ -117,6 +117,10 @@
     },
     'organisations:getMine': () => api('GET', '/organisations/mine'),
     'organisations:update': (o) => api('PUT', '/organisations', o),
+    'organisations:setStatut': (d) => api('PUT', '/organisations/statut', d),
+    'organisations:export': () => api('GET', '/organisations/export'),
+    'organisations:demanderSuppression': (d) => api('POST', '/organisations/demander-suppression', d),
+    'organisations:annulerSuppression': () => api('POST', '/organisations/annuler-suppression'),
 
     // ── produits ──
     'produits:getAll': () => api('GET', '/produits'),

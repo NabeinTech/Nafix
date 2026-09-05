@@ -4,7 +4,7 @@ const AuthService = require('../auth/AuthService')
 const OrganisationsDAO = {
   async getById(id) {
     const { rows } = await pool.query(
-      'SELECT id, nom, code, statut, created_at FROM organisations WHERE id = $1',
+      'SELECT id, nom, code, statut, created_at, suppression_demandee_le FROM organisations WHERE id = $1',
       [id]
     )
     return rows[0] || null
@@ -27,6 +27,27 @@ const OrganisationsDAO = {
     const { rows } = await pool.query(
       'UPDATE organisations SET statut = $1 WHERE id = $2 RETURNING id, nom, code, statut, created_at',
       [statut, id]
+    )
+    return { succes: rows[0] }
+  },
+
+  // Chantier RGPD — jamais de suppression definitive automatique ici : se
+  // contente de reutiliser le statut 'inactive' deja existant (coupe l'acces,
+  // meme mecanisme que la desactivation manuelle) et de dater la demande,
+  // pour que le Platform Admin distingue les deux cas et traite la
+  // suppression reelle des donnees separement.
+  async demanderSuppression(id) {
+    const { rows } = await pool.query(
+      "UPDATE organisations SET statut = 'inactive', suppression_demandee_le = now() WHERE id = $1 RETURNING id, nom, code, statut, created_at, suppression_demandee_le",
+      [id]
+    )
+    return { succes: rows[0] }
+  },
+
+  async annulerSuppression(id) {
+    const { rows } = await pool.query(
+      "UPDATE organisations SET statut = 'active', suppression_demandee_le = NULL WHERE id = $1 RETURNING id, nom, code, statut, created_at, suppression_demandee_le",
+      [id]
     )
     return { succes: rows[0] }
   },
@@ -108,7 +129,7 @@ const OrganisationsDAO = {
   // server/api/routes/platform.js, jamais depuis un service/DAO métier.
   async getAllPourPlateforme() {
     const { rows } = await pool.query(`
-      SELECT o.id, o.nom, o.code, o.statut, o.created_at,
+      SELECT o.id, o.nom, o.code, o.statut, o.created_at, o.suppression_demandee_le,
              a.statut AS abonnement_statut, a.fin_essai_le, p.code AS plan_code, p.nom AS plan_nom,
              (SELECT COUNT(*)::int FROM utilisateurs u WHERE u.organisation_id = o.id) AS nb_utilisateurs
       FROM organisations o

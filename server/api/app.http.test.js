@@ -322,7 +322,70 @@ async function main() {
       ok('INVITATIONS — annulation scopée par organisation (B ne peut pas annuler celle de A)')
     } catch (e) { fail('INVITATIONS — annulation', e) }
 
-    // ---- P. Route inconnue -> 404 propre ----
+    // ---- P. Statut d'organisation via HTTP (gap comblé : bouton
+    // "Désactiver l'organisation" échouait réellement sur le SaaS) ----
+    try {
+      const r = await fetch(`${base}/organisations/statut`, {
+        method: 'PUT', headers: { Authorization: `Bearer ${tokenA}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statut: 'inactive' })
+      })
+      const corps = await r.json()
+      assert.strictEqual(r.status, 200)
+      assert.strictEqual(corps.succes.statut, 'inactive')
+
+      const rReactive = await fetch(`${base}/organisations/statut`, {
+        method: 'PUT', headers: { Authorization: `Bearer ${tokenA}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statut: 'active' })
+      })
+      assert.strictEqual((await rReactive.json()).succes.statut, 'active')
+
+      ok('STATUT ORGANISATION — PUT /organisations/statut désactive/réactive via HTTP')
+    } catch (e) { fail('STATUT ORGANISATION', e) }
+
+    // ---- Q. Export RGPD — isolation, forme du contenu ----
+    try {
+      const r = await fetch(`${base}/organisations/export`, { headers: { Authorization: `Bearer ${tokenA}` } })
+      const corps = await r.json()
+      assert.strictEqual(r.status, 200)
+      assert.ok(Array.isArray(corps.produits) && corps.produits.some(p => p.id === produitId), 'l\'export de A contient son propre produit')
+
+      const rB = await fetch(`${base}/organisations/export`, { headers: { Authorization: `Bearer ${tokenB}` } })
+      const corpsB = await rB.json()
+      assert.ok(!corpsB.produits.some(p => p.id === produitId), 'l\'export de B ne contient jamais les produits de A')
+      assert.ok(!JSON.stringify(corpsB.utilisateurs).includes('password'), 'aucun hash de mot de passe dans l\'export')
+
+      ok('EXPORT RGPD — contenu scopé par organisation, jamais de mot de passe')
+    } catch (e) { fail('EXPORT RGPD', e) }
+
+    // ---- R. Demande de suppression — mauvais mot de passe refusé, bon mot
+    // de passe désactive et date la demande, annulation réactive ----
+    try {
+      const rMauvais = await fetch(`${base}/organisations/demander-suppression`, {
+        method: 'POST', headers: { Authorization: `Bearer ${tokenA}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: 'mauvais-mot-de-passe' })
+      })
+      assert.strictEqual(rMauvais.status, 400)
+
+      const rBon = await fetch(`${base}/organisations/demander-suppression`, {
+        method: 'POST', headers: { Authorization: `Bearer ${tokenA}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: MOT_DE_PASSE })
+      })
+      const corpsBon = await rBon.json()
+      assert.strictEqual(rBon.status, 200)
+      assert.strictEqual(corpsBon.succes.statut, 'inactive')
+      assert.ok(corpsBon.succes.suppression_demandee_le, 'la date de demande est posée')
+
+      const rAnnuler = await fetch(`${base}/organisations/annuler-suppression`, {
+        method: 'POST', headers: { Authorization: `Bearer ${tokenA}` }
+      })
+      const corpsAnnuler = await rAnnuler.json()
+      assert.strictEqual(corpsAnnuler.succes.statut, 'active')
+      assert.strictEqual(corpsAnnuler.succes.suppression_demandee_le, null, 'annuler efface la date de demande')
+
+      ok('SUPPRESSION RGPD — mauvais mot de passe refusé, bon mot de passe désactive + date, annulation réactive')
+    } catch (e) { fail('SUPPRESSION RGPD', e) }
+
+    // ---- S. Route inconnue -> 404 propre ----
     try {
       const r = await fetch(`${base}/route-qui-nexiste-pas`, { headers: { Authorization: `Bearer ${tokenA}` } })
       const corps = await r.json()

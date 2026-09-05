@@ -546,6 +546,17 @@ async function runMigrations() {
     `)
     await client.query('CREATE INDEX IF NOT EXISTS idx_invitations_org ON invitations_utilisateur(organisation_id)')
 
+    // Chantier RGPD — demande de suppression de compte, self-service. NON
+    // destructif par construction : ne fait que reutiliser le statut
+    // 'inactive' deja existant (meme mecanisme que la desactivation
+    // manuelle) et marquer QUAND la demande a ete faite. Aucune suppression
+    // definitive automatique n'est declenchee par ce chantier -- la colonne
+    // sert uniquement a distinguer, cote Platform Admin, une organisation
+    // desactivee manuellement d'une organisation qui a demande sa propre
+    // suppression, et a permettre a l'administrateur d'annuler sa demande
+    // tant que les donnees n'ont pas ete retirees.
+    await client.query('ALTER TABLE organisations ADD COLUMN IF NOT EXISTS suppression_demandee_le TIMESTAMP')
+
     console.log('✅ Migrations terminées')
   } catch (err) {
     console.error('❌ Erreur migration:', err.message)
