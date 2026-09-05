@@ -139,6 +139,20 @@ function Parametres({ utilisateur }) {
     }
   }, [])
 
+  // Chantier invitations d'equipe — web (SaaS) uniquement : le lien envoye
+  // par email pointe vers le domaine public, inutilisable depuis une base
+  // Desktop locale. Le bouton "Ajouter un utilisateur" (mot de passe fourni
+  // directement) reste la seule methode sur desktop.
+  const chargerInvitations = useCallback(async () => {
+    if (!ipcRenderer || !window.NAFIX_ENV_WEB) return
+    try {
+      const data = await ipcRenderer.invoke('utilisateurs:getInvitations')
+      setInvitations(Array.isArray(data) ? data : [])
+    } catch {
+      setInvitations([])
+    }
+  }, [])
+
   // Chantier PayDunya — renouvellement/passage au payant depuis les
   // Paramètres, sans attendre d'être bloqué (même canal que
   // EcranAbonnementBloque, paie toujours le plan courant, pas de
@@ -265,20 +279,6 @@ function Parametres({ utilisateur }) {
     message.success('✅ Utilisateur supprimé !')
     chargerUtilisateurs()
   }
-
-  // Chantier invitations d'equipe — web (SaaS) uniquement : le lien envoye
-  // par email pointe vers le domaine public, inutilisable depuis une base
-  // Desktop locale. Le bouton "Ajouter un utilisateur" (mot de passe fourni
-  // directement) reste la seule methode sur desktop.
-  const chargerInvitations = useCallback(async () => {
-    if (!ipcRenderer || !window.NAFIX_ENV_WEB) return
-    try {
-      const data = await ipcRenderer.invoke('utilisateurs:getInvitations')
-      setInvitations(Array.isArray(data) ? data : [])
-    } catch {
-      setInvitations([])
-    }
-  }, [])
 
   const envoyerInvitation = async (values) => {
     if (!ipcRenderer) return

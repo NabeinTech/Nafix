@@ -14,7 +14,6 @@ import { montantEnLettresFCFA } from '../utils/nombreEnLettres'
 // ticket de caisse reste court, jamais artificiellement rallongé.
 const COULEUR_SOMBRE = '#132743'
 const COULEUR_ACCENT = '#0d9488'
-const COULEUR_LABEL = '#2f6fed'
 const COULEUR_TEXTE = '#000000'
 const COULEUR_TEXTE_ATTENUE = '#1c1c1c'
 
