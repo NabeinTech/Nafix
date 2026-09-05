@@ -9,6 +9,7 @@ const express = require('express')
 const pool = require('../../db/pool')
 const logger = require('./lib/logger')
 const authRoutes = require('./routes/auth')
+const invitationsRoutes = require('./routes/invitations')
 const platformRoutes = require('./routes/platform')
 const webhooksRoutes = require('./routes/webhooks')
 const utilisateursRoutes = require('./routes/utilisateurs')
@@ -114,6 +115,9 @@ function creerApp() {
   app.use(express.static(path.join(__dirname, '../../build')))
 
   app.use('/auth', authRoutes)
+  // Chantier invitations d'equipe — public, comme /auth/signup : l'invite
+  // n'a par definition aucun compte pour s'authentifier a ce stade.
+  app.use('/invitations', invitationsRoutes)
   // Chantier PayDunya — appele par PayDunya lui-meme (serveur-a-serveur),
   // jamais par un utilisateur : aucun middleware d'authentification.
   app.use('/webhooks', webhooksRoutes)

@@ -4,6 +4,7 @@
 // middleware/rbac.js), aucune nouvelle logique métier.
 const express = require('express')
 const UtilisateursDAO = require('../../../dao/UtilisateursDAO')
+const invitationsService = require('../../../core/services/invitationsService')
 const { authentifier } = require('../middleware/authentification')
 const { verifierAbonnement } = require('../middleware/subscriptionGate')
 const { exigerRole } = require('../middleware/rbac')
@@ -35,6 +36,37 @@ router.post('/', exigerRole('utilisateurs:create'), async (req, res) => {
 
 router.delete('/:id', exigerRole('utilisateurs:delete'), async (req, res) => {
   res.json(await UtilisateursDAO.delete(req.params.id, req.tenantContext.organisationId))
+})
+
+// Chantier invitations d'equipe — reutilise les memes permissions que la
+// creation/suppression directe (inviter/annuler une invitation est une
+// variante de creer/supprimer un utilisateur, pas une action distincte).
+router.post('/inviter', exigerRole('utilisateurs:create'), async (req, res) => {
+  try {
+    validerEntree(req.body, {
+      email: { required: true, type: 'email', maxLen: 200 },
+      role:  { required: true, type: 'string', enum: ['administrateur', 'gerant', 'comptable', 'caissier'] }
+    })
+    const resultat = await invitationsService.inviter({
+      organisationId: req.tenantContext.organisationId,
+      email: req.body.email,
+      role: req.body.role,
+      inviteParId: req.tenantContext.userId
+    })
+    if (resultat.erreur) return res.status(400).json(resultat)
+    res.status(201).json(resultat)
+  } catch (e) {
+    res.status(400).json({ erreur: messageErreurSur(e) })
+  }
+})
+
+router.get('/invitations', exigerRole('utilisateurs:getAll'), async (req, res) => {
+  res.json(await invitationsService.getEnAttente(req.tenantContext.organisationId))
+})
+
+router.delete('/invitations/:id', exigerRole('utilisateurs:delete'), async (req, res) => {
+  await invitationsService.annuler(req.params.id, req.tenantContext.organisationId)
+  res.json({ succes: true })
 })
 
 router.put('/:id/password', exigerRole('utilisateurs:updatePassword'), async (req, res) => {

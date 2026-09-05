@@ -16,6 +16,7 @@
 // production : deux organisations de test isolées, nettoyées en fin
 // d'exécution quoi qu'il arrive. Exécution : node server/api/app.http.test.js
 const assert = require('assert')
+const crypto = require('crypto')
 
 const dbConfig = require('../../config/db.config.json')
 process.env.PGHOST = dbConfig.host
@@ -43,7 +44,7 @@ async function main() {
   const port = serveur.address().port
   const base = `http://127.0.0.1:${port}`
 
-  let orgAId, orgBId, produitId, paiementId
+  let orgAId, orgBId, produitId, paiementId, invitationId
 
   try {
     // ---- A. Route protégée sans token -> 401 ----
@@ -200,7 +201,128 @@ async function main() {
       ok('HISTORIQUE FACTURATION — vide pour une organisation neuve, scopé par organisation via HTTP')
     } catch (e) { fail('HISTORIQUE FACTURATION', e) }
 
-    // ---- L. Route inconnue -> 404 propre ----
+    // ---- L. Invitations d'équipe — envoi, doublon, isolation, annulation ----
+    try {
+      const emailInvite = `invite_${SUFFIXE}@example.test`
+      const rInvite = await fetch(`${base}/utilisateurs/inviter`, {
+        method: 'POST', headers: { Authorization: `Bearer ${tokenA}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailInvite, role: 'caissier' })
+      })
+      assert.strictEqual(rInvite.status, 201)
+
+      const { rows: invitesAvant } = await pool.query(
+        "SELECT id FROM invitations_utilisateur WHERE organisation_id = $1 AND email = $2", [orgAId, emailInvite]
+      )
+      assert.strictEqual(invitesAvant.length, 1, 'une invitation créée')
+      invitationId = invitesAvant[0].id
+
+      // Ré-inviter le même email remplace l'invitation en attente (pas de doublon).
+      const rReinvite = await fetch(`${base}/utilisateurs/inviter`, {
+        method: 'POST', headers: { Authorization: `Bearer ${tokenA}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailInvite, role: 'gerant' })
+      })
+      assert.strictEqual(rReinvite.status, 201)
+      const { rows: invitesApres } = await pool.query(
+        "SELECT id, role FROM invitations_utilisateur WHERE organisation_id = $1 AND email = $2", [orgAId, emailInvite]
+      )
+      assert.strictEqual(invitesApres.length, 1, 'ré-inviter remplace, ne duplique pas')
+      assert.strictEqual(invitesApres[0].role, 'gerant', 'le role de la ré-invitation est bien pris en compte')
+      invitationId = invitesApres[0].id
+
+      // Inviter un email déjà membre de l'organisation -> refusé.
+      const emailDejaMembre = `deja_membre_${SUFFIXE}@example.test`
+      await pool.query('UPDATE utilisateurs SET email = $1 WHERE username = $2', [emailDejaMembre, usernameA])
+      const rDejaMembre = await fetch(`${base}/utilisateurs/inviter`, {
+        method: 'POST', headers: { Authorization: `Bearer ${tokenA}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailDejaMembre, role: 'caissier' })
+      })
+      const corpsDejaMembre = await rDejaMembre.json()
+      assert.strictEqual(rDejaMembre.status, 400)
+      assert.ok(corpsDejaMembre.erreur, 'inviter un email déjà membre de l\'organisation est refusé')
+
+      // Liste des invitations en attente — visible par A, pas par B (isolation).
+      const rListeA = await fetch(`${base}/utilisateurs/invitations`, { headers: { Authorization: `Bearer ${tokenA}` } })
+      const corpsListeA = await rListeA.json()
+      assert.ok(corpsListeA.some(i => i.id === invitationId), 'A voit sa propre invitation en attente')
+
+      const rListeB = await fetch(`${base}/utilisateurs/invitations`, { headers: { Authorization: `Bearer ${tokenB}` } })
+      const corpsListeB = await rListeB.json()
+      assert.ok(!corpsListeB.some(i => i.id === invitationId), 'B ne voit jamais les invitations de A')
+
+      ok('INVITATIONS — envoi (201), ré-invitation remplace sans dupliquer, isolation de la liste entre organisations')
+    } catch (e) { fail('INVITATIONS — envoi/liste', e) }
+
+    // ---- M. Acceptation d'une invitation — token connu inséré directement
+    // (le vrai token n'est jamais renvoyé par l'API, seulement envoyé par
+    // email) pour tester le chemin d'acceptation lui-même ----
+    try {
+      const tokenClair = crypto.randomBytes(32).toString('hex')
+      const tokenHash = crypto.createHash('sha256').update(tokenClair).digest('hex')
+      const emailAccepte = `accepte_${SUFFIXE}@example.test`
+      await pool.query(
+        `INSERT INTO invitations_utilisateur (organisation_id, email, role, token_hash, expire_le)
+         VALUES ($1,$2,'caissier',$3, now() + interval '7 days')`,
+        [orgAId, emailAccepte, tokenHash]
+      )
+
+      const rApercu = await fetch(`${base}/invitations/${tokenClair}`)
+      const corpsApercu = await rApercu.json()
+      assert.strictEqual(rApercu.status, 200)
+      assert.strictEqual(corpsApercu.email, emailAccepte)
+      assert.strictEqual(corpsApercu.role, 'caissier')
+
+      const usernameInvite = `test_http_invite_${SUFFIXE}`
+      const rAccepte = await fetch(`${base}/invitations/accepter`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: tokenClair, nom: 'Invité Test', username: usernameInvite, password: MOT_DE_PASSE })
+      })
+      const corpsAccepte = await rAccepte.json()
+      assert.strictEqual(rAccepte.status, 201)
+      assert.ok(corpsAccepte.accessToken, 'accepter une invitation auto-connecte, comme le signup')
+      assert.strictEqual(corpsAccepte.utilisateur.role, 'caissier', 'le role vient de l\'invitation, jamais du formulaire')
+
+      // Réutiliser le même token -> refusé (usage unique).
+      const rRejoue = await fetch(`${base}/invitations/accepter`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: tokenClair, nom: 'Autre', username: `${usernameInvite}_bis`, password: MOT_DE_PASSE })
+      })
+      assert.strictEqual(rRejoue.status, 400, 'un token déjà utilisé est refusé')
+
+      // Nettoyage de ce cas précis (hors boucle générique de fin).
+      await pool.query('DELETE FROM utilisateurs WHERE username = $1', [usernameInvite])
+
+      ok('INVITATIONS — acceptation crée le compte avec le rôle figé par l\'invitation, token à usage unique')
+    } catch (e) { fail('INVITATIONS — acceptation', e) }
+
+    // ---- N. Token expiré -> refusé ----
+    try {
+      const tokenExpireClair = crypto.randomBytes(32).toString('hex')
+      const tokenExpireHash = crypto.createHash('sha256').update(tokenExpireClair).digest('hex')
+      await pool.query(
+        `INSERT INTO invitations_utilisateur (organisation_id, email, role, token_hash, expire_le)
+         VALUES ($1,$2,'caissier',$3, now() - interval '1 day')`,
+        [orgAId, `expire_${SUFFIXE}@example.test`, tokenExpireHash]
+      )
+      const r = await fetch(`${base}/invitations/${tokenExpireClair}`)
+      assert.strictEqual(r.status, 400)
+      ok('INVITATIONS — un token expiré est refusé')
+    } catch (e) { fail('INVITATIONS — expiration', e) }
+
+    // ---- O. Annulation — B ne peut pas annuler l'invitation de A ----
+    try {
+      await fetch(`${base}/utilisateurs/invitations/${invitationId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${tokenB}` } })
+      const { rows } = await pool.query('SELECT id FROM invitations_utilisateur WHERE id = $1', [invitationId])
+      assert.strictEqual(rows.length, 1, 'B ne peut pas annuler une invitation de A')
+
+      await fetch(`${base}/utilisateurs/invitations/${invitationId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${tokenA}` } })
+      const { rows: rowsApres } = await pool.query('SELECT id FROM invitations_utilisateur WHERE id = $1', [invitationId])
+      assert.strictEqual(rowsApres.length, 0, 'A peut annuler sa propre invitation')
+      invitationId = null
+
+      ok('INVITATIONS — annulation scopée par organisation (B ne peut pas annuler celle de A)')
+    } catch (e) { fail('INVITATIONS — annulation', e) }
+
+    // ---- P. Route inconnue -> 404 propre ----
     try {
       const r = await fetch(`${base}/route-qui-nexiste-pas`, { headers: { Authorization: `Bearer ${tokenA}` } })
       const corps = await r.json()
@@ -211,6 +333,7 @@ async function main() {
   } finally {
     if (produitId) await pool.query('DELETE FROM produits WHERE id = $1', [produitId]).catch(() => {})
     if (paiementId) await pool.query('DELETE FROM paiements WHERE id = $1', [paiementId]).catch(() => {})
+    if (invitationId) await pool.query('DELETE FROM invitations_utilisateur WHERE id = $1', [invitationId]).catch(() => {})
     for (const orgId of [orgAId, orgBId]) {
       if (!orgId) continue
       await pool.query('DELETE FROM utilisateurs WHERE organisation_id = $1', [orgId]).catch(() => {})

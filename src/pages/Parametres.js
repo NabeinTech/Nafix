@@ -31,6 +31,7 @@ function Parametres({ utilisateur }) {
   const [formPassword] = Form.useForm()
   const [formOrganisation] = Form.useForm()
   const [formNouvelleOrganisation] = Form.useForm()
+  const [formInvite] = Form.useForm()
 
   const [parametres, setParametres] = useState({})
   const [organisation, setOrganisation] = useState(null)
@@ -49,6 +50,9 @@ function Parametres({ utilisateur }) {
   const [domaineLoading, setDomaineLoading] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
   const [userModalVisible, setUserModalVisible] = useState(false)
+  const [inviteModalVisible, setInviteModalVisible] = useState(false)
+  const [envoiInvitationEnCours, setEnvoiInvitationEnCours] = useState(false)
+  const [invitations, setInvitations] = useState([])
   const [passwordModalVisible, setPasswordModalVisible] = useState(false)
   const [roleModalVisible, setRoleModalVisible] = useState(false)
   const [userSelectionne, setUserSelectionne] = useState(null)
@@ -161,7 +165,8 @@ function Parametres({ utilisateur }) {
     chargerOrganisation()
     chargerAbonnement()
     chargerPaiements()
-  }, [chargerParametres, chargerUtilisateurs, chargerDomaine, chargerOrganisation, chargerAbonnement, chargerPaiements])
+    chargerInvitations()
+  }, [chargerParametres, chargerUtilisateurs, chargerDomaine, chargerOrganisation, chargerAbonnement, chargerPaiements, chargerInvitations])
 
   // ── Sauvegarder entreprise ───────────────────────────────
   const sauvegarderEntreprise = async (values) => {
@@ -255,6 +260,44 @@ function Parametres({ utilisateur }) {
     await ipcRenderer.invoke('utilisateurs:delete', id)
     message.success('✅ Utilisateur supprimé !')
     chargerUtilisateurs()
+  }
+
+  // Chantier invitations d'equipe — web (SaaS) uniquement : le lien envoye
+  // par email pointe vers le domaine public, inutilisable depuis une base
+  // Desktop locale. Le bouton "Ajouter un utilisateur" (mot de passe fourni
+  // directement) reste la seule methode sur desktop.
+  const chargerInvitations = useCallback(async () => {
+    if (!ipcRenderer || !window.NAFIX_ENV_WEB) return
+    try {
+      const data = await ipcRenderer.invoke('utilisateurs:getInvitations')
+      setInvitations(Array.isArray(data) ? data : [])
+    } catch {
+      setInvitations([])
+    }
+  }, [])
+
+  const envoyerInvitation = async (values) => {
+    if (!ipcRenderer) return
+    setEnvoiInvitationEnCours(true)
+    try {
+      const resultat = await ipcRenderer.invoke('utilisateurs:inviter', values)
+      if (resultat?.erreur) { message.error(`❌ ${resultat.erreur}`); return }
+      message.success(`✅ Invitation envoyée à ${values.email} !`)
+      formInvite.resetFields()
+      setInviteModalVisible(false)
+      chargerInvitations()
+    } catch (err) {
+      message.error(`❌ ${err.message}`)
+    } finally {
+      setEnvoiInvitationEnCours(false)
+    }
+  }
+
+  const annulerInvitation = async (id) => {
+    if (!ipcRenderer) return
+    await ipcRenderer.invoke('utilisateurs:annulerInvitation', id)
+    message.success('✅ Invitation annulée')
+    chargerInvitations()
   }
 
   const ouvrirRoleModal = (record) => {
@@ -994,14 +1037,23 @@ function Parametres({ utilisateur }) {
       <Card
         title={<Space><TeamOutlined style={{ color: '#1890ff' }} /><Text strong>Membres de l'équipe</Text></Space>}
         extra={
-          <Button type="primary" icon={<UserAddOutlined />}
-            onClick={() => setUserModalVisible(true)}
-            style={{
-              borderRadius: 8,
-              background: 'linear-gradient(135deg, #1890ff, #722ed1)', border: 'none'
-            }}>
-            Ajouter un utilisateur
-          </Button>
+          <Space>
+            {window.NAFIX_ENV_WEB && (
+              <Button icon={<MailOutlined />}
+                onClick={() => setInviteModalVisible(true)}
+                style={{ borderRadius: 8 }}>
+                Inviter par email
+              </Button>
+            )}
+            <Button type="primary" icon={<UserAddOutlined />}
+              onClick={() => setUserModalVisible(true)}
+              style={{
+                borderRadius: 8,
+                background: 'linear-gradient(135deg, #1890ff, #722ed1)', border: 'none'
+              }}>
+              Ajouter un utilisateur
+            </Button>
+          </Space>
         }
         style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
       >
@@ -1009,6 +1061,32 @@ function Parametres({ utilisateur }) {
           pagination={{ pageSize: 8, showSizeChanger: false }}
           locale={{ emptyText: 'Aucun utilisateur enregistré' }} />
       </Card>
+
+      {window.NAFIX_ENV_WEB && invitations.length > 0 && (
+        <Card
+          title={<Space><MailOutlined style={{ color: '#1890ff' }} /><Text strong>Invitations en attente</Text></Space>}
+          style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginTop: 16 }}
+        >
+          <Table
+            dataSource={invitations}
+            rowKey="id"
+            pagination={false}
+            columns={[
+              { title: 'Email', dataIndex: 'email' },
+              { title: 'Rôle', dataIndex: 'role', render: (v) => roleConfig[v]?.label || v },
+              { title: 'Invité par', dataIndex: 'invite_par_nom', render: (v) => v || '—' },
+              { title: 'Expire le', dataIndex: 'expire_le', render: (v) => dayjs(v).format('DD/MM/YYYY') },
+              {
+                title: '', key: 'actions', render: (_, record) => (
+                  <Popconfirm title="Annuler cette invitation ?" onConfirm={() => annulerInvitation(record.id)} okText="Oui" cancelText="Non">
+                    <Button size="small" danger icon={<DeleteOutlined />} style={{ borderRadius: 6 }}>Annuler</Button>
+                  </Popconfirm>
+                )
+              }
+            ]}
+          />
+        </Card>
+      )}
     </div>
   )
 
@@ -1791,6 +1869,38 @@ function Parametres({ utilisateur }) {
               })
             ]}>
             <Input.Password placeholder="Répéter le mot de passe" size="large" />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* ── Modal Inviter par email ── */}
+      <Modal
+        title={<Space><MailOutlined style={{ color: '#1890ff' }} />Inviter par email</Space>}
+        open={inviteModalVisible}
+        onCancel={() => { setInviteModalVisible(false); formInvite.resetFields() }}
+        onOk={() => formInvite.submit()}
+        okText="Envoyer l'invitation" cancelText="Annuler" width={480}
+        confirmLoading={envoiInvitationEnCours}
+        okButtonProps={{
+          style: { background: 'linear-gradient(135deg, #1890ff, #722ed1)', border: 'none' }
+        }}
+      >
+        <Text style={{ display: 'block', marginBottom: 16, color: '#888', fontSize: 13 }}>
+          La personne invitée reçoit un lien par email pour créer elle-même son compte (valable 7 jours).
+        </Text>
+        <Form form={formInvite} layout="vertical" onFinish={envoyerInvitation}>
+          <Form.Item name="email" label="Email"
+            rules={[{ required: true, message: 'Obligatoire' }, { type: 'email', message: 'Email invalide' }]}>
+            <Input prefix={<MailOutlined />} placeholder="Ex: moussa.diallo@exemple.com" size="large" />
+          </Form.Item>
+          <Form.Item name="role" label="Rôle"
+            rules={[{ required: true, message: 'Obligatoire' }]}>
+            <Select placeholder="Choisir un rôle" size="large">
+              <Option value="administrateur">👑 Administrateur — Accès total</Option>
+              <Option value="gerant">🏢 Gérant — Gestion complète</Option>
+              <Option value="comptable">📊 Comptable — Finance uniquement</Option>
+              <Option value="caissier">🛒 Caissier — Ventes uniquement</Option>
+            </Select>
           </Form.Item>
         </Form>
       </Modal>

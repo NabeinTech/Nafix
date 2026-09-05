@@ -524,6 +524,28 @@ async function runMigrations() {
     // unique par essai, meme pattern defensif que le job d'expiration.
     await client.query('ALTER TABLE abonnements ADD COLUMN IF NOT EXISTS relance_essai_envoyee_le TIMESTAMP')
 
+    // Chantier invitations d'equipe — jusqu'ici, un administrateur ne pouvait
+    // que creer directement un compte en fournissant lui-meme le mot de
+    // passe. Meme conventions crypto que reinitialisations_mot_de_passe :
+    // token opaque aleatoire, jamais stocke en clair (seulement son hash),
+    // a usage unique. organisation_id/role/email figes des l'invitation ;
+    // l'invite choisit uniquement son nom, son identifiant et son mot de
+    // passe en acceptant.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS invitations_utilisateur (
+        id              SERIAL PRIMARY KEY,
+        organisation_id INTEGER NOT NULL REFERENCES organisations(id) ON DELETE CASCADE,
+        email           TEXT NOT NULL,
+        role            TEXT NOT NULL,
+        token_hash      TEXT NOT NULL UNIQUE,
+        invite_par_id   INTEGER REFERENCES utilisateurs(id) ON DELETE SET NULL,
+        expire_le       TIMESTAMP NOT NULL,
+        utilise         INTEGER NOT NULL DEFAULT 0,
+        created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+    await client.query('CREATE INDEX IF NOT EXISTS idx_invitations_org ON invitations_utilisateur(organisation_id)')
+
     console.log('✅ Migrations terminées')
   } catch (err) {
     console.error('❌ Erreur migration:', err.message)

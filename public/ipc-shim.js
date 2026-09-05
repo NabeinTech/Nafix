@@ -236,6 +236,9 @@
     'utilisateurs:updatePassword': (u) => api('PUT', '/utilisateurs/' + u.id + '/password', { password: u.password }),
     'utilisateurs:updateRole': (u) => api('PUT', '/utilisateurs/' + u.id + '/role', { role: u.role }),
     'utilisateurs:updatePermissions': (u) => api('PUT', '/utilisateurs/' + u.id + '/permissions', { permissions: u.permissions }),
+    'utilisateurs:inviter': (d) => api('POST', '/utilisateurs/inviter', d),
+    'utilisateurs:getInvitations': () => api('GET', '/utilisateurs/invitations'),
+    'utilisateurs:annulerInvitation': (id) => api('DELETE', '/utilisateurs/invitations/' + id),
 
     // ── impression — vrai comportement navigateur, pas un stub ──
     'impression:imprimerHTML': async ({ html, numero }) => {
