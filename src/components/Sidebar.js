@@ -108,7 +108,11 @@ function Sidebar({ utilisateur, onLogout, statutAbonnement }) {
       .map(item => {
         if (item.children) {
           const enfantsFiltres = item.children.filter(
-            child => utilisateurPeutAcceder(utilisateur, child.module)
+            // Nafix Voice depend du moteur Vosk local (binaire natif) --
+            // aucun equivalent web, jamais atteignable via ipc-shim.js
+            // (voice:demarrer/arreter volontairement hors perimetre).
+            child => utilisateurPeutAcceder(utilisateur, child.module) &&
+              (child.key !== '/voice' || !window.NAFIX_ENV_WEB)
           )
           if (enfantsFiltres.length === 0) return null
           return { ...item, children: enfantsFiltres }

@@ -314,6 +314,25 @@ function NafixVoice() {
     }
   ]
 
+  // Nafix Voice depend du moteur Vosk local (binaire natif, voir
+  // server/voskFfi.js) -- aucun equivalent web (voice:demarrer/arreter
+  // volontairement hors perimetre du shim, public/ipc-shim.js). Sans ce
+  // garde, le bouton micro echouait silencieusement sur le SaaS (rejet de
+  // promesse jamais intercepte, aucun message affiche).
+  if (window.NAFIX_ENV_WEB) {
+    return (
+      <div>
+        <Alert
+          type="info"
+          showIcon
+          message="Nafix Voice n'est pas disponible sur le SaaS"
+          description="La reconnaissance vocale nécessite le moteur installé avec l'application Desktop. Utilisez la version installée sur votre ordinateur pour cette fonctionnalité."
+          style={{ borderRadius: 12 }}
+        />
+      </div>
+    )
+  }
+
   return (
     <div>
       <div style={{

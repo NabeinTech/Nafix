@@ -1727,7 +1727,11 @@ function Parametres({ utilisateur }) {
         </>
       )}
 
-      {/* ── Sauvegarde complète ───────────────────────────── */}
+      {/* ── Sauvegarde complète — Desktop uniquement : un dump complet de la
+          base locale n'a pas d'equivalent self-service sur une base
+          partagee multi-tenant. "Exporter mes donnees" (onglet Organisation)
+          couvre le meme besoin de portabilite des donnees sur le web. ── */}
+      {!window.NAFIX_ENV_WEB && (
       <Card
         style={{
           borderRadius: 14, marginTop: 24,
@@ -1778,6 +1782,7 @@ function Parametres({ utilisateur }) {
           </Button>
         </Space>
       </Card>
+      )}
 
       {/* ── Zone Danger ───────────────────────────────────── */}
       <Card

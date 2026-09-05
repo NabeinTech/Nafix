@@ -44,7 +44,7 @@ async function main() {
   const port = serveur.address().port
   const base = `http://127.0.0.1:${port}`
 
-  let orgAId, orgBId, produitId, paiementId, invitationId
+  let orgAId, orgBId, produitId, paiementId, invitationId, orgFrancheId
 
   try {
     // ---- A. Route protégée sans token -> 401 ----
@@ -385,6 +385,28 @@ async function main() {
       ok('SUPPRESSION RGPD — mauvais mot de passe refusé, bon mot de passe désactive + date, annulation réactive')
     } catch (e) { fail('SUPPRESSION RGPD', e) }
 
+    // ---- T. Création d'une organisation supplémentaire (franchise/multi-
+    // boutique) — l'admin créateur ne change jamais de session ----
+    try {
+      const usernameFranche = `test_http_franche_${SUFFIXE}`
+      const r = await fetch(`${base}/organisations`, {
+        method: 'POST', headers: { Authorization: `Bearer ${tokenA}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nom: 'Franchise Test', adminNom: 'Admin Franchise', username: usernameFranche, password: MOT_DE_PASSE })
+      })
+      const corps = await r.json()
+      assert.strictEqual(r.status, 201)
+      assert.ok(corps.succes.organisation.id)
+      assert.notStrictEqual(corps.succes.organisation.id, orgAId, 'organisation distincte de celle du créateur')
+      orgFrancheId = corps.succes.organisation.id
+
+      // Le créateur (token A) reste dans SA propre organisation, aucun accès
+      // acquis sur la nouvelle (aucun changement de session côté serveur).
+      const { rows: [creatorApres] } = await pool.query('SELECT organisation_id FROM utilisateurs WHERE username = $1', [usernameA])
+      assert.strictEqual(creatorApres.organisation_id, orgAId, 'le créateur reste dans sa propre organisation')
+
+      ok('ORGANISATION SUPPLÉMENTAIRE — POST /organisations crée une organisation indépendante, sans changement de session')
+    } catch (e) { fail('ORGANISATION SUPPLÉMENTAIRE', e) }
+
     // ---- S. Route inconnue -> 404 propre ----
     try {
       const r = await fetch(`${base}/route-qui-nexiste-pas`, { headers: { Authorization: `Bearer ${tokenA}` } })
@@ -397,7 +419,7 @@ async function main() {
     if (produitId) await pool.query('DELETE FROM produits WHERE id = $1', [produitId]).catch(() => {})
     if (paiementId) await pool.query('DELETE FROM paiements WHERE id = $1', [paiementId]).catch(() => {})
     if (invitationId) await pool.query('DELETE FROM invitations_utilisateur WHERE id = $1', [invitationId]).catch(() => {})
-    for (const orgId of [orgAId, orgBId]) {
+    for (const orgId of [orgAId, orgBId, orgFrancheId]) {
       if (!orgId) continue
       await pool.query('DELETE FROM utilisateurs WHERE organisation_id = $1', [orgId]).catch(() => {})
       await pool.query('DELETE FROM abonnements WHERE organisation_id = $1', [orgId]).catch(() => {})

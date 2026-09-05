@@ -34,6 +34,35 @@ router.put('/', verifierAbonnement, exigerRole('organisations:update'), async (r
   }
 })
 
+// Gap web-shim comble — equivalent HTTP de organisations:creerOrganisation
+// (main.js:1148), jamais expose jusqu'ici (le bouton "Creer une nouvelle
+// organisation" plantait reellement sur le SaaS, aucune route ni canal).
+// Franchise/multi-boutique : un administrateur deja connecte cree une
+// organisation totalement independante, sans jamais obtenir d'acces dessus
+// (aucun changement de session ici, meme principe que main.js). verifierAbonnement
+// s'applique a l'organisation DU CREATEUR (via req.tenantContext, deja
+// verifiee par le middleware) -- empeche un administrateur suspendu de
+// s'echapper de sa propre suspension en creant indefiniment de nouvelles
+// organisations avec un essai gratuit neuf.
+router.post('/', verifierAbonnement, exigerRole('organisations:creerOrganisation'), async (req, res) => {
+  try {
+    validerEntree(req.body, {
+      nom:      { required: true, type: 'string', maxLen: 200 },
+      adminNom: { required: true, type: 'string', maxLen: 100 },
+      username: { required: true, type: 'string', maxLen: 100 },
+      password: { required: true, type: 'string', maxLen: 200 }
+    })
+    if (req.body.password.length < 6) {
+      return res.status(400).json({ erreur: 'Le mot de passe doit contenir au moins 6 caractères' })
+    }
+    const resultat = await organisationsService.creerAvecAdmin(req.body)
+    if (resultat.erreur) return res.status(400).json(resultat)
+    res.status(201).json({ succes: { organisation: resultat.succes.organisation, utilisateur: resultat.succes.utilisateur } })
+  } catch (e) {
+    res.status(400).json({ erreur: messageErreurSur(e) })
+  }
+})
+
 // Gap web-shim comble — equivalent HTTP de organisations:setStatut
 // (main.js:1107), jamais expose jusqu'ici (le bouton "Desactiver
 // l'organisation" de Parametres.js echouait reellement sur le SaaS). Pas de

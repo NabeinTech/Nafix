@@ -121,6 +121,7 @@
     'organisations:export': () => api('GET', '/organisations/export'),
     'organisations:demanderSuppression': (d) => api('POST', '/organisations/demander-suppression', d),
     'organisations:annulerSuppression': () => api('POST', '/organisations/annuler-suppression'),
+    'organisations:creerOrganisation': (d) => api('POST', '/organisations', d),
 
     // ── produits ──
     'produits:getAll': () => api('GET', '/produits'),
