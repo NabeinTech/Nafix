@@ -150,8 +150,9 @@
   }
 
   /* ---- Pricing ---- */
-  .price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
-  @media (max-width: 860px) { .price-grid { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; } }
+  .price-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  @media (max-width: 1040px) { .price-grid { grid-template-columns: repeat(2, 1fr); max-width: 620px; margin: 0 auto; } }
+  @media (max-width: 560px) { .price-grid { grid-template-columns: 1fr; max-width: 420px; } }
   .price-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 30px 26px;
     display: flex; flex-direction: column;
@@ -345,25 +346,34 @@
           <div class="price-card featured">
             <div class="badge">Le plus choisi</div>
             <div class="plan-nom">Standard</div>
-            <div class="plan-prix">15 000 <small>FCFA / mois</small></div>
+            <div class="plan-prix">5 000 <small>FCFA / mois</small></div>
             <div class="plan-sub">Pour un commerce en développement</div>
             <ul>
               <li><span class="chk">✓</span> Jusqu'à 10 utilisateurs</li>
               <li><span class="chk">✓</span> Toutes les fonctionnalités</li>
-              <li><span class="chk">✓</span> Support prioritaire</li>
             </ul>
             <a class="btn btn-primary" href="/signup.html">Démarrer avec Standard</a>
           </div>
           <div class="price-card">
             <div class="plan-nom">Illimité</div>
-            <div class="plan-prix">35 000 <small>FCFA / mois</small></div>
-            <div class="plan-sub">Pour plusieurs points de vente</div>
+            <div class="plan-prix">10 000 <small>FCFA / mois</small></div>
+            <div class="plan-sub">Pour une équipe qui grandit</div>
             <ul>
               <li><span class="chk">✓</span> Utilisateurs illimités</li>
               <li><span class="chk">✓</span> Toutes les fonctionnalités</li>
-              <li><span class="chk">✓</span> Support prioritaire</li>
             </ul>
             <a class="btn btn-ghost" href="/signup.html">Démarrer avec Illimité</a>
+          </div>
+          <div class="price-card">
+            <div class="plan-nom">Premium</div>
+            <div class="plan-prix">17 000 <small>FCFA / mois</small></div>
+            <div class="plan-sub">Pour plusieurs boutiques</div>
+            <ul>
+              <li><span class="chk">✓</span> Utilisateurs illimités</li>
+              <li><span class="chk">✓</span> Plusieurs boutiques/organisations</li>
+              <li><span class="chk">✓</span> Support prioritaire</li>
+            </ul>
+            <a class="btn btn-ghost" href="/signup.html">Démarrer avec Premium</a>
           </div>
         </div>
       </div>
