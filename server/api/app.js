@@ -103,6 +103,12 @@ function creerApp() {
     }
   })
 
+  // Landing page publique — alias sans extension pour un lien marketing
+  // plus court (/accueil.html reste servi tel quel par express.static ci-dessous).
+  app.get('/accueil', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'accueil.html'))
+  })
+
   // Sprint 17 — page publique d'inscription (statique, aucune dépendance
   // externe, servie directement par Express). Appelle POST /auth/signup
   // ci-dessous en relatif, donc fonctionne sans configuration supplémentaire
