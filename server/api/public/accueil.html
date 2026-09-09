@@ -92,9 +92,14 @@
   .hero h1 { font-size: 46px; line-height: 1.09; color: var(--navy); }
   .hero h1 span { background: linear-gradient(135deg, var(--bleu), var(--violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .hero p.lead { font-size: 17.5px; color: var(--ink-dim); margin: 22px 0 30px; max-width: 52ch; }
-  .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 26px; }
-  .hero-trust { display: flex; flex-wrap: wrap; gap: 18px; font-size: 13px; color: var(--ink-faint); }
-  .hero-trust span { display: flex; align-items: center; gap: 6px; }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 0; }
+
+  /* ---- Bande de reassurance ---- */
+  .trust-bar { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 20px 0; }
+  .trust-bar .wrap { display: flex; flex-wrap: wrap; justify-content: center; gap: 28px; }
+  .trust-item { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--ink-dim); }
+  .trust-item .ico { font-size: 15px; flex: none; }
+  @media (max-width: 640px) { .trust-bar .wrap { gap: 14px 22px; } .trust-item { font-size: 12.5px; } }
 
   .hero-visual { position: relative; }
   .doc-frame {
@@ -269,11 +274,6 @@
             <a class="btn btn-primary btn-lg" href="/signup.html">Démarrer gratuitement</a>
             <a class="btn btn-ghost btn-lg" href="#fonctionnalites">Voir les fonctionnalités</a>
           </div>
-          <div class="hero-trust">
-            <span>✅ 14 jours d'essai gratuit</span>
-            <span>✅ Sans carte bancaire</span>
-            <span>✅ Vos données vous appartiennent</span>
-          </div>
         </div>
         <div class="hero-visual">
           <div class="doc-frame">
@@ -283,6 +283,16 @@
         </div>
       </div>
     </section>
+
+    <div class="trust-bar">
+      <div class="wrap">
+        <div class="trust-item"><span class="ico">✅</span>14 jours d'essai gratuit</div>
+        <div class="trust-item"><span class="ico">💳</span>Sans carte bancaire</div>
+        <div class="trust-item"><span class="ico">🔒</span>Vos données vous appartiennent</div>
+        <div class="trust-item"><span class="ico">●</span>Conçu pour les commerces sénégalais</div>
+        <div class="trust-item"><span class="ico">💻</span>Accessible depuis un ordinateur ou un navigateur</div>
+      </div>
+    </div>
 
     <section class="section section-alt" id="secteurs">
       <div class="wrap">
