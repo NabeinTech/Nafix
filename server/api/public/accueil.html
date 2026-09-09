@@ -124,6 +124,18 @@
   .section-head p { font-size: 16px; color: var(--ink-dim); margin-top: 14px; }
   .section-alt { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 
+  /* ---- Comment ca marche ---- */
+  .steps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 8px; }
+  .step-card { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+  .step-num {
+    width: 44px; height: 44px; border-radius: 50%; background: var(--navy); color: white;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800;
+    font-family: 'IBM Plex Mono', monospace; flex: none;
+  }
+  .step-lbl { font-size: 14.5px; font-weight: 600; color: var(--ink); }
+  @media (max-width: 760px) { .steps-grid { grid-template-columns: repeat(2, 1fr); gap: 28px 20px; } }
+  @media (max-width: 460px) { .steps-grid { grid-template-columns: 1fr; } }
+
   /* ---- Secteurs ---- */
   .sector-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
   @media (max-width: 900px) { .sector-grid { grid-template-columns: repeat(3, 1fr); } }
@@ -247,6 +259,11 @@
 
   /* ---- Footer ---- */
   footer.site-footer { padding: 48px 0 36px; }
+  .footer-cols { display: flex; gap: 48px; padding-bottom: 32px; flex-wrap: wrap; }
+  .footer-col { display: flex; flex-direction: column; gap: 10px; min-width: 120px; }
+  .footer-col-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); margin-bottom: 4px; }
+  .footer-col a { font-size: 14px; color: var(--ink-dim); text-decoration: none; }
+  .footer-col a:hover { color: var(--navy); }
   .footer-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 20px; align-items: center; border-top: 1px solid var(--border); padding-top: 28px; }
   .footer-inner .brand { font-size: 15px; }
   .footer-inner .brand .mark-img { width: 26px; height: 26px; border-radius: 7px; }
@@ -431,6 +448,33 @@
       </div>
     </section>
 
+    <section class="section section-compact section-alt" id="comment-ca-marche">
+      <div class="wrap">
+        <div class="section-head">
+          <div class="eyebrow">Comment ça marche</div>
+          <h2>Opérationnel en quelques minutes</h2>
+        </div>
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-num">1</div>
+            <div class="step-lbl">Créez votre compte</div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">2</div>
+            <div class="step-lbl">Ajoutez vos produits</div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">3</div>
+            <div class="step-lbl">Commencez à vendre</div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">4</div>
+            <div class="step-lbl">Suivez votre activité</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="section" id="tarifs">
       <div class="wrap">
         <div class="section-head">
@@ -501,6 +545,19 @@
   </main>
 
   <footer class="site-footer">
+    <div class="wrap footer-cols">
+      <div class="footer-col">
+        <div class="footer-col-title">Produit</div>
+        <a href="#secteurs">Secteurs</a>
+        <a href="#fonctionnalites">Fonctionnalités</a>
+        <a href="#tarifs">Tarifs</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Compte</div>
+        <a href="/">Se connecter</a>
+        <a href="/signup.html">Essai gratuit</a>
+      </div>
+    </div>
     <div class="wrap footer-inner">
       <a class="brand" href="#top"><img class="mark-img" src="/logo-nafix.png" alt="Nafix">Nafix</a>
       <div class="fine">© 2026 Nafix. Fait pour les commerces du Sénégal.</div>
