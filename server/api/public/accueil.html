@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nafix — Gérez votre commerce, simplement</title>
 <meta name="description" content="Le logiciel de gestion pensé pour les commerces sénégalais : ventes, stock, devis, factures professionnelles et trésorerie, sur ordinateur comme sur le web.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%23132743%22/><text x=%2250%22 y=%2268%22 font-size=%2258%22 font-family=%22Arial%22 font-weight=%22800%22 fill=%22%230d9488%22 text-anchor=%22middle%22>N</text></svg>">
+<link rel="icon" type="image/png" href="/logo-nafix.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -50,11 +50,7 @@
   }
   .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 68px; }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; text-decoration: none; color: var(--navy); }
-  .brand .mark {
-    width: 34px; height: 34px; border-radius: 9px; background: var(--navy);
-    color: var(--teal); display: flex; align-items: center; justify-content: center;
-    font-size: 19px; font-weight: 800; flex: none;
-  }
+  .brand .mark-img { width: 34px; height: 34px; border-radius: 9px; flex: none; object-fit: cover; box-shadow: 0 1px 2px rgba(16,26,43,.15); }
   .nav-links { display: flex; align-items: center; gap: 28px; }
   .nav-links a.link { font-size: 14.5px; font-weight: 500; color: var(--ink-dim); text-decoration: none; }
   .nav-links a.link:hover { color: var(--ink); }
@@ -190,15 +186,21 @@
   footer.site-footer { padding: 48px 0 36px; }
   .footer-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 20px; align-items: center; border-top: 1px solid var(--border); padding-top: 28px; }
   .footer-inner .brand { font-size: 15px; }
-  .footer-inner .brand .mark { width: 26px; height: 26px; font-size: 15px; border-radius: 7px; }
+  .footer-inner .brand .mark-img { width: 26px; height: 26px; border-radius: 7px; }
   footer.site-footer .fine { font-size: 13px; color: var(--ink-faint); }
+  .footer-credit {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border);
+    font-size: 12.5px; color: var(--ink-faint);
+  }
+  .footer-credit img { width: 20px; height: 20px; border-radius: 5px; flex: none; }
 </style>
 </head>
 <body>
 
   <header class="nav">
     <div class="wrap nav-inner">
-      <a class="brand" href="#top"><span class="mark">N</span>Nafix</a>
+      <a class="brand" href="#top"><img class="mark-img" src="/logo-nafix.png" alt="Nafix">Nafix</a>
       <nav class="nav-links">
         <a class="link" href="#secteurs">Secteurs</a>
         <a class="link" href="#fonctionnalites">Fonctionnalités</a>
@@ -395,8 +397,11 @@
 
   <footer class="site-footer">
     <div class="wrap footer-inner">
-      <a class="brand" href="#top"><span class="mark">N</span>Nafix</a>
+      <a class="brand" href="#top"><img class="mark-img" src="/logo-nafix.png" alt="Nafix">Nafix</a>
       <div class="fine">© 2026 Nafix. Fait pour les commerces du Sénégal.</div>
+    </div>
+    <div class="wrap">
+      <div class="footer-credit"><img src="/logo-nafimax.png" alt="Nafimax Technology">Une solution développée par Nafimax Technology</div>
     </div>
   </footer>
 
