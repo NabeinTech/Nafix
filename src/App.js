@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { Layout, ConfigProvider } from 'antd'
+import { Layout, ConfigProvider, Grid, Button } from 'antd'
+import { MenuOutlined } from '@ant-design/icons'
 import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Dashboard'
 import Produits from './pages/Produits'
@@ -26,6 +27,7 @@ import 'antd/dist/reset.css'
 const INTERVALLE_RAFRAICHISSEMENT_ABONNEMENT_MS = 5 * 60 * 1000
 
 const { Content } = Layout
+const { useBreakpoint } = Grid
 
 // ✅ Route protégée par rôle
 function RouteProtegee({ utilisateur, module, children }) {
@@ -67,6 +69,10 @@ function App() {
 
   const [statutAbonnement, setStatutAbonnement] = useState(null)
   const [organisationMine, setOrganisationMine] = useState(null)
+
+  const screens = useBreakpoint()
+  const estMobile = !screens.md
+  const [menuMobileOuvert, setMenuMobileOuvert] = useState(false)
 
   // Statut d'abonnement — chargé au login puis rafraîchi périodiquement,
   // pour refléter un changement fait par le Platform Admin (suspension,
@@ -166,9 +172,26 @@ function App() {
           utilisateur={utilisateur}
           onLogout={handleLogout}
           statutAbonnement={statutAbonnement}
+          estMobile={estMobile}
+          menuMobileOuvert={menuMobileOuvert}
+          onFermerMenuMobile={() => setMenuMobileOuvert(false)}
         />
         <Layout>
-          <Content style={{ margin: '24px' }}>
+          {estMobile && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '8px 16px', background: '#001529',
+              position: 'sticky', top: 0, zIndex: 10
+            }}>
+              <Button
+                type="text"
+                icon={<MenuOutlined style={{ color: 'white', fontSize: 20 }} />}
+                onClick={() => setMenuMobileOuvert(true)}
+              />
+              <img src="nafix-logo.png" alt="Nafix" style={{ height: 28, objectFit: 'contain' }} />
+            </div>
+          )}
+          <Content style={{ margin: estMobile ? '12px' : '24px' }}>
             <Routes>
 
               {/* ── Dashboard ── */}

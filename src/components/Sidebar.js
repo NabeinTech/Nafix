@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Layout, Menu, Avatar, Typography, Button, Popconfirm, Tag } from 'antd'
+import { Layout, Menu, Avatar, Typography, Button, Popconfirm, Tag, Drawer } from 'antd'
 import dayjs from 'dayjs'
 import {
   DashboardOutlined, ShoppingOutlined, TeamOutlined,
@@ -15,7 +15,7 @@ import { utilisateurPeutAcceder } from '../utils/permissions'
 const { Sider } = Layout
 const { Text } = Typography
 
-function Sidebar({ utilisateur, onLogout, statutAbonnement }) {
+function Sidebar({ utilisateur, onLogout, statutAbonnement, estMobile, menuMobileOuvert, onFermerMenuMobile }) {
   const [collapsed, setCollapsed] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
@@ -124,17 +124,17 @@ function Sidebar({ utilisateur, onLogout, statutAbonnement }) {
 
   const itemsFiltres = filtrerItems(tousLesItems)
 
-  return (
-    <Sider
-      collapsible
-      collapsed={collapsed}
-      onCollapse={setCollapsed}
-      width={220}
-    >
+  const gererClicMenu = ({ key }) => {
+    navigate(key)
+    if (estMobile) onFermerMenuMobile?.()
+  }
+
+  const contenu = (replie) => (
+    <>
       {/* Logo */}
       <div style={{
         textAlign: 'center',
-        padding: collapsed ? '12px 8px' : '12px 16px',
+        padding: replie ? '12px 8px' : '12px 16px',
         borderBottom: '1px solid #ffffff20',
         display: 'flex',
         alignItems: 'center',
@@ -144,17 +144,17 @@ function Sidebar({ utilisateur, onLogout, statutAbonnement }) {
           src="nafix-logo.png"
           alt="Nafix"
           style={{
-            width: collapsed ? 40 : 140,
-            height: collapsed ? 40 : 140,
+            width: replie ? 40 : 140,
+            height: replie ? 40 : 140,
             objectFit: 'contain',
-            borderRadius: collapsed ? 8 : 16,
+            borderRadius: replie ? 8 : 16,
             transition: 'all 0.2s ease'
           }}
         />
       </div>
 
       {/* Infos utilisateur */}
-      {!collapsed && (
+      {!replie && (
         <div style={{
           padding: '12px 16px',
           borderBottom: '1px solid #ffffff20',
@@ -203,7 +203,7 @@ function Sidebar({ utilisateur, onLogout, statutAbonnement }) {
         defaultOpenKeys={['commercial', 'inventaire', 'finances', 'ia']}
         mode="inline"
         items={itemsFiltres}
-        onClick={({ key }) => navigate(key)}
+        onClick={gererClicMenu}
         style={{ flex: 1 }}
       />
 
@@ -225,10 +225,36 @@ function Sidebar({ utilisateur, onLogout, statutAbonnement }) {
             icon={<LogoutOutlined />}
             style={{ width: '100%' }}
           >
-            {!collapsed && 'Déconnexion'}
+            {!replie && 'Déconnexion'}
           </Button>
         </Popconfirm>
       </div>
+    </>
+  )
+
+  if (estMobile) {
+    return (
+      <Drawer
+        placement="left"
+        open={menuMobileOuvert}
+        onClose={onFermerMenuMobile}
+        width={260}
+        closable={false}
+        styles={{ body: { padding: 0, background: '#001529', display: 'flex', flexDirection: 'column' } }}
+      >
+        {contenu(false)}
+      </Drawer>
+    )
+  }
+
+  return (
+    <Sider
+      collapsible
+      collapsed={collapsed}
+      onCollapse={setCollapsed}
+      width={220}
+    >
+      {contenu(collapsed)}
     </Sider>
   )
 }
