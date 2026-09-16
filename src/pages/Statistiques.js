@@ -679,7 +679,8 @@ function Statistiques() {
             columns={colonnesTop}
             rowKey="nom"
             pagination={{ pageSize: 10, hideOnSinglePage: true }}
-            size="small" />
+            size="small"
+            scroll={{ x: 'max-content' }} />
         )}
       </Card>
 
