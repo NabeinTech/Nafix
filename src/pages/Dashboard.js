@@ -435,6 +435,7 @@ function Dashboard({ utilisateur }) {
           ) : (
             <Table dataSource={stats.ventesAujourdhui} columns={colonnesCaissier}
               rowKey="id" pagination={{ pageSize: 10, hideOnSinglePage: true }} size="small"
+              scroll={{ x: 'max-content' }}
               summary={() => (
                 <Table.Summary.Row>
                   <Table.Summary.Cell index={0} colSpan={2}>
@@ -741,7 +742,8 @@ function Dashboard({ utilisateur }) {
               </div>
             ) : (
               <Table dataSource={stats.ventesAujourdhui} columns={colonnesVentes}
-                rowKey="id" pagination={{ pageSize: 5, hideOnSinglePage: true }} size="small" />
+                rowKey="id" pagination={{ pageSize: 5, hideOnSinglePage: true }} size="small"
+                scroll={{ x: 'max-content' }} />
             )}
           </Card>
 
@@ -768,7 +770,8 @@ function Dashboard({ utilisateur }) {
               </div>
             ) : (
               <Table dataSource={stats.dernieresVentes} columns={colonnesVentes}
-                rowKey="id" pagination={false} size="small" />
+                rowKey="id" pagination={false} size="small"
+                scroll={{ x: 'max-content' }} />
             )}
           </Card>
         </Col>
@@ -797,7 +800,7 @@ function Dashboard({ utilisateur }) {
             ) : (
               <Table dataSource={stats.alertesStock} columns={colonnesStock}
                 rowKey="id" pagination={{ pageSize: 4, hideOnSinglePage: true }}
-                size="small" />
+                size="small" scroll={{ x: 'max-content' }} />
             )}
           </Card>
 
