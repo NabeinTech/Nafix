@@ -984,13 +984,13 @@ function Fournisseurs({ utilisateur }) {
           {/* Identité */}
           <Divider orientation="left" style={{ fontSize: 12, color: '#888' }}>Identité</Divider>
           <Row gutter={16}>
-            <Col span={14}>
+            <Col xs={24} sm={14}>
               <Form.Item name="nom" label="Nom du fournisseur"
                 rules={[{ required: true, message: 'Nom obligatoire' }]}>
                 <Input prefix={<TruckOutlined />} placeholder="Ex: Distributions Diallo & Fils" size="large" />
               </Form.Item>
             </Col>
-            <Col span={10}>
+            <Col xs={24} sm={10}>
               <Form.Item name="type" label="Type" initialValue="grossiste">
                 <Select size="large">
                   {TYPE_FOURNISSEUR.map(t => (
@@ -1002,12 +1002,12 @@ function Fournisseurs({ utilisateur }) {
           </Row>
 
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="ninea" label="NINEA">
                 <Input placeholder="NINEA du fournisseur" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="registre_commerce" label="Registre de Commerce">
                 <Input placeholder="Numéro RC" />
               </Form.Item>
@@ -1017,12 +1017,12 @@ function Fournisseurs({ utilisateur }) {
           {/* Contacts */}
           <Divider orientation="left" style={{ fontSize: 12, color: '#888' }}>Contacts</Divider>
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="telephone" label="Téléphone">
                 <Input prefix={<PhoneOutlined />} placeholder="+221 77 000 00 00" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="email" label="Email">
                 <Input prefix={<MailOutlined />} placeholder="contact@fournisseur.sn" />
               </Form.Item>
@@ -1030,12 +1030,12 @@ function Fournisseurs({ utilisateur }) {
           </Row>
 
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="contact_nom" label="Nom du contact">
                 <Input prefix={<UserOutlined />} placeholder="Responsable commercial" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="site_web" label="Site Web">
                 <Input prefix={<LinkOutlined />} placeholder="https://..." />
               </Form.Item>
@@ -1049,7 +1049,7 @@ function Fournisseurs({ utilisateur }) {
           {/* Conditions commerciales */}
           <Divider orientation="left" style={{ fontSize: 12, color: '#888' }}>Conditions commerciales</Divider>
           <Row gutter={16}>
-            <Col span={14}>
+            <Col xs={24} sm={14}>
               <Form.Item name="conditions_paiement" label="Conditions de paiement" initialValue="Comptant">
                 <Select size="large">
                   {CONDITIONS_PAIEMENT.map(c => (
@@ -1058,7 +1058,7 @@ function Fournisseurs({ utilisateur }) {
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={10}>
+            <Col xs={24} sm={10}>
               <Form.Item name="delai_livraison_jours" label="Délai livraison habituel" initialValue={7}>
                 <InputNumber min={0} max={365} style={{ width: '100%' }} size="large"
                   addonAfter="jours" />
@@ -1098,7 +1098,7 @@ function Fournisseurs({ utilisateur }) {
       >
         <Form form={formA} layout="vertical" onFinish={validerAchat}>
           <Row gutter={16}>
-            <Col span={10}>
+            <Col xs={24} sm={10}>
               <Form.Item name="fournisseur_id" label="🚛 Fournisseur">
                 <Select showSearch placeholder="Sélectionner un fournisseur..." allowClear size="large"
                   filterOption={(input, option) =>
@@ -1113,12 +1113,12 @@ function Fournisseurs({ utilisateur }) {
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={5}>
+            <Col xs={24} sm={5}>
               <Form.Item name="reference" label="Référence BC">
                 <Input placeholder={`BC-${Date.now().toString().slice(-6)}`} />
               </Form.Item>
             </Col>
-            <Col span={5}>
+            <Col xs={24} sm={5}>
               <Form.Item name="priorite" label="Priorité" initialValue="normale">
                 <Select size="large">
                   {PRIORITES.map(p => (
@@ -1127,7 +1127,7 @@ function Fournisseurs({ utilisateur }) {
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={4}>
+            <Col xs={24} sm={4}>
               <Form.Item name="date_achat" label="Date" initialValue={dayjs()}>
                 <DatePicker style={{ width: '100%' }} size="large" format="DD/MM/YYYY" />
               </Form.Item>
@@ -1135,13 +1135,13 @@ function Fournisseurs({ utilisateur }) {
           </Row>
 
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="date_livraison_prevue" label="📅 Date livraison souhaitée">
                 <DatePicker style={{ width: '100%' }} size="large" format="DD/MM/YYYY"
                   placeholder="Optionnel" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="notes" label="Notes de commande">
                 <Input placeholder="Conditions, remarques, instructions livraison..." />
               </Form.Item>
@@ -1281,19 +1281,19 @@ function Fournisseurs({ utilisateur }) {
                   📦 Article hors catalogue — ne sera pas ajouté au stock automatiquement
                 </div>
                 <Row gutter={8}>
-                  <Col span={10}>
+                  <Col xs={24} sm={10}>
                     <Input placeholder="Nom de l'article" size="small"
                       value={articleLibreNom} onChange={e => setArticleLibreNom(e.target.value)} />
                   </Col>
-                  <Col span={5}>
+                  <Col xs={24} sm={5}>
                     <Input placeholder="Unité (kg, carton...)" size="small"
                       value={articleLibreUnite} onChange={e => setArticleLibreUnite(e.target.value)} />
                   </Col>
-                  <Col span={4}>
+                  <Col xs={24} sm={4}>
                     <InputNumber placeholder="Qté" min={0.001} step={1} size="small" style={{ width: '100%' }}
                       value={articleLibreQte} onChange={v => setArticleLibreQte(v || 0)} />
                   </Col>
-                  <Col span={5}>
+                  <Col xs={24} sm={5}>
                     <InputNumber placeholder="Prix unit." min={0} size="small" style={{ width: '100%' }}
                       value={articleLibrePrix} onChange={v => setArticleLibrePrix(v || 0)} />
                   </Col>
@@ -1491,15 +1491,15 @@ function Fournisseurs({ utilisateur }) {
                   borderRadius: 8
                 }}>
                   <Row gutter={16}>
-                    <Col span={8}>
+                    <Col xs={24} sm={8}>
                       <Statistic title="Total BC" value={montantTotalAchat} suffix="FCFA"
                         valueStyle={{ color: '#ff4d4f', fontSize: 14 }} />
                     </Col>
-                    <Col span={8}>
+                    <Col xs={24} sm={8}>
                       <Statistic title="Versé" value={montantPayeAchat} suffix="FCFA"
                         valueStyle={{ color: '#52c41a', fontSize: 14 }} />
                     </Col>
-                    <Col span={8}>
+                    <Col xs={24} sm={8}>
                       <Statistic
                         title={montantTotalAchat - montantPayeAchat > 0 ? '⚠️ Reste dû' : '✅ Soldé'}
                         value={Math.max(0, montantTotalAchat - montantPayeAchat)} suffix="FCFA"
@@ -1696,7 +1696,7 @@ function Fournisseurs({ utilisateur }) {
 
               {/* KPIs fournisseur */}
               <Row gutter={[10, 10]} style={{ marginBottom: 16 }}>
-                <Col span={8}>
+                <Col xs={24} sm={8}>
                   <Card size="small" style={{ background: theme.lightBg, borderRadius: 8, textAlign: 'center' }}>
                     <Text style={{ color: '#888', fontSize: 11, display: 'block' }}>Commandes</Text>
                     <Text strong style={{ color: theme.primaryColor, fontSize: 20 }}>
@@ -1704,7 +1704,7 @@ function Fournisseurs({ utilisateur }) {
                     </Text>
                   </Card>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={8}>
                   <Card size="small" style={{ background: '#f6ffed', borderRadius: 8, textAlign: 'center' }}>
                     <Text style={{ color: '#888', fontSize: 11, display: 'block' }}>Total payé</Text>
                     <Text strong style={{ color: '#52c41a', fontSize: 13 }}>
@@ -1713,7 +1713,7 @@ function Fournisseurs({ utilisateur }) {
                     <Text style={{ color: '#aaa', fontSize: 10 }}> FCFA</Text>
                   </Card>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={8}>
                   <Card size="small" style={{ background: totalDuFourn > 0 ? '#fff2f0' : '#f6ffed', borderRadius: 8, textAlign: 'center' }}>
                     <Text style={{ color: '#888', fontSize: 11, display: 'block' }}>Reste dû</Text>
                     <Text strong style={{ color: totalDuFourn > 0 ? '#ff4d4f' : '#52c41a', fontSize: 13 }}>
@@ -1722,7 +1722,7 @@ function Fournisseurs({ utilisateur }) {
                     <Text style={{ color: '#aaa', fontSize: 10 }}> FCFA</Text>
                   </Card>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} sm={12}>
                   <Card size="small" style={{ background: '#fff7e6', borderRadius: 8 }}>
                     <Text style={{ color: '#888', fontSize: 11, display: 'block' }}>Moy. par commande</Text>
                     <Text strong style={{ color: '#fa8c16', fontSize: 13 }}>
@@ -1730,7 +1730,7 @@ function Fournisseurs({ utilisateur }) {
                     </Text>
                   </Card>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} sm={12}>
                   <Card size="small" style={{
                     background: score >= 80 ? '#f6ffed' : score >= 50 ? '#fff7e6' : '#fff2f0',
                     borderRadius: 8

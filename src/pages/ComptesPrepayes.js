@@ -454,7 +454,7 @@ export default function ComptesPrepayes({ utilisateur }) {
 
       {/* ── KPIs ── */}
       <Row gutter={16} style={{ marginBottom: '20px' }}>
-        <Col span={6}>
+        <Col xs={12} sm={6}>
           <Card>
             <Statistic
               title="Comptes actifs"
@@ -464,7 +464,7 @@ export default function ComptesPrepayes({ utilisateur }) {
             />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col xs={12} sm={6}>
           <Card>
             <Statistic
               title="Total dépôts"
@@ -475,7 +475,7 @@ export default function ComptesPrepayes({ utilisateur }) {
             />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col xs={12} sm={6}>
           <Card>
             <Statistic
               title="Soldes disponibles"
@@ -486,7 +486,7 @@ export default function ComptesPrepayes({ utilisateur }) {
             />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col xs={12} sm={6}>
           <Card>
             <Statistic
               title="En alerte"
@@ -506,6 +506,7 @@ export default function ComptesPrepayes({ utilisateur }) {
           rowKey="id"
           loading={loading}
           pagination={{ pageSize: 15, showSizeChanger: false }}
+          scroll={{ x: 'max-content' }}
           rowClassName={r => r.en_alerte && r.actif ? 'row-alerte' : ''}
           locale={{ emptyText: <Empty description="Aucun compte prépayé" /> }}
         />
@@ -735,12 +736,12 @@ export default function ComptesPrepayes({ utilisateur }) {
           <>
             {/* Résumé compte */}
             <Row gutter={12} style={{ marginBottom: 16 }}>
-              <Col span={8}>
+              <Col xs={24} sm={8}>
                 <Card size="small">
                   <Statistic title="Dépôt initial" value={Number(drawerAvoir.montant_initial)} suffix="FCFA" valueStyle={{ fontSize: 14 }} />
                 </Card>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={8}>
                 <Card size="small">
                   <Statistic
                     title="Solde restant"
@@ -750,7 +751,7 @@ export default function ComptesPrepayes({ utilisateur }) {
                   />
                 </Card>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={8}>
                 <Card size="small">
                   <Statistic
                     title="Montant dépensé"
@@ -800,6 +801,7 @@ export default function ComptesPrepayes({ utilisateur }) {
               rowKey="id"
               loading={loadingTx}
               size="small"
+              scroll={{ x: 'max-content' }}
               pagination={{ pageSize: 20, showSizeChanger: false }}
               locale={{ emptyText: <Empty description="Aucune transaction" /> }}
             />

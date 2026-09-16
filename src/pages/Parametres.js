@@ -675,7 +675,7 @@ function Parametres({ utilisateur }) {
 
           <Row gutter={24}>
             {/* ── Colonne gauche ── */}
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <div style={{ marginBottom: 16 }}>
                 <Text style={{
                   color: '#1890ff', fontWeight: 700, fontSize: 12,
@@ -750,7 +750,7 @@ function Parametres({ utilisateur }) {
             </Col>
 
             {/* ── Colonne droite ── */}
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <div style={{ marginBottom: 16 }}>
                 <Text style={{
                   color: '#52c41a', fontWeight: 700, fontSize: 12,
@@ -840,42 +840,42 @@ function Parametres({ utilisateur }) {
             <Divider style={{ margin: '8px 0' }} />
             <Row gutter={[16, 8]}>
               {parametres.adresse && (
-                <Col span={12}>
+                <Col xs={24} sm={12}>
                   <Text style={{ fontSize: 12, color: '#555' }}>
                     📍 {parametres.adresse}
                   </Text>
                 </Col>
               )}
               {parametres.telephone && (
-                <Col span={12}>
+                <Col xs={24} sm={12}>
                   <Text style={{ fontSize: 12, color: '#555' }}>
                     📞 {parametres.telephone}
                   </Text>
                 </Col>
               )}
               {parametres.telephone_secondaire && (
-                <Col span={12}>
+                <Col xs={24} sm={12}>
                   <Text style={{ fontSize: 12, color: '#555' }}>
                     📞 {parametres.telephone_secondaire}
                   </Text>
                 </Col>
               )}
               {parametres.email && (
-                <Col span={12}>
+                <Col xs={24} sm={12}>
                   <Text style={{ fontSize: 12, color: '#555' }}>
                     ✉️ {parametres.email}
                   </Text>
                 </Col>
               )}
               {parametres.registre_commerce && (
-                <Col span={12}>
+                <Col xs={24} sm={12}>
                   <Text style={{ fontSize: 12, color: '#555' }}>
                     🏢 RC: {parametres.registre_commerce}
                   </Text>
                 </Col>
               )}
               {parametres.ninea && (
-                <Col span={12}>
+                <Col xs={24} sm={12}>
                   <Text style={{ fontSize: 12, color: '#555' }}>
                     🏛️ NINEA: {parametres.ninea}
                   </Text>
@@ -910,7 +910,7 @@ function Parametres({ utilisateur }) {
                 } catch { return null }
               })()}
               {parametres.tva_taux && (
-                <Col span={12}>
+                <Col xs={24} sm={12}>
                   <Text style={{ fontSize: 12, color: '#555' }}>
                     🧾 TVA: {parametres.tva_taux}%
                   </Text>
@@ -975,11 +975,11 @@ function Parametres({ utilisateur }) {
         </div>
         {abonnement ? (
           <Row gutter={[16, 8]}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Text style={{ display: 'block', color: '#888', fontSize: 12 }}>Plan</Text>
               <Text strong>{abonnement.plan_nom || '—'}</Text>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Text style={{ display: 'block', color: '#888', fontSize: 12 }}>
                 {['essai', 'essai_expire'].includes(abonnement.statut) ? 'Fin de la période d\'essai' : 'Prochain paiement'}
               </Text>
@@ -1012,7 +1012,7 @@ function Parametres({ utilisateur }) {
             <Divider style={{ margin: '20px 0 12px' }} />
             <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 8 }}>Historique de facturation</Text>
             <Table
-              size="small"
+              size="small" scroll={{ x: 'max-content' }}
               pagination={false}
               rowKey="id"
               dataSource={paiements}
@@ -1112,7 +1112,7 @@ function Parametres({ utilisateur }) {
     <div>
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
         {Object.entries(roleConfig).map(([key, cfg]) => (
-          <Col span={6} key={key}>
+          <Col xs={12} sm={6} key={key}>
             <Card style={{ borderRadius: 12, border: 'none', background: '#fafafa', textAlign: 'center' }}
               bodyStyle={{ padding: '12px' }}>
               <div style={{ fontSize: 24, marginBottom: 4 }}>{cfg.label.split(' ')[0]}</div>
@@ -1151,7 +1151,7 @@ function Parametres({ utilisateur }) {
         style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
       >
         <Table dataSource={utilisateurs} columns={colonnesUsers} rowKey="id"
-          pagination={{ pageSize: 8, showSizeChanger: false }}
+          pagination={{ pageSize: 8, showSizeChanger: false }} scroll={{ x: 'max-content' }}
           locale={{ emptyText: 'Aucun utilisateur enregistré' }} />
       </Card>
 
@@ -1225,7 +1225,7 @@ function Parametres({ utilisateur }) {
       {/* Grille des domaines */}
       <Row gutter={[16, 16]}>
         {getTousDomaines().map((d) => (
-          <Col span={12} key={d.type}>
+          <Col xs={24} sm={12} key={d.type}>
             <Card hoverable
               onClick={() => !domaineLoading && sauvegarderDomaine(d.type)}
               style={{
@@ -1305,7 +1305,7 @@ function Parametres({ utilisateur }) {
           { label: 'Rôles Utilisateurs', val: '4', emoji: '👥', color: '#52c41a', bg: '#f6ffed' },
           { label: '100% Hors Ligne', val: '✓', emoji: '🔒', color: '#faad14', bg: '#fffbe6' }
         ].map((s, i) => (
-          <Col span={6} key={i}>
+          <Col xs={12} sm={6} key={i}>
             <Card style={{ borderRadius: 12, border: 'none', background: s.bg, textAlign: 'center' }}
               bodyStyle={{ padding: '16px 8px' }}>
               <div style={{ fontSize: 28 }}>{s.emoji}</div>
@@ -1317,7 +1317,7 @@ function Parametres({ utilisateur }) {
       </Row>
 
       <Row gutter={[16, 16]}>
-        <Col span={12}>
+        <Col xs={24} sm={12}>
           <Card style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             <Text strong style={{ display: 'block', marginBottom: 12 }}>🔧 Technologies utilisées</Text>
             {[
@@ -1341,7 +1341,7 @@ function Parametres({ utilisateur }) {
             ))}
           </Card>
         </Col>
-        <Col span={12}>
+        <Col xs={24} sm={12}>
           <Card style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             <Text strong style={{ display: 'block', marginBottom: 12 }}>🌍 Adapté pour l'Afrique</Text>
             {[
@@ -1400,7 +1400,7 @@ function Parametres({ utilisateur }) {
           {palettes.map((p) => {
             const actif = couleurTheme === p.couleur
             return (
-              <Col span={6} key={p.couleur}>
+              <Col xs={12} sm={6} key={p.couleur}>
                 <div
                   onClick={() => appliquerTheme(p.couleur)}
                   style={{
@@ -1647,7 +1647,7 @@ function Parametres({ utilisateur }) {
                 { label: 'Utilisateur', val: dbStats.user },
                 { label: 'Taille',   val: dbStats.dbSize || '—' }
               ].map((item) => (
-                <Col span={8} key={item.label}>
+                <Col xs={12} sm={8} key={item.label}>
                   <Text style={{ color: '#888', fontSize: 12, display: 'block' }}>{item.label}</Text>
                   <Text strong style={{ fontSize: 14 }}>{item.val}</Text>
                 </Col>
@@ -1657,7 +1657,7 @@ function Parametres({ utilisateur }) {
 
           {/* Résumé chiffres */}
           <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
-            <Col span={8}>
+            <Col xs={24} sm={8}>
               <Card style={{ borderRadius: 12, border: 'none', background: '#f0f5ff', textAlign: 'center' }}
                 bodyStyle={{ padding: '16px 8px' }}>
                 <Statistic
@@ -1668,7 +1668,7 @@ function Parametres({ utilisateur }) {
                 />
               </Card>
             </Col>
-            <Col span={8}>
+            <Col xs={24} sm={8}>
               <Card style={{ borderRadius: 12, border: 'none', background: '#f9f0ff', textAlign: 'center' }}
                 bodyStyle={{ padding: '16px 8px' }}>
                 <Statistic
@@ -1679,7 +1679,7 @@ function Parametres({ utilisateur }) {
                 />
               </Card>
             </Col>
-            <Col span={8}>
+            <Col xs={24} sm={8}>
               <Card style={{ borderRadius: 12, border: 'none', background: '#fff7e6', textAlign: 'center' }}
                 bodyStyle={{ padding: '16px 8px' }}>
                 <Statistic
@@ -1701,7 +1701,7 @@ function Parametres({ utilisateur }) {
                 const cfg = tableLabels[t.table] || { label: t.table, emoji: '📄' }
                 const pct = totalLignes > 0 ? Math.round((t.count / totalLignes) * 100) : 0
                 return (
-                  <Col span={12} key={t.table}>
+                  <Col xs={24} sm={12} key={t.table}>
                     <div style={{
                       background: '#fafafa', borderRadius: 10,
                       padding: '12px 16px', border: '1px solid #f0f0f0'

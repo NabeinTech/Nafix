@@ -329,7 +329,7 @@ function NafixAI() {
               {/* Métriques prédiction */}
               <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
                 {predictionCA.predictions.map((p, i) => (
-                  <Col span={8} key={i}>
+                  <Col xs={24} sm={8} key={i}>
                     <Card style={{
                       borderRadius: 12,
                       background: i === 0
@@ -431,7 +431,7 @@ function NafixAI() {
               const couleurs = ['#ff4d4f', '#ff7a45', '#faad14', '#52c41a']
               const icones = ['🚨', '⚠️', '🔶', '✅']
               return (
-                <Col span={6} key={risque}>
+                <Col xs={12} sm={6} key={risque}>
                   <Card style={{ borderRadius: 12, border: `2px solid ${couleurs[i]}`, textAlign: 'center' }}>
                     <div style={{ fontSize: 28 }}>{icones[i]}</div>
                     <Title level={2} style={{ color: couleurs[i], margin: '4px 0' }}>{count}</Title>
@@ -453,7 +453,7 @@ function NafixAI() {
                 columns={colonnesRupture}
                 rowKey="id"
                 pagination={{ pageSize: 8 }}
-                size="small"
+                size="small" scroll={{ x: 'max-content' }}
                 rowClassName={(r) => r.risque === 'critique' ? 'row-critique' : ''}
               />
             </Card>
@@ -469,7 +469,7 @@ function NafixAI() {
           {/* Stats segments */}
           <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
             {statsSegments.map((s, i) => (
-              <Col span={Math.floor(24 / Math.max(statsSegments.length, 1))} key={i}>
+              <Col xs={12} sm={Math.floor(24 / Math.max(statsSegments.length, 1))} key={i}>
                 <Card style={{ borderRadius: 12, border: 'none', background: '#fafbfc', textAlign: 'center' }}>
                   <div style={{ fontSize: 24 }}>{s.segment.split(' ')[0]}</div>
                   <Title level={3} style={{ margin: '4px 0' }}>{s.count}</Title>
@@ -488,7 +488,7 @@ function NafixAI() {
                 columns={colonnesRFM}
                 rowKey="id"
                 pagination={{ pageSize: 8 }}
-                size="small"
+                size="small" scroll={{ x: 'max-content' }}
               />
             </Card>
           )}
@@ -528,7 +528,7 @@ function NafixAI() {
               columns={colonnesRentabilite}
               rowKey="id"
               pagination={{ pageSize: 8 }}
-              size="small"
+              size="small" scroll={{ x: 'max-content' }}
             />
           </Card>
         </div>
@@ -621,7 +621,7 @@ function NafixAI() {
           { label: 'Clients Champions', value: segmentationRFM.filter(c => c.segment.includes('Champion')).length, icone: '⭐', couleur: '#faad14', bg: '#fffbe6' },
           { label: 'Recommandations', value: recommandations.length, icone: '💡', couleur: '#1890ff', bg: '#e6f7ff' }
         ].map((item, i) => (
-          <Col span={6} key={i}>
+          <Col xs={12} sm={6} key={i}>
             <Card style={{ borderRadius: 12, border: 'none', background: item.bg }}
               bodyStyle={{ padding: '16px 20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

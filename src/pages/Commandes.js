@@ -325,12 +325,12 @@ function ModalDetail({ commande, open, onClose, onStatut }) {
       width={600}
     >
       <Row gutter={16} style={{ marginBottom: 12 }}>
-        <Col span={12}>
+        <Col xs={24} sm={12}>
           <Text type="secondary">Client</Text>
           <div><Text strong style={{ fontSize: 15 }}>{commande.client_nom}</Text></div>
           {commande.client_telephone && <Text>{commande.client_telephone}</Text>}
         </Col>
-        <Col span={12}>
+        <Col xs={24} sm={12}>
           <Space wrap>
             <Tag color={statut.color}>{statut.label}</Tag>
             <Tag color={priorite.color}>{priorite.label}</Tag>
@@ -353,7 +353,7 @@ function ModalDetail({ commande, open, onClose, onStatut }) {
 
       <Table
         dataSource={panier} rowKey={(_, i) => i}
-        size="small" pagination={false}
+        size="small" pagination={false} scroll={{ x: 'max-content' }}
         columns={[
           { title: 'Article',      dataIndex: 'nom',           key: 'nom'           },
           { title: 'Qté',          dataIndex: 'quantite',      key: 'quantite', width: 60  },
@@ -802,7 +802,7 @@ export default function Commandes() {
             <Table
               dataSource={tableData} columns={colonnes}
               rowKey="id" loading={loading} size="small"
-              pagination={{ pageSize: 15, showSizeChanger: false }}
+              pagination={{ pageSize: 15, showSizeChanger: false }} scroll={{ x: 'max-content' }}
             />
           </Tabs.TabPane>
 
@@ -827,7 +827,7 @@ export default function Commandes() {
       >
         <Form form={formCreer} layout="vertical" size="small">
           <Row gutter={12}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item label="Client (catalogue)" name="client_id">
                 <Select
                   showSearch placeholder="Choisir un client..." allowClear
@@ -857,22 +857,22 @@ export default function Commandes() {
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item label="Nom du client" name="client_nom" rules={[{ required: true, message: 'Requis' }]}>
                 <Input placeholder="Nom complet du client" />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col xs={12} sm={8}>
               <Form.Item label="Téléphone" name="client_telephone">
                 <Input placeholder="77 xxx xx xx" />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col xs={12} sm={8}>
               <Form.Item label="Date de livraison" name="date_livraison_prevue">
                 <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col xs={24} sm={8}>
               <Form.Item label="Priorité" name="priorite" initialValue="normale">
                 <Select>
                   {Object.entries(PRIORITES).map(([k, v]) => (
@@ -959,7 +959,7 @@ export default function Commandes() {
           )}
 
           <Row gutter={12}>
-            <Col span={8}>
+            <Col xs={12} sm={8}>
               <Form.Item label="Mode de paiement" name="mode_paiement" initialValue="especes">
                 <Select>
                   <Option value="especes"><CreditCardOutlined /> Espèces</Option>
@@ -972,13 +972,13 @@ export default function Commandes() {
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col xs={12} sm={8}>
               <Form.Item label="Acompte versé (FCFA)" name="acompte" initialValue={0}>
                 <InputNumber min={0} style={{ width: '100%' }}
                   formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col xs={24} sm={8}>
               <Form.Item label="Vendeur" name="vendeur">
                 <Input placeholder="Nom du vendeur" />
               </Form.Item>

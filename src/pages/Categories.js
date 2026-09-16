@@ -257,7 +257,7 @@ function Categories({ utilisateur }) {
           },
           { val: produits.length, lbl: 'Produits', emoji: '📦', color: '#faad14', bg: '#fffbe6' }
         ].map((s, i) => (
-          <Col span={8} key={i}>
+          <Col xs={24} sm={8} key={i}>
             <Card style={{ borderRadius: 12, border: 'none', background: s.bg, textAlign: 'center' }}>
               <div style={{ fontSize: 32 }}>{s.emoji}</div>
               <Title level={2} style={{ color: s.color, margin: '4px 0' }}>{s.val}</Title>
