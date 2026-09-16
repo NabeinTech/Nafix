@@ -955,7 +955,7 @@ function Produits({ utilisateur }) {
               ))}
             </Select>
           </Col>
-          <Col xs={12} sm={6} md={8} style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Col xs={24} sm={12} md={8} style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <div style={{
               background: '#f0f5ff', padding: '8px 16px',
               borderRadius: 8, minWidth: 90, textAlign: 'center'

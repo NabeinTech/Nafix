@@ -268,7 +268,7 @@ function Clients({ utilisateur }) {
               <Option value="entreprise">🏢 Entreprise</Option>
             </Select>
           </Col>
-          <Col xs={12} sm={6} md={8} style={{ display: 'flex', gap: 8 }}>
+          <Col xs={24} sm={12} md={8} style={{ display: 'flex', gap: 8 }}>
             <Button icon={<ClearOutlined />} size="large"
               onClick={reinitialiserFiltres} style={{ flex: 1, borderRadius: 8 }}>
               Réinitialiser

@@ -767,7 +767,7 @@ function Factures({ utilisateur }) {
               value={filtreDates} onChange={setFiltreDates}
               format="DD/MM/YYYY" placeholder={['Date début', 'Date fin']} />
           </Col>
-          <Col xs={24} sm={12} md={5} style={{ display: 'flex', gap: 8 }}>
+          <Col xs={24} sm={24} md={7} lg={5} style={{ display: 'flex', gap: 8 }}>
             <Button icon={<DownloadOutlined />} size="large"
               onClick={exporterCSV} style={{ flex: 1, borderRadius: 8 }}>
               Exporter
