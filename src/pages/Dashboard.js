@@ -309,7 +309,7 @@ function Dashboard({ utilisateur }) {
 
         {/* 4 cartes chiffres du jour */}
         <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col span={6}>
+          <Col xs={24} sm={12} md={6}>
             <Card style={{
               background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)',
               border: 'none', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.12)'
@@ -334,7 +334,7 @@ function Dashboard({ utilisateur }) {
               </div>
             </Card>
           </Col>
-          <Col span={6}>
+          <Col xs={24} sm={12} md={6}>
             <Card style={{
               background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
               border: 'none', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.12)'
@@ -357,7 +357,7 @@ function Dashboard({ utilisateur }) {
               </div>
             </Card>
           </Col>
-          <Col span={6}>
+          <Col xs={24} sm={12} md={6}>
             <Card style={{
               background: 'linear-gradient(135deg, #722ed1 0%, #531dab 100%)',
               border: 'none', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.12)'
@@ -382,7 +382,7 @@ function Dashboard({ utilisateur }) {
               </div>
             </Card>
           </Col>
-          <Col span={6}>
+          <Col xs={24} sm={12} md={6}>
             <Card style={{
               background: creditsJour > 0
                 ? 'linear-gradient(135deg, #faad14 0%, #d48806 100%)'
@@ -469,7 +469,7 @@ function Dashboard({ utilisateur }) {
 
       {/* Chiffres du jour */}
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-        <Col span={8}>
+        <Col xs={24} sm={12} md={8}>
           <Card style={{
             background: 'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)',
             border: 'none', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.12)'
@@ -493,7 +493,7 @@ function Dashboard({ utilisateur }) {
             </div>
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={24} sm={12} md={8}>
           <Card style={{
             background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
             border: 'none', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.12)'
@@ -516,7 +516,7 @@ function Dashboard({ utilisateur }) {
             </div>
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={24} sm={12} md={8}>
           <Card style={{
             background: 'linear-gradient(135deg, #722ed1 0%, #531dab 100%)',
             border: 'none', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.12)'
@@ -546,7 +546,7 @@ function Dashboard({ utilisateur }) {
       {/* Cartes KPI cumulatifs */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         {cartes.map((carte, i) => (
-          <Col span={6} key={i}>
+          <Col xs={24} sm={12} md={6} key={i}>
             <Card style={{
               background: carte.bg, border: 'none',
               borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.12)'
@@ -617,7 +617,7 @@ function Dashboard({ utilisateur }) {
                     icon: <RiseOutlined />, color: '#2e7d32', bg: '#E8F5E9'
                   }
                 ].map((k, i) => (
-                  <Col span={6} key={i}>
+                  <Col xs={24} sm={12} md={6} key={i}>
                     <div style={{
                       background: k.bg, borderRadius: 12, padding: '14px 16px',
                       display: 'flex', alignItems: 'center', gap: 12
@@ -694,7 +694,7 @@ function Dashboard({ utilisateur }) {
                     color: '#6A1B9A', bg: '#F3E5F5'
                   }
                 ].map((k, i) => (
-                  <Col span={Math.floor(24 / 5)} key={i}>
+                  <Col xs={24} sm={12} md={Math.floor(24 / 5)} key={i}>
                     <div style={{
                       background: k.bg, borderRadius: 12, padding: '14px 16px',
                       display: 'flex', alignItems: 'center', gap: 12
@@ -722,7 +722,7 @@ function Dashboard({ utilisateur }) {
 
       <Row gutter={[16, 16]}>
         {/* Ventes du jour + dernières ventes */}
-        <Col span={15}>
+        <Col xs={24} md={15}>
           {/* Ventes du jour */}
           <Card
             title={
@@ -774,7 +774,7 @@ function Dashboard({ utilisateur }) {
         </Col>
 
         {/* Alertes stock + Résumé */}
-        <Col span={9}>
+        <Col xs={24} md={9}>
           <Card
             title={
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
