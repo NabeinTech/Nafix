@@ -71,7 +71,7 @@ function App() {
   const [organisationMine, setOrganisationMine] = useState(null)
 
   const screens = useBreakpoint()
-  const estMobile = !screens.md
+  const estMobile = !screens.lg
   const [menuMobileOuvert, setMenuMobileOuvert] = useState(false)
 
   // Statut d'abonnement — chargé au login puis rafraîchi périodiquement,
