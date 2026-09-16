@@ -350,7 +350,7 @@ function StatistiquesAvancees() {
   const TabPredictions = () => (
     <div>
       <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
-        <Col span={12}>
+        <Col xs={24} md={12}>
           <Card title="🔮 Prédictions Ventes (3 périodes)" style={{ borderRadius: 12 }}>
             <ResponsiveContainer width="100%" height={300}>
               <ComposedChart
@@ -374,7 +374,7 @@ function StatistiquesAvancees() {
             <Divider />
             <Row gutter={16}>
               {predictions.map((pred, i) => (
-                <Col span={8} key={i}>
+                <Col xs={24} sm={8} key={i}>
                   <Card size="small" style={{ background: '#f0f5ff' }}>
                     <Statistic
                       title={`Période +${pred.periode}`}
@@ -392,10 +392,10 @@ function StatistiquesAvancees() {
           </Card>
         </Col>
 
-        <Col span={12}>
+        <Col xs={24} md={12}>
           <Card title="📈 Analyse de Croissance" style={{ borderRadius: 12 }}>
             <Row gutter={16}>
-              <Col span={12}>
+              <Col xs={12}>
                 <Statistic
                   title="Tendance Générale"
                   value={croissance.croissance}
@@ -407,7 +407,7 @@ function StatistiquesAvancees() {
                   }}
                 />
               </Col>
-              <Col span={12}>
+              <Col xs={12}>
                 <Statistic
                   title="Classification"
                   value={croissance.tendance}
@@ -492,13 +492,14 @@ function StatistiquesAvancees() {
         rowKey="nom"
         pagination={false}
         size="small"
+        scroll={{ x: 'max-content' }}
       />
     </Card>
   )
 
   const TabSegmentation = () => (
     <Row gutter={[16, 16]}>
-      <Col span={12}>
+      <Col xs={24} md={12}>
         <Card title="💰 Segmentation RFM Clients" style={{ borderRadius: 12 }}>
           <Table
             dataSource={segmentationClients.slice(0, 10)}
@@ -529,11 +530,12 @@ function StatistiquesAvancees() {
             rowKey="nom"
             pagination={false}
             size="small"
+            scroll={{ x: 'max-content' }}
           />
         </Card>
       </Col>
 
-      <Col span={12}>
+      <Col xs={24} md={12}>
         <Card title="⚠️ Clients à Risque d'Attrition" style={{ borderRadius: 12 }}>
           {clientsAuRisque.length === 0 ? (
             <Empty description="Aucun client à risque" />
@@ -582,6 +584,7 @@ function StatistiquesAvancees() {
               rowKey="nom"
               pagination={false}
               size="small"
+              scroll={{ x: 'max-content' }}
             />
           )}
         </Card>
@@ -597,7 +600,7 @@ function StatistiquesAvancees() {
         </Col>
       ) : (
         recommandations.map((rec, i) => (
-          <Col span={8} key={rec.id}>
+          <Col xs={24} sm={12} md={8} key={rec.id}>
             <Card
               style={{
                 borderRadius: 12,

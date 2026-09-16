@@ -702,7 +702,7 @@ function Factures({ utilisateur }) {
             couleur: '#ff4d4f', bg: '#fff2f0'
           }
         ].map((s, i) => (
-          <Col span={i === 4 ? 8 : 4} key={i}>
+          <Col xs={24} sm={12} md={i === 4 ? 8 : 4} key={i}>
             <Card style={{ borderRadius: 12, border: 'none', background: s.bg }}
               bodyStyle={{ padding: '14px 18px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -723,7 +723,7 @@ function Factures({ utilisateur }) {
       {/* ✅ Filtres */}
       <Card style={{ marginBottom: 16, borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
         <Row gutter={[16, 12]} align="middle">
-          <Col span={5}>
+          <Col xs={24} sm={12} md={5}>
             <Search
               placeholder="Rechercher par client ou N°..."
               allowClear
@@ -733,7 +733,7 @@ function Factures({ utilisateur }) {
               size="large"
             />
           </Col>
-          <Col span={4}>
+          <Col xs={12} sm={8} md={4}>
             <Select placeholder="Client" allowClear
               style={{ width: '100%' }} size="large"
               value={filtreClient} onChange={setFiltreClient}>
@@ -742,7 +742,7 @@ function Factures({ utilisateur }) {
               ))}
             </Select>
           </Col>
-          <Col span={3}>
+          <Col xs={12} sm={8} md={3}>
             <Select placeholder="Mode paiement" allowClear
               style={{ width: '100%' }} size="large"
               value={filtrePaiement} onChange={setFiltrePaiement}>
@@ -753,7 +753,7 @@ function Factures({ utilisateur }) {
               <Option value="avoir">🏦 Compte prépayé</Option>
             </Select>
           </Col>
-          <Col span={3}>
+          <Col xs={12} sm={8} md={3}>
             <Select placeholder="Statut paiement" allowClear
               style={{ width: '100%' }} size="large"
               value={filtrePaiementStatut} onChange={setFiltrePaiementStatut}>
@@ -762,12 +762,12 @@ function Factures({ utilisateur }) {
               <Option value="credit">📋 Crédit</Option>
             </Select>
           </Col>
-          <Col span={4}>
+          <Col xs={24} sm={12} md={4}>
             <RangePicker style={{ width: '100%' }} size="large"
               value={filtreDates} onChange={setFiltreDates}
               format="DD/MM/YYYY" placeholder={['Date début', 'Date fin']} />
           </Col>
-          <Col span={5} style={{ display: 'flex', gap: 8 }}>
+          <Col xs={24} sm={12} md={5} style={{ display: 'flex', gap: 8 }}>
             <Button icon={<DownloadOutlined />} size="large"
               onClick={exporterCSV} style={{ flex: 1, borderRadius: 8 }}>
               Exporter
@@ -815,6 +815,7 @@ function Factures({ utilisateur }) {
             rowKey="id"
             size="small"
             pagination={false}
+            scroll={{ x: 'max-content' }}
             columns={[
               {
                 title: 'N° Facture', dataIndex: 'vente_id', width: 100,

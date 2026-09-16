@@ -505,7 +505,7 @@ function Comptabilite({ utilisateur }) {
             icone: <RiseOutlined />, span: 6
           }
         ].map((s, i) => (
-          <Col span={s.span} key={i}>
+          <Col xs={24} sm={12} md={s.span} key={i}>
             <Card style={{ borderRadius: 14, border: `1px solid ${s.border}`, background: s.bg }}
               bodyStyle={{ padding: '16px 18px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -564,7 +564,7 @@ function Comptabilite({ utilisateur }) {
             couleur: '#13c2c2', bg: '#e6fffb', icone: <CheckCircleOutlined />, noSuffix: true, span: 4
           }
         ].map((s, i) => (
-          <Col span={s.span} key={i}>
+          <Col xs={12} sm={12} md={s.span} key={i}>
             <Card style={{ borderRadius: 12, border: 'none', background: s.bg }}
               bodyStyle={{ padding: '12px 16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -647,7 +647,7 @@ function Comptabilite({ utilisateur }) {
                 {/* Filtres */}
                 <Card style={{ marginBottom: 12, borderRadius: 10 }} bodyStyle={{ padding: '12px 16px' }}>
                   <Row gutter={[12, 8]} align="middle">
-                    <Col span={6}>
+                    <Col xs={24} sm={12} md={6}>
                       <Input
                         placeholder="Rechercher description / catégorie..."
                         prefix={<SearchOutlined style={{ color: '#1890ff' }} />}
@@ -655,7 +655,7 @@ function Comptabilite({ utilisateur }) {
                         onChange={e => setRecherche(e.target.value)} size="large"
                       />
                     </Col>
-                    <Col span={4}>
+                    <Col xs={12} sm={8} md={4}>
                       <Select placeholder="Type" allowClear style={{ width: '100%' }} size="large"
                         value={filtreType} onChange={setFiltreType}>
                         <Option value="entree">
@@ -666,7 +666,7 @@ function Comptabilite({ utilisateur }) {
                         </Option>
                       </Select>
                     </Col>
-                    <Col span={4}>
+                    <Col xs={12} sm={8} md={4}>
                       <Select placeholder="Catégorie" allowClear style={{ width: '100%' }} size="large"
                         value={filtreCategorie} onChange={setFiltreCategorie}>
                         {Object.entries(CATS).map(([k, v]) => (
@@ -674,12 +674,12 @@ function Comptabilite({ utilisateur }) {
                         ))}
                       </Select>
                     </Col>
-                    <Col span={7}>
+                    <Col xs={24} sm={12} md={7}>
                       <RangePicker style={{ width: '100%' }} size="large"
                         value={filtrePeriode} onChange={setFiltrePeriode}
                         format="DD/MM/YYYY" placeholder={['Début', 'Fin']} />
                     </Col>
-                    <Col span={3}>
+                    <Col xs={12} sm={4} md={3}>
                       <Button icon={<ClearOutlined />} size="large" style={{ width: '100%', borderRadius: 8 }}
                         onClick={() => {
                           setRecherche(''); setFiltreType(null)
@@ -761,7 +761,7 @@ function Comptabilite({ utilisateur }) {
                     >
                       <Row gutter={[24, 16]}>
                         {/* Recettes */}
-                        <Col span={8}>
+                        <Col xs={24} sm={12} md={8}>
                           <div style={{ background: '#f6ffed', borderRadius: 12, padding: '14px 18px', border: '1px solid #b7eb8f' }}>
                             <Text style={{ color: '#389e0d', fontWeight: 700, fontSize: 13, display: 'block', marginBottom: 8 }}>
                               RECETTES
@@ -804,7 +804,7 @@ function Comptabilite({ utilisateur }) {
                         </Col>
 
                         {/* Charges */}
-                        <Col span={8}>
+                        <Col xs={24} sm={12} md={8}>
                           <div style={{ background: '#fff2f0', borderRadius: 12, padding: '14px 18px', border: '1px solid #ffa39e' }}>
                             <Text style={{ color: '#cf1322', fontWeight: 700, fontSize: 13, display: 'block', marginBottom: 8 }}>
                               CHARGES
@@ -825,7 +825,7 @@ function Comptabilite({ utilisateur }) {
                         </Col>
 
                         {/* Résultat */}
-                        <Col span={8}>
+                        <Col xs={24} sm={12} md={8}>
                           {(() => {
                             const recettes = (dashStats?.chiffreAffaire || 0) + operations.filter(o => isEntree(o.type) && o.categorie !== 'avoir' && o.categorie !== 'vente').reduce((s, o) => s + o.montant, 0)
                             const charges  = operations.filter(o => !isEntree(o.type)).reduce((s, o) => s + o.montant, 0)
@@ -865,7 +865,7 @@ function Comptabilite({ utilisateur }) {
                 {/* ── CA mensuel + Répartition charges ──────────────────── */}
                 <Row gutter={[16, 16]}>
                   {/* CA mensuel */}
-                  <Col span={14}>
+                  <Col xs={24} md={14}>
                     <Card
                       title={<Space><CalendarOutlined style={{ color: '#fa8c16' }} /><span>CA mensuel (clôtures)</span></Space>}
                       style={{ borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
@@ -882,6 +882,7 @@ function Comptabilite({ utilisateur }) {
                           dataSource={caMensuel}
                           rowKey="key"
                           size="small"
+                          scroll={{ x: 'max-content' }}
                           pagination={{ pageSize: 8, hideOnSinglePage: true }}
                           columns={[
                             {
@@ -957,7 +958,7 @@ function Comptabilite({ utilisateur }) {
                   </Col>
 
                   {/* Répartition charges */}
-                  <Col span={10}>
+                  <Col xs={24} md={10}>
                     <Card
                       title={<Space><PieChartOutlined style={{ color: '#ff4d4f' }} /><span>Répartition des charges</span></Space>}
                       style={{ borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', height: '100%' }}
@@ -1076,7 +1077,7 @@ function Comptabilite({ utilisateur }) {
       >
         <Form form={formOp} layout="vertical" onFinish={sauvegarder} style={{ marginTop: 16 }}>
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="type" label="Type d'opération"
                 rules={[{ required: true, message: 'Obligatoire' }]}>
                 <Select placeholder="Choisir" size="large">
@@ -1089,7 +1090,7 @@ function Comptabilite({ utilisateur }) {
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="categorie" label="Catégorie"
                 rules={[{ required: true, message: 'Obligatoire' }]}>
                 <Select placeholder="Catégorie" size="large">
@@ -1109,7 +1110,7 @@ function Comptabilite({ utilisateur }) {
           </Form.Item>
 
           <Row gutter={16}>
-            <Col span={14}>
+            <Col xs={24} sm={14}>
               <Form.Item name="montant" label="Montant (FCFA)"
                 rules={[{ required: true, message: 'Obligatoire' }]}>
                 <InputNumber
@@ -1119,7 +1120,7 @@ function Comptabilite({ utilisateur }) {
                 />
               </Form.Item>
             </Col>
-            <Col span={10}>
+            <Col xs={24} sm={10}>
               <Form.Item name="date_operation" label="Date"
                 rules={[{ required: true, message: 'Obligatoire' }]}>
                 <Input type="date" size="large" />
@@ -1182,25 +1183,25 @@ function Comptabilite({ utilisateur }) {
 
             {/* KPI ventes du jour */}
             <Row gutter={12} style={{ marginBottom: 12 }}>
-              <Col span={6}>
+              <Col xs={12} sm={6}>
                 <Card size="small" style={{ textAlign: 'center', borderRadius: 10 }}>
                   <Text style={{ color: '#8c8c8c', fontSize: 11, display: 'block' }}>Ventes</Text>
                   <Text strong style={{ fontSize: 18 }}>{rapportCloture.resume.nbVentes}</Text>
                 </Card>
               </Col>
-              <Col span={6}>
+              <Col xs={12} sm={6}>
                 <Card size="small" style={{ textAlign: 'center', borderRadius: 10 }}>
                   <Text style={{ color: '#8c8c8c', fontSize: 11, display: 'block' }}>Panier moyen</Text>
                   <Text strong style={{ fontSize: 15 }}>{Math.round(rapportCloture.resume.panierMoyen).toLocaleString('fr-FR')} F</Text>
                 </Card>
               </Col>
-              <Col span={6}>
+              <Col xs={12} sm={6}>
                 <Card size="small" style={{ textAlign: 'center', borderRadius: 10 }}>
                   <Text style={{ color: '#8c8c8c', fontSize: 11, display: 'block' }}>Clients servis</Text>
                   <Text strong style={{ fontSize: 18 }}>{rapportCloture.resume.clientsUniques}</Text>
                 </Card>
               </Col>
-              <Col span={6}>
+              <Col xs={12} sm={6}>
                 <Card size="small" style={{ textAlign: 'center', borderRadius: 10, background: rapportCloture.dettes.total > 0 ? '#fff7e6' : undefined }}>
                   <Text style={{ color: '#8c8c8c', fontSize: 11, display: 'block' }}>Dû (crédit)</Text>
                   <Text strong style={{ fontSize: 15, color: rapportCloture.dettes.total > 0 ? '#fa8c16' : undefined }}>
@@ -1241,6 +1242,7 @@ function Comptabilite({ utilisateur }) {
                 title={<Space size={6}><TeamOutlined /><Text strong style={{ fontSize: 13 }}>Clients du jour ({rapportCloture.clients.length})</Text></Space>}>
                 <Table
                   size="small" pagination={false}
+                  scroll={{ x: 'max-content' }}
                   dataSource={rapportCloture.clients.slice(0, 8)}
                   rowKey={(r, i) => r.client_id || i}
                   columns={[
@@ -1280,7 +1282,7 @@ function Comptabilite({ utilisateur }) {
 
         {/* Résumé trésorerie du jour */}
         <Row gutter={12} style={{ marginBottom: 12 }}>
-          <Col span={12}>
+          <Col xs={12}>
             <Card size="small" style={{
               background: '#f6ffed', border: '1px solid #b7eb8f',
               borderRadius: 10, textAlign: 'center'
@@ -1291,7 +1293,7 @@ function Comptabilite({ utilisateur }) {
               </Text>
             </Card>
           </Col>
-          <Col span={12}>
+          <Col xs={12}>
             <Card size="small" style={{
               background: '#fff2f0', border: '1px solid #ffa39e',
               borderRadius: 10, textAlign: 'center'

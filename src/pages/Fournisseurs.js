@@ -847,7 +847,7 @@ function Fournisseurs({ utilisateur }) {
           { titre: 'Reste à Payer',   val: totalDu,              suf: ' FCFA', bg: '#fff2f0',      col: '#ff4d4f',          icone: <WarningOutlined /> },
           { titre: 'Cmdes en cours',  val: nbEnCours,            suf: '',      bg: '#f0f5ff',      col: '#722ed1',          icone: <RocketOutlined /> }
         ].map((k, i) => (
-          <Col span={i === 4 ? 4 : 5} key={i}>
+          <Col xs={12} sm={8} md={i === 4 ? 4 : 5} key={i}>
             <Card style={{ borderRadius: 12, border: 'none', background: k.bg }} bodyStyle={{ padding: '14px 18px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ fontSize: 22, color: k.col }}>{k.icone}</div>
@@ -873,13 +873,13 @@ function Fournisseurs({ utilisateur }) {
             <>
               <Card style={{ marginBottom: 12, borderRadius: 12, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                 <Row gutter={16} align="middle">
-                  <Col span={10}>
+                  <Col xs={24} sm={12} md={10}>
                     <Input prefix={<SearchOutlined style={{ color: theme.primaryColor }} />}
                       placeholder="Rechercher nom, téléphone, contact..."
                       allowClear value={rechercheF} onChange={e => setRechercheF(e.target.value)}
                       size="large" />
                   </Col>
-                  <Col span={6}>
+                  <Col xs={12} sm={8} md={6}>
                     <Select placeholder="Type de fournisseur" allowClear
                       style={{ width: '100%' }} size="large"
                       value={filtreTypeF} onChange={setFiltreTypeF}>
@@ -888,7 +888,7 @@ function Fournisseurs({ utilisateur }) {
                       ))}
                     </Select>
                   </Col>
-                  <Col span={4}>
+                  <Col xs={12} sm={4} md={4}>
                     <Button icon={<ClearOutlined />} size="large"
                       onClick={() => { setRechercheF(''); setFiltreTypeF(null) }}>
                       Réinitialiser
@@ -898,7 +898,7 @@ function Fournisseurs({ utilisateur }) {
               </Card>
               <Card style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
                 <Table dataSource={fournisseursFiltres} columns={colonneFournisseurs}
-                  rowKey="id" pagination={{ pageSize: 10 }} />
+                  rowKey="id" pagination={{ pageSize: 10 }} scroll={{ x: 'max-content' }} />
               </Card>
             </>
           )
@@ -917,13 +917,13 @@ function Fournisseurs({ utilisateur }) {
             <>
               <Card style={{ marginBottom: 12, borderRadius: 12, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                 <Row gutter={[12, 12]} align="middle">
-                  <Col span={7}>
+                  <Col xs={24} sm={12} md={7}>
                     <Input prefix={<SearchOutlined style={{ color: theme.primaryColor }} />}
                       placeholder="Rechercher fournisseur ou référence..."
                       allowClear value={rechercheA} onChange={e => setRechercheA(e.target.value)}
                       size="large" />
                   </Col>
-                  <Col span={4}>
+                  <Col xs={12} sm={6} md={4}>
                     <Select placeholder="Fournisseur" allowClear style={{ width: '100%' }} size="large"
                       value={filtresFournisseurA} onChange={setFiltresFournisseurA} showSearch
                       filterOption={(input, option) => option.children?.toLowerCase().includes(input.toLowerCase())}>
@@ -932,7 +932,7 @@ function Fournisseurs({ utilisateur }) {
                       ))}
                     </Select>
                   </Col>
-                  <Col span={4}>
+                  <Col xs={12} sm={6} md={4}>
                     <Select placeholder="Étape" allowClear style={{ width: '100%' }} size="large"
                       value={filtreEtapeA} onChange={setFiltreEtapeA}>
                       {ORDRE_ETAPES.map(e => (
@@ -940,7 +940,7 @@ function Fournisseurs({ utilisateur }) {
                       ))}
                     </Select>
                   </Col>
-                  <Col span={4}>
+                  <Col xs={12} sm={6} md={4}>
                     <Select placeholder="Statut paiement" allowClear style={{ width: '100%' }} size="large"
                       value={filtreStatutA} onChange={setFiltreStatutA}>
                       <Option value="paye">✅ Payé</Option>
@@ -948,7 +948,7 @@ function Fournisseurs({ utilisateur }) {
                       <Option value="en_attente">🔴 Impayé</Option>
                     </Select>
                   </Col>
-                  <Col span={3}>
+                  <Col xs={12} sm={6} md={3}>
                     <Button icon={<ClearOutlined />} size="large"
                       onClick={() => {
                         setRechercheA(''); setFiltreStatutA(null)
@@ -961,7 +961,7 @@ function Fournisseurs({ utilisateur }) {
               </Card>
               <Card style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
                 <Table dataSource={achatsFiltres} columns={colonneAchats}
-                  rowKey="id" pagination={{ pageSize: 10 }} />
+                  rowKey="id" pagination={{ pageSize: 10 }} scroll={{ x: 'max-content' }} />
               </Card>
             </>
           )

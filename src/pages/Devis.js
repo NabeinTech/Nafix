@@ -814,7 +814,7 @@ function Devis({ utilisateur }) {
           { titre: 'Acceptés', val: devisList.filter(d => d.statut === 'accepte').length, color: '#52c41a', bg: '#f6ffed' },
           { titre: 'Convertis', val: devisList.filter(d => d.converti === 1).length, color: '#1890ff', bg: '#e6f7ff' }
         ].map((s, i) => (
-          <Col span={6} key={i}>
+          <Col xs={12} sm={6} key={i}>
             <Card style={{ borderRadius: 12, border: 'none', background: s.bg, textAlign: 'center' }}
               bodyStyle={{ padding: '14px' }}>
               <div style={{ fontSize: 20, fontWeight: 'bold', color: s.color }}>{s.val}</div>
@@ -828,13 +828,13 @@ function Devis({ utilisateur }) {
       <Card style={{ marginBottom: 16, borderRadius: 12, border: 'none',
         boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
         <Row gutter={[16, 12]} align="middle">
-          <Col span={6}>
+          <Col xs={24} sm={12} md={6}>
             <Search placeholder="Client ou N° devis..."
               allowClear prefix={<SearchOutlined />}
               value={recherche} onChange={(e) => setRecherche(e.target.value)}
               size="large" />
           </Col>
-          <Col span={5}>
+          <Col xs={12} sm={8} md={5}>
             <Select placeholder="Statut" allowClear style={{ width: '100%' }}
               size="large" value={filtreStatut} onChange={setFiltreStatut}>
               <Option value="en_attente">⏳ En attente</Option>
@@ -842,18 +842,18 @@ function Devis({ utilisateur }) {
               <Option value="refuse">❌ Refusé</Option>
             </Select>
           </Col>
-          <Col span={6}>
+          <Col xs={24} sm={12} md={6}>
             <RangePicker style={{ width: '100%' }} size="large"
               value={filtreDates} onChange={setFiltreDates}
               format="DD/MM/YYYY" placeholder={['Date début', 'Date fin']} />
           </Col>
-          <Col span={3}>
+          <Col xs={12} sm={4} md={3}>
             <Button icon={<ClearOutlined />} size="large"
               onClick={reinitialiserFiltres} style={{ width: '100%', borderRadius: 8 }}>
               Reset
             </Button>
           </Col>
-          <Col span={4}>
+          <Col xs={12} sm={4} md={4}>
             <div style={{ background: '#f0f5ff', padding: '8px 12px', borderRadius: 8, textAlign: 'center' }}>
               <Text style={{ color: '#722ed1', fontWeight: 'bold', display: 'block' }}>
                 {devisFiltres.length} / {devisList.length}
@@ -882,7 +882,8 @@ function Devis({ utilisateur }) {
       {/* Tableau */}
       <Card style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
         <Table dataSource={devisFiltres} columns={columns} rowKey="id"
-          pagination={{ pageSize: 10, showTotal: (t) => `${t} devis au total` }} />
+          pagination={{ pageSize: 10, showTotal: (t) => `${t} devis au total` }}
+          scroll={{ x: 'max-content' }} />
       </Card>
 
       {/* Modal Nouveau Devis / Modification (formulaire partagé, voir editingDevis) */}
@@ -891,7 +892,7 @@ function Devis({ utilisateur }) {
         footer={null} width={820}>
         <Form form={form} layout="vertical" onFinish={creerDevis}>
           <Row gutter={16}>
-            <Col span={16}>
+            <Col xs={24} sm={16}>
               <Form.Item name="client_id" label="Client (optionnel)">
                 <Select placeholder="Choisir un client" allowClear
                   dropdownRender={(menu) => (
@@ -912,7 +913,7 @@ function Devis({ utilisateur }) {
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col xs={24} sm={8}>
               <Form.Item name="validite" label="Validité (jours)">
                 <InputNumber style={{ width: '100%' }} defaultValue={30} min={1} />
               </Form.Item>
@@ -921,7 +922,7 @@ function Devis({ utilisateur }) {
 
           <Card size="small" title="➕ Ajouter des produits" style={{ marginBottom: 16 }}>
             <Row gutter={8}>
-              <Col span={14}>
+              <Col xs={24} sm={14}>
                 <Form.Item name="produit_id" noStyle>
                   <Select
                     placeholder="🔍 Tapez le nom ou la référence du produit..."
@@ -972,7 +973,7 @@ function Devis({ utilisateur }) {
                   </Select>
                 </Form.Item>
               </Col>
-              <Col span={6}>
+              <Col xs={12} sm={6}>
                 <Form.Item name="quantite" noStyle initialValue={1}>
                   <InputNumber
                     min={0.001}
@@ -982,7 +983,7 @@ function Devis({ utilisateur }) {
                     style={{ width: '100%' }} />
                 </Form.Item>
               </Col>
-              <Col span={4}>
+              <Col xs={12} sm={4}>
                 <Button type="dashed" icon={<PlusOutlined />} style={{ width: '100%' }}
                   onClick={() =>
                     form.validateFields(['produit_id', 'quantite'])

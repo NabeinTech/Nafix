@@ -802,7 +802,7 @@ function Produits({ utilisateur }) {
 
       {/* Stats KPI */}
       <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Card hoverable onClick={voirTousProduits}
             style={{ borderRadius: 12, border: 'none', background: theme.lightBg, cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
             bodyStyle={{ padding: '16px 20px' }}>
@@ -812,7 +812,7 @@ function Produits({ utilisateur }) {
               valueStyle={{ color: theme.primaryColor, fontSize: 22 }} />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Card hoverable onClick={voirAlertesStock}
             style={{ borderRadius: 12, border: 'none', background: '#fff2f0', cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
             bodyStyle={{ padding: '16px 20px' }}>
@@ -822,7 +822,7 @@ function Produits({ utilisateur }) {
               valueStyle={{ color: '#ff4d4f', fontSize: 22 }} />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Card hoverable onClick={() => setModalValeurStock(true)}
             style={{ borderRadius: 12, border: 'none', background: '#f6ffed', cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
             bodyStyle={{ padding: '16px 20px' }}>
@@ -832,7 +832,7 @@ function Produits({ utilisateur }) {
               valueStyle={{ color: '#52c41a', fontSize: 18 }} />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col xs={24} sm={12} md={6}>
           <Card hoverable onClick={() => setModalMarge(true)}
             style={{ borderRadius: 12, border: 'none', background: '#fffbe6', cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
             bodyStyle={{ padding: '16px 20px' }}>
@@ -845,7 +845,7 @@ function Produits({ utilisateur }) {
 
         {/* Cartes dynamiques par catégorie — cliquer filtre le tableau sur cette catégorie */}
         {!categoriesMasquees && statsCat.map((cat) => (
-          <Col span={6} key={cat.id}>
+          <Col xs={24} sm={12} md={6} key={cat.id}>
             <Card hoverable onClick={() => voirCategorie(cat.nom)}
               style={{
                 borderRadius: 12, border: 'none', cursor: 'pointer',
@@ -879,7 +879,7 @@ function Produits({ utilisateur }) {
               const catInfo = obtenirCategorieInfo(p.categorie)
               const nouveau = estNouveau(p)
               return (
-                <Col span={24 / derniersAjouts.length} key={p.id}>
+                <Col xs={24} sm={12} md={24 / derniersAjouts.length} key={p.id}>
                   <div
                     onClick={() => peutModifier(role) && ouvrirModal(p)}
                     title={p.created_at ? `Ajouté ${depuisTexte(p.created_at)}` : undefined}
@@ -939,13 +939,13 @@ function Produits({ utilisateur }) {
       <Card style={{ marginBottom: 16, borderRadius: 12, border: 'none',
         boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
         <Row gutter={16} align="middle" style={{ marginBottom: 12 }}>
-          <Col span={10}>
+          <Col xs={24} sm={12} md={10}>
             <Search placeholder="Rechercher par nom, référence ou marque..."
               allowClear prefix={<SearchOutlined style={{ color: '#1890ff' }} />}
               value={recherche} onChange={(e) => setRecherche(e.target.value)}
               size="large" />
           </Col>
-          <Col span={6}>
+          <Col xs={12} sm={6} md={6}>
             <Select placeholder="Filtrer par catégorie" allowClear
               style={{ width: '100%' }} size="large"
               value={filtreCategorie} onChange={setFiltreCategorie}
@@ -955,7 +955,7 @@ function Produits({ utilisateur }) {
               ))}
             </Select>
           </Col>
-          <Col span={8} style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Col xs={12} sm={6} md={8} style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <div style={{
               background: '#f0f5ff', padding: '8px 16px',
               borderRadius: 8, minWidth: 90, textAlign: 'center'
@@ -1012,6 +1012,7 @@ function Produits({ utilisateur }) {
           rowClassName={(record) =>
             record.stock_actuel <= record.stock_minimum ? 'row-alerte' : ''
           }
+          scroll={{ x: 'max-content' }}
         />
       </Card>
 
@@ -1530,7 +1531,7 @@ function Produits({ utilisateur }) {
           dataSource={produitsParValeurStock}
           rowKey="id"
           size="small"
-          pagination={{ pageSize: 10 }}
+          pagination={{ pageSize: 10 }} scroll={{ x: 'max-content' }}
           columns={[
             { title: 'Produit', dataIndex: 'nom', key: 'nom' },
             { title: 'Catégorie', dataIndex: 'categorie', key: 'categorie' },
@@ -1555,7 +1556,7 @@ function Produits({ utilisateur }) {
           dataSource={produitsParMarge}
           rowKey="id"
           size="small"
-          pagination={{ pageSize: 10 }}
+          pagination={{ pageSize: 10 }} scroll={{ x: 'max-content' }}
           columns={[
             { title: 'Produit', dataIndex: 'nom', key: 'nom' },
             { title: 'Catégorie', dataIndex: 'categorie', key: 'categorie' },

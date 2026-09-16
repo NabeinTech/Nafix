@@ -1205,7 +1205,7 @@ function Ventes({ utilisateur }) {
             <Table dataSource={panier} columns={colonnesPanier} rowKey={r => `${r.produit_id}_${r.unite}`}
               pagination={false} size="small"
               style={{ marginBottom: 8 }}
-              scroll={{ y: 220 }}
+              scroll={{ x: 'max-content', y: 220 }}
               footer={() => (
                 <div style={{
                   display: 'flex', justifyContent: 'space-between',
@@ -1664,7 +1664,7 @@ function Ventes({ utilisateur }) {
       <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
         {estCaissier ? (
           <>
-            <Col span={8}>
+            <Col xs={24} sm={12} md={8}>
               <Card style={{ borderRadius: 12, border: 'none', background: '#f6ffed' }}
                 bodyStyle={{ padding: '16px 20px' }}>
                 <Statistic title={<Text style={{ color: '#8c8c8c' }}>CA Aujourd'hui</Text>}
@@ -1673,7 +1673,7 @@ function Ventes({ utilisateur }) {
                   valueStyle={{ color: '#52c41a', fontSize: 18 }} />
               </Card>
             </Col>
-            <Col span={8}>
+            <Col xs={24} sm={12} md={8}>
               <Card style={{ borderRadius: 12, border: 'none', background: '#e6f7ff' }}
                 bodyStyle={{ padding: '16px 20px' }}>
                 <Statistic title={<Text style={{ color: '#8c8c8c' }}>Ventes Aujourd'hui</Text>}
@@ -1681,7 +1681,7 @@ function Ventes({ utilisateur }) {
                   valueStyle={{ color: '#1890ff', fontSize: 22 }} />
               </Card>
             </Col>
-            <Col span={8}>
+            <Col xs={24} sm={12} md={8}>
               <Card style={{ borderRadius: 12, border: 'none', background: '#fff7e6' }}
                 bodyStyle={{ padding: '16px 20px' }}>
                 <Statistic title={<Text style={{ color: '#8c8c8c' }}>Panier Moyen (jour)</Text>}
@@ -1693,7 +1693,7 @@ function Ventes({ utilisateur }) {
           </>
         ) : (
           <>
-            <Col span={6}>
+            <Col xs={24} sm={12} md={6}>
               <Card style={{ borderRadius: 12, border: 'none', background: '#e6f7ff' }}
                 bodyStyle={{ padding: '16px 20px' }}>
                 <Statistic title={<Text style={{ color: '#8c8c8c' }}>Total Ventes</Text>}
@@ -1701,7 +1701,7 @@ function Ventes({ utilisateur }) {
                   valueStyle={{ color: '#1890ff', fontSize: 22 }} />
               </Card>
             </Col>
-            <Col span={6}>
+            <Col xs={24} sm={12} md={6}>
               <Card style={{ borderRadius: 12, border: 'none', background: '#f6ffed' }}
                 bodyStyle={{ padding: '16px 20px' }}>
                 <Statistic title={<Text style={{ color: '#8c8c8c' }}>Chiffre d'Affaires</Text>}
@@ -1710,7 +1710,7 @@ function Ventes({ utilisateur }) {
                   valueStyle={{ color: '#52c41a', fontSize: 18 }} />
               </Card>
             </Col>
-            <Col span={6}>
+            <Col xs={24} sm={12} md={6}>
               <Card style={{ borderRadius: 12, border: 'none', background: '#fff7e6' }}
                 bodyStyle={{ padding: '16px 20px' }}>
                 <Statistic title={<Text style={{ color: '#8c8c8c' }}>Crédits en cours</Text>}
@@ -1718,7 +1718,7 @@ function Ventes({ utilisateur }) {
                   valueStyle={{ color: '#faad14', fontSize: 22 }} />
               </Card>
             </Col>
-            <Col span={6}>
+            <Col xs={24} sm={12} md={6}>
               <Card style={{ borderRadius: 12, border: 'none', background: '#fff2f0' }}
                 bodyStyle={{ padding: '16px 20px' }}>
                 <Statistic title={<Text style={{ color: '#8c8c8c' }}>Montant Dû</Text>}
@@ -1734,12 +1734,12 @@ function Ventes({ utilisateur }) {
       {/* ✅ Filtres améliorés */}
       <Card style={{ marginBottom: 16, borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
         <Row gutter={[16, 16]} align="middle">
-          <Col span={6}>
+          <Col xs={24} sm={12} md={6}>
             <Search placeholder="Rechercher par client ou N°..."
               allowClear prefix={<SearchOutlined style={{ color: '#1890ff' }} />}
               value={recherche} onChange={(e) => setRecherche(e.target.value)} size="large" />
           </Col>
-          <Col span={4}>
+          <Col xs={12} sm={8} md={4}>
             <Select placeholder="Mode paiement" allowClear
               style={{ width: '100%' }} size="large"
               value={filtrePaiement} onChange={setFiltrePaiement}>
@@ -1750,7 +1750,7 @@ function Ventes({ utilisateur }) {
               <Option value="avoir">🏦 Compte prépayé</Option>
             </Select>
           </Col>
-          <Col span={4}>
+          <Col xs={12} sm={8} md={4}>
             <Select placeholder="Statut paiement" allowClear
               style={{ width: '100%' }} size="large"
               value={filtrePaiementStatut} onChange={setFiltrePaiementStatut}>
@@ -1760,19 +1760,19 @@ function Ventes({ utilisateur }) {
             </Select>
           </Col>
           {!estCaissier && (
-            <Col span={6}>
+            <Col xs={24} sm={12} md={6}>
               <RangePicker style={{ width: '100%' }} size="large"
                 value={filtreDates} onChange={setFiltreDates}
                 format="DD/MM/YYYY" placeholder={['Date début', 'Date fin']} />
             </Col>
           )}
-          <Col span={2}>
+          <Col xs={12} sm={4} md={2}>
             <Button icon={<ClearOutlined />} size="large"
               onClick={reinitialiserFiltres} style={{ width: '100%' }}>
               Reset
             </Button>
           </Col>
-          <Col span={3}>
+          <Col xs={12} sm={4} md={3}>
             <div style={{
               textAlign: 'right', background: '#f0f5ff',
               padding: '8px 12px', borderRadius: 8
@@ -1818,6 +1818,7 @@ function Ventes({ utilisateur }) {
           columns={columns}
           rowKey="id"
           pagination={{ pageSize: 10, showTotal: (total) => `${total} ventes` }}
+          scroll={{ x: 'max-content' }}
         />
       </Card>
       </>

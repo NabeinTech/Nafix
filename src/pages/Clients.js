@@ -239,7 +239,7 @@ function Clients({ utilisateur }) {
             suffix: '%', color: '#722ed1', bg: '#f9f0ff'
           }
         ].map((s, i) => (
-          <Col span={6} key={i}>
+          <Col xs={24} sm={12} md={6} key={i}>
             <Card style={{ borderRadius: 12, border: 'none', background: s.bg }}
               bodyStyle={{ padding: '16px 20px' }}>
               <Statistic title={<Text style={{ color: '#888' }}>{s.titre}</Text>}
@@ -254,13 +254,13 @@ function Clients({ utilisateur }) {
       {/* Filtres */}
       <Card style={{ marginBottom: 16, borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
         <Row gutter={16} align="middle">
-          <Col span={10}>
+          <Col xs={24} sm={12} md={10}>
             <Search placeholder="Rechercher par nom, téléphone, email..."
               allowClear prefix={<SearchOutlined style={{ color: '#1890ff' }} />}
               value={recherche} onChange={(e) => setRecherche(e.target.value)}
               size="large" />
           </Col>
-          <Col span={6}>
+          <Col xs={12} sm={6} md={6}>
             <Select placeholder="Filtrer par type" allowClear
               style={{ width: '100%' }} size="large"
               value={filtreType} onChange={setFiltreType}>
@@ -268,7 +268,7 @@ function Clients({ utilisateur }) {
               <Option value="entreprise">🏢 Entreprise</Option>
             </Select>
           </Col>
-          <Col span={8} style={{ display: 'flex', gap: 8 }}>
+          <Col xs={12} sm={6} md={8} style={{ display: 'flex', gap: 8 }}>
             <Button icon={<ClearOutlined />} size="large"
               onClick={reinitialiserFiltres} style={{ flex: 1, borderRadius: 8 }}>
               Réinitialiser
@@ -289,7 +289,8 @@ function Clients({ utilisateur }) {
       {/* Tableau */}
       <Card style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
         <Table dataSource={clientsFiltres} columns={columns} rowKey="id"
-          pagination={{ pageSize: 10, showTotal: (t) => `${t} client(s)` }} />
+          pagination={{ pageSize: 10, showTotal: (t) => `${t} client(s)` }}
+          scroll={{ x: 'max-content' }} />
       </Card>
 
       {/* Modal Ajout / Modification */}

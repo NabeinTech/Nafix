@@ -245,7 +245,7 @@ function Statistiques() {
 
       {/* ✅ KPI Période rapide */}
       <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
-        <Col span={8}>
+        <Col xs={24} sm={12} md={8}>
           <Card style={{
             borderRadius: 12, border: 'none',
             background: 'linear-gradient(135deg, #1890ff, #096dd9)',
@@ -272,7 +272,7 @@ function Statistiques() {
             </div>
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={24} sm={12} md={8}>
           <Card style={{
             borderRadius: 12, border: 'none',
             background: 'linear-gradient(135deg, #52c41a, #389e0d)',
@@ -299,7 +299,7 @@ function Statistiques() {
             </div>
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={24} sm={12} md={8}>
           <Card style={{
             borderRadius: 12, border: 'none',
             background: 'linear-gradient(135deg, #faad14, #d48806)',
@@ -380,7 +380,7 @@ function Statistiques() {
             bg: croissance >= 0 ? '#f6ffed' : '#fff2f0'
           }
         ].map((kpi, i) => (
-          <Col span={4} key={i}>
+          <Col xs={12} sm={8} md={4} key={i}>
             <Card style={{ borderRadius: 12, border: 'none', background: kpi.bg }}
               bodyStyle={{ padding: '16px' }}>
               <div style={{ textAlign: 'center' }}>
@@ -403,31 +403,31 @@ function Statistiques() {
       {/* ✅ Stats Crédits */}
       {stats.statsCredits && (
         <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
-          <Col span={24}>
+          <Col xs={24}>
             <Card style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
               <Row gutter={16} align="middle">
-                <Col span={1}>
+                <Col xs={0} sm={1}>
                   <CreditCardOutlined style={{ fontSize: 24, color: '#faad14' }} />
                 </Col>
-                <Col span={5}>
+                <Col xs={12} sm={5}>
                   <Statistic title="📋 Ventes à Crédit"
                     value={stats.statsCredits.total_prets || 0}
                     suffix="vente(s)"
                     valueStyle={{ color: '#faad14', fontSize: 18 }} />
                 </Col>
-                <Col span={5}>
+                <Col xs={12} sm={5}>
                   <Statistic title="⚠️ Paiements Partiels"
                     value={stats.statsCredits.total_partiels || 0}
                     suffix="vente(s)"
                     valueStyle={{ color: '#ff4d4f', fontSize: 18 }} />
                 </Col>
-                <Col span={6}>
+                <Col xs={12} sm={6}>
                   <Statistic title="💰 Montant Crédits"
                     value={stats.statsCredits.montant_prets || 0}
                     suffix="FCFA"
                     valueStyle={{ color: '#faad14', fontSize: 18 }} />
                 </Col>
-                <Col span={6}>
+                <Col xs={12} sm={6}>
                   <Statistic title="❌ Total Montant Dû"
                     value={stats.statsCredits.total_du || 0}
                     suffix="FCFA"
@@ -500,7 +500,7 @@ function Statistiques() {
 
             <Divider />
             <Row gutter={16}>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={8}>
                 <Card size="small" style={{ background: '#f0f5ff', border: '1px solid #1890ff', borderRadius: 8 }}>
                   <Statistic
                     title={`Total (${periode === 'jour' ? '30J' : periode === 'semaine' ? '52S' : '12M'})`}
@@ -509,7 +509,7 @@ function Statistiques() {
                     valueStyle={{ color: '#1890ff', fontSize: 16 }} />
                 </Card>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={8}>
                 <Card size="small" style={{ background: '#f6ffed', border: '1px solid #52c41a', borderRadius: 8 }}>
                   <Statistic
                     title="Moyenne par période"
@@ -518,7 +518,7 @@ function Statistiques() {
                     valueStyle={{ color: '#52c41a', fontSize: 16 }} />
                 </Card>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={12} md={8}>
                 <Card size="small" style={{
                   background: croissance >= 0 ? '#f6ffed' : '#fff2f0',
                   border: `1px solid ${croissance >= 0 ? '#52c41a' : '#ff4d4f'}`,
@@ -539,7 +539,7 @@ function Statistiques() {
 
       <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
         {/* ✅ Pie Chart Modes de Paiement */}
-        <Col span={10}>
+        <Col xs={24} md={10}>
           <Card title="💳 Répartition par Mode de Paiement"
             style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', height: '100%' }}>
             {donneesPaiement.length === 0 ? (
@@ -585,7 +585,7 @@ function Statistiques() {
         </Col>
 
         {/* ✅ Top Clients */}
-        <Col span={14}>
+        <Col xs={24} md={14}>
           <Card title="👑 Top 5 Clients"
             style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', height: '100%' }}>
             {!stats.topClients || stats.topClients.length === 0 ? (
@@ -596,7 +596,8 @@ function Statistiques() {
                 columns={colonnesClients}
                 rowKey="nom"
                 pagination={false}
-                size="small" />
+                size="small"
+                scroll={{ x: 'max-content' }} />
             )}
           </Card>
         </Col>
@@ -620,7 +621,7 @@ function Statistiques() {
               const pct = Math.round((sc.ca / maxCA) * 100)
               const couleurs = ['#1890ff','#722ed1','#52c41a','#faad14','#ff4d4f','#13c2c2','#fa8c16','#eb2f96','#2f54eb','#08979c']
               return (
-                <Col span={12} key={sc.nom}>
+                <Col xs={24} sm={12} key={sc.nom}>
                   <div style={{
                     background: '#fafafa', borderRadius: 10,
                     padding: '12px 16px', border: '1px solid #f0f0f0'
@@ -696,7 +697,7 @@ function Statistiques() {
         >
           <Row gutter={[16, 16]}>
             {stats.alertesStock.map(p => (
-              <Col span={6} key={p.id}>
+              <Col xs={24} sm={12} md={6} key={p.id}>
                 <Alert
                   message={<Text strong>{p.nom}</Text>}
                   description={
