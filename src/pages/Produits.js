@@ -507,7 +507,10 @@ function Produits({ utilisateur }) {
         description_courte: attrs.description,
         fournisseur_habit:  attrs.fournisseur,
         couleurs:           attrs.couleurs,
-        tailles:            attrs.tailles
+        tailles:            attrs.tailles,
+        matiere:            attrs.matiere,
+        collection:         attrs.collection,
+        saison:             attrs.saison
       })
       setUnitesLocales(Array.isArray(produit.unites_multiples) ? produit.unites_multiples : [])
     } else {
@@ -526,13 +529,16 @@ function Produits({ utilisateur }) {
 
   const sauvegarderProduit = async (values) => {
     if (!ipcRenderer) return
-    const { garantie, description_courte, fournisseur_habit, couleurs, tailles, ...rest } = values
+    const { garantie, description_courte, fournisseur_habit, couleurs, tailles, matiere, collection, saison, ...rest } = values
     const attrs = {}
     if (garantie)           attrs.garantie    = garantie
     if (description_courte) attrs.description = description_courte
     if (fournisseur_habit)  attrs.fournisseur = fournisseur_habit
     if (couleurs?.length)   attrs.couleurs    = couleurs
     if (tailles?.length)    attrs.tailles     = tailles
+    if (matiere?.length)    attrs.matiere     = matiere
+    if (collection)         attrs.collection  = collection
+    if (saison)             attrs.saison      = saison
     const produitData = {
       ...rest,
       attributs:       Object.keys(attrs).length ? JSON.stringify(attrs) : null,
@@ -1166,29 +1172,56 @@ function Produits({ utilisateur }) {
                 )}
 
                 {isTextile && (
-                  <Row gutter={16}>
-                    <Col span={12}>
-                      <Form.Item name="couleurs" label="🎨 Couleurs disponibles">
-                        <Select mode="tags" placeholder="Tapez ou sélectionnez..." tokenSeparators={[',']}>
-                          {['Blanc', 'Noir', 'Rouge', 'Bleu', 'Vert', 'Jaune', 'Rose', 'Gris',
-                            'Marron', 'Beige', 'Violet', 'Orange', 'Multicolore'].map(c => (
-                            <Option key={c} value={c}>{c}</Option>
-                          ))}
-                        </Select>
-                      </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                      <Form.Item name="tailles" label="📐 Tailles disponibles">
-                        <Select mode="tags" placeholder="Tapez ou sélectionnez..." tokenSeparators={[',']}>
-                          {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL',
-                            '36', '37', '38', '39', '40', '41', '42', '43', '44', '45',
-                            'Unique', '38/40', '42/44'].map(t => (
-                            <Option key={t} value={t}>{t}</Option>
-                          ))}
-                        </Select>
-                      </Form.Item>
-                    </Col>
-                  </Row>
+                  <>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item name="couleurs" label="🎨 Couleurs disponibles">
+                          <Select mode="tags" placeholder="Tapez ou sélectionnez..." tokenSeparators={[',']}>
+                            {['Blanc', 'Noir', 'Rouge', 'Bleu', 'Vert', 'Jaune', 'Rose', 'Gris',
+                              'Marron', 'Beige', 'Violet', 'Orange', 'Multicolore'].map(c => (
+                              <Option key={c} value={c}>{c}</Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item name="tailles" label="📐 Tailles disponibles">
+                          <Select mode="tags" placeholder="Tapez ou sélectionnez..." tokenSeparators={[',']}>
+                            {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL',
+                              '36', '37', '38', '39', '40', '41', '42', '43', '44', '45',
+                              'Unique', '38/40', '42/44'].map(t => (
+                              <Option key={t} value={t}>{t}</Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item name="matiere" label="🧵 Matière / Tissu (optionnel)">
+                          <Select mode="tags" placeholder="Ex: Coton, Wax, Bazin, Soie..." tokenSeparators={[',']}>
+                            {['Coton', 'Wax', 'Bazin', 'Soie', 'Laine', 'Lin', 'Denim',
+                              'Cuir', 'Synthétique', 'Dentelle'].map(m => (
+                              <Option key={m} value={m}>{m}</Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item name="saison" label="🗓️ Saison (optionnel)">
+                          <Select placeholder="Choisir une saison" allowClear>
+                            <Option value="toutes">Toutes saisons</Option>
+                            <Option value="ete">Été</Option>
+                            <Option value="hiver">Hiver / Fraîcheur</Option>
+                            <Option value="fetes">Fêtes / Occasions</Option>
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Form.Item name="collection" label="✨ Collection (optionnel)">
+                      <Input placeholder="Ex: Collection Tabaski 2026, Nouveautés..." />
+                    </Form.Item>
+                  </>
                 )}
 
                 {/* ── Unité de mesure (recommandées selon domaine en premier) ── */}
