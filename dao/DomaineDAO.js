@@ -1,5 +1,17 @@
 const pool = require('../db/pool')
 
+// ⚠️ SYNCHRONISATION MANUELLE REQUISE : cette liste duplique
+// CATEGORIES_PAR_DOMAINE dans src/utils/domainConfig.js (frontend, ESM) —
+// ce fichier tourne en CommonJS pur cote serveur (node direct, sans etape de
+// build) et ne peut donc pas importer ce module frontend sans changement
+// d'architecture plus large. Tout ajout/edit de categorie fait cote front
+// doit etre reporte ici manuellement, et vice-versa. Un ecart existe deja
+// (audit du 2026-09-17) sur les 5 domaines partages : quelques
+// sous-categories et 2 couleurs (quincaillerie.Electricite,
+// textile.Vetements Femme) different legerement entre les deux fichiers.
+// Ces ecarts pre-existants n'ont PAS ete corriges ici (hors perimetre de
+// cette passe, qui ajoute seulement restauration/btp) — a traiter separement
+// si une reconciliation est demandee.
 function getCategoriesByDomaine(type) {
   const domaines = {
     informatique: [
@@ -53,6 +65,31 @@ function getCategoriesByDomaine(type) {
         sous_categories: ['Homme', 'Femme', 'Enfant', 'Sport', 'Sandales'] },
       { nom: 'Accessoires Mode', icone: '👜', couleur: 'gold',
         sous_categories: ['Sacs', 'Ceintures', 'Bijoux', 'Montres', 'Lunettes'] }
+    ],
+    // Ajoutes pour corriger l'ecart avec src/utils/domainConfig.js (DOMAINES) :
+    // ces deux domaines existaient deja cote frontend/selection utilisateur
+    // mais tombaient sur les categories "general" ici, faute d'entree dediee.
+    restauration: [
+      { nom: 'Plats & Menus', icone: '🍽️', couleur: 'red',
+        sous_categories: ['Plat du jour', 'Entrées', 'Plats principaux', 'Desserts', 'Menu complet'] },
+      { nom: 'Boissons', icone: '🥤', couleur: 'blue',
+        sous_categories: ['Eau', 'Jus naturels', 'Sodas', 'Café & Thé', 'Bières', 'Bissap', 'Ginger'] },
+      { nom: 'Boulangerie & Pâtisserie', icone: '🥐', couleur: 'gold',
+        sous_categories: ['Pain', 'Viennoiseries', 'Gâteaux', 'Sandwichs', 'Pâtisseries'] },
+      { nom: 'Fast-food & Snack', icone: '🍟', couleur: 'orange',
+        sous_categories: ['Brochettes', 'Poulet', 'Thiéboudienne', 'Sandwichs', 'Frites'] }
+    ],
+    btp: [
+      { nom: 'Gros Œuvre', icone: '🏗️', couleur: 'gray',
+        sous_categories: ['Fondations', 'Maçonnerie', 'Béton armé', 'Charpente', 'Toiture'] },
+      { nom: 'Second Œuvre', icone: '🚪', couleur: 'blue',
+        sous_categories: ['Menuiserie', 'Plâtrerie', 'Carrelage', 'Peinture', 'Isolation'] },
+      { nom: 'Électricité & Plomberie', icone: '⚡', couleur: 'gold',
+        sous_categories: ['Installation électrique', 'Plomberie sanitaire', 'Climatisation', 'Chauffage'] },
+      { nom: 'Matériaux', icone: '🧱', couleur: 'orange',
+        sous_categories: ['Ciment', 'Fer à béton', 'Briques', 'Carrelage', 'Sable', 'Gravier'] },
+      { nom: 'Main d\'Œuvre', icone: '👷', couleur: 'purple',
+        sous_categories: ['Maçon', 'Électricien', 'Plombier', 'Peintre', 'Carreleur', 'Chef chantier'] }
     ],
     general: [
       { nom: 'Produits Divers', icone: '📦', couleur: 'blue', sous_categories: ['Général'] },

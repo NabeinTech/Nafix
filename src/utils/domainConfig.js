@@ -54,6 +54,11 @@ export const DOMAINES = {
   }
 }
 
+// ⚠️ SYNCHRONISATION MANUELLE REQUISE : dupliquee cote serveur dans
+// dao/DomaineDAO.js (getCategoriesByDomaine), qui est le code reellement
+// execute a l'activation d'un domaine (seed des categories en base). Ce
+// fichier-ci ne pilote que l'affichage/selection cote client. Toute
+// modification ici doit etre reportee manuellement dans DomaineDAO.js.
 export const CATEGORIES_PAR_DOMAINE = {
   informatique: [
     {

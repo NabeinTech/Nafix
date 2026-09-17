@@ -9,7 +9,10 @@ const router = express.Router()
 router.use(authentifier)
 router.use(verifierAbonnement)
 
-const TYPES_DOMAINE = ['informatique', 'alimentaire', 'quincaillerie', 'textile', 'general']
+// Doit rester en miroir exact de src/utils/domainConfig.js (DOMAINES) et de
+// dao/DomaineDAO.js (getCategoriesByDomaine) — restauration et btp existaient
+// deja cote frontend mais etaient absents ici, ce qui bloquait leur sauvegarde.
+const TYPES_DOMAINE = ['informatique', 'alimentaire', 'quincaillerie', 'textile', 'restauration', 'btp', 'general']
 
 router.get('/', async (req, res) => {
   res.json(await domaineService.get(req.tenantContext.organisationId))
