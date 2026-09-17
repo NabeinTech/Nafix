@@ -242,18 +242,20 @@ function Parametres({ utilisateur }) {
   const sauvegarderDomaine = async (type) => {
     if (!ipcRenderer) return
     setDomaineLoading(true)
-    const noms = {
-      informatique:  'Informatique & Électroménager',
-      alimentaire:   'Alimentaire & Épicerie',
-      restauration:  'Restauration & Café',
-      quincaillerie: 'Quincaillerie & Matériaux',
-      btp:           'BTP & Construction',
-      textile:       'Textile & Prêt-à-porter',
-      general:       'Commerce Général'
+    // Nom pioché dans domainConfig.js (source unique) plutôt qu'une liste
+    // locale dupliquée — celle-ci ne connaissait pas les domaines ajoutés
+    // depuis (chaussures...), ce qui envoyait nom:undefined et faisait
+    // échouer silencieusement la validation serveur (le toast de succès
+    // s'affichait quand même, sans vérifier la réponse).
+    const nom = getDomaine(type)?.nom
+    const resultat = await ipcRenderer.invoke('domaine:save', { type, nom })
+    if (resultat?.erreur) {
+      message.error(`❌ ${resultat.erreur}`)
+      setDomaineLoading(false)
+      return
     }
-    await ipcRenderer.invoke('domaine:save', { type, nom: noms[type] })
     setDomaine(type)
-    message.success(`✅ Domaine changé : ${noms[type]} ! Catégories installées.`)
+    message.success(`✅ Domaine changé : ${nom} ! Catégories installées.`)
     setDomaineLoading(false)
   }
 
