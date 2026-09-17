@@ -66,6 +66,18 @@ function getCategoriesByDomaine(type) {
       { nom: 'Accessoires Mode', icone: '👜', couleur: 'gold',
         sous_categories: ['Sacs', 'Ceintures', 'Bijoux', 'Montres', 'Lunettes'] }
     ],
+    chaussures: [
+      { nom: 'Chaussures Homme', icone: '👞', couleur: 'blue',
+        sous_categories: ['Baskets', 'Sandales', 'Mocassins', 'Bottes', 'Ville'] },
+      { nom: 'Chaussures Femme', icone: '👠', couleur: 'magenta',
+        sous_categories: ['Talons', 'Sandales', 'Baskets', 'Ballerines', 'Bottes'] },
+      { nom: 'Chaussures Enfant', icone: '👟', couleur: 'green',
+        sous_categories: ['Baskets', 'Sandales', 'Scolaire'] },
+      { nom: 'Sacs & Maroquinerie', icone: '👜', couleur: 'gold',
+        sous_categories: ['Sacs à main', 'Sacs à dos', 'Portefeuilles', 'Ceintures'] },
+      { nom: 'Bijoux & Accessoires', icone: '💍', couleur: 'purple',
+        sous_categories: ['Bijoux', 'Montres', 'Lunettes', 'Foulards'] }
+    ],
     // Ajoutes pour corriger l'ecart avec src/utils/domainConfig.js (DOMAINES) :
     // ces deux domaines existaient deja cote frontend/selection utilisateur
     // mais tombaient sur les categories "general" ici, faute d'entree dediee.

@@ -45,6 +45,13 @@ export const DOMAINES = {
     description: 'Vêtements, tissus, pagnes, chaussures, accessoires...',
     formatFacture: 'standard'
   },
+  chaussures: {
+    type: 'chaussures',
+    nom: 'Chaussures & Accessoires',
+    icone: '👟',
+    description: 'Chaussures, sacs, ceintures, lunettes, accessoires de mode...',
+    formatFacture: 'standard'
+  },
   general: {
     type: 'general',
     nom: 'Commerce Général',
@@ -156,6 +163,28 @@ export const CATEGORIES_PAR_DOMAINE = {
       sousCategories: ['Sacs', 'Ceintures', 'Bijoux', 'Montres', 'Lunettes', 'Foulards']
     }
   ],
+  chaussures: [
+    {
+      nom: 'Chaussures Homme', icone: '👞', couleur: 'blue',
+      sousCategories: ['Baskets', 'Sandales', 'Mocassins', 'Bottes', 'Ville']
+    },
+    {
+      nom: 'Chaussures Femme', icone: '👠', couleur: 'magenta',
+      sousCategories: ['Talons', 'Sandales', 'Baskets', 'Ballerines', 'Bottes']
+    },
+    {
+      nom: 'Chaussures Enfant', icone: '👟', couleur: 'green',
+      sousCategories: ['Baskets', 'Sandales', 'Scolaire']
+    },
+    {
+      nom: 'Sacs & Maroquinerie', icone: '👜', couleur: 'gold',
+      sousCategories: ['Sacs à main', 'Sacs à dos', 'Portefeuilles', 'Ceintures']
+    },
+    {
+      nom: 'Bijoux & Accessoires', icone: '💍', couleur: 'purple',
+      sousCategories: ['Bijoux', 'Montres', 'Lunettes', 'Foulards']
+    }
+  ],
   restauration: [
     {
       nom: 'Plats & Menus', icone: '🍽️', couleur: 'red',
@@ -265,6 +294,18 @@ export const DOMAIN_THEMES = {
     produitLabel: 'Article / Vêtement',
     defaultUnite: 'm',
     unitesDisponibles: ['m', 'cm', 'yard', 'pièce', 'rouleau', 'lot', 'paire']
+  },
+  chaussures: {
+    gradient: 'linear-gradient(135deg, #ad4e00 0%, #613400 100%)',
+    primaryColor: '#ad4e00',
+    lightBg: '#fff2e8',
+    borderColor: '#ffbb96',
+    description: 'Chaussures · Sacs · Ceintures · Bijoux · Accessoires de mode',
+    marqueLabel: 'Marque',
+    marquePlaceholder: 'Ex: Nike, Adidas, Bata, marque locale...',
+    produitLabel: 'Article / Paire',
+    defaultUnite: 'paire',
+    unitesDisponibles: ['paire', 'pièce', 'lot', 'boîte']
   },
   restauration: {
     gradient: 'linear-gradient(135deg, #cf1322 0%, #fa8c16 100%)',

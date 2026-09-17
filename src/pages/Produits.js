@@ -467,20 +467,22 @@ function Produits({ utilisateur }) {
   const isBTP          = domaineActive === 'btp' || domaineActive === 'quincaillerie'
   const isInformatique = domaineActive === 'informatique'
   const isTextile      = domaineActive === 'textile'
+  const isChaussures   = domaineActive === 'chaussures'
 
   // Config formulaire selon domaine
   const formCfg = {
     referenceLabel:    isBTP ? 'Référence article' : isInformatique ? 'Référence / Code' : isRestaurant ? 'Code plat' : isAlimentaire ? 'Code produit' : 'Référence',
     referenceRequired: isBTP || isInformatique,
     referencePlaceholder: isBTP ? 'Ex: QUINCA-001' : isInformatique ? 'Ex: INFO-001' : isRestaurant ? 'Ex: PLT-001 (optionnel)' : 'Ex: ART-001',
-    nomLabel:     isRestaurant ? 'Nom du plat / article' : isBTP ? 'Désignation de l\'article' : isTextile ? 'Désignation / Modèle' : isAlimentaire ? 'Nom du produit / denrée' : 'Nom du produit',
-    nomPlaceholder: isRestaurant ? 'Ex: Thiéboudienne, Poulet yassa, Jus bissap...' : isBTP ? 'Ex: Ciment CEM II, Fer à béton 10mm, Peinture blanche...' : isTextile ? 'Ex: Wax 6 yards, Chemise slim, Robe pagne...' : isAlimentaire ? 'Ex: Riz parfumé, Huile Sundia, Concentré tomate...' : 'Ex: Laptop HP 15, Téléphone Samsung...',
+    nomLabel:     isRestaurant ? 'Nom du plat / article' : isBTP ? 'Désignation de l\'article' : (isTextile || isChaussures) ? 'Désignation / Modèle' : isAlimentaire ? 'Nom du produit / denrée' : 'Nom du produit',
+    nomPlaceholder: isRestaurant ? 'Ex: Thiéboudienne, Poulet yassa, Jus bissap...' : isBTP ? 'Ex: Ciment CEM II, Fer à béton 10mm, Peinture blanche...' : isChaussures ? 'Ex: Baskets running, Sandales cuir, Sac à main...' : isTextile ? 'Ex: Wax 6 yards, Chemise slim, Robe pagne...' : isAlimentaire ? 'Ex: Riz parfumé, Huile Sundia, Concentré tomate...' : 'Ex: Laptop HP 15, Téléphone Samsung...',
     prixAchatLabel: isRestaurant ? 'Prix de revient (FCFA)' : isBTP ? 'Prix unitaire achat HT (FCFA)' : 'Prix d\'achat (FCFA)',
     prixVenteLabel: isRestaurant ? 'Prix menu / vente (FCFA)' : isBTP ? 'Prix unitaire vente HT (FCFA)' : 'Prix de vente (FCFA)',
     stockLabel:    isRestaurant ? 'Quantité en stock' : isBTP ? 'Quantité en stock' : 'Stock actuel',
     hint: isRestaurant ? 'Ajoutez vos plats, boissons et articles du menu'
       : isAlimentaire  ? 'Gérez vos denrées alimentaires et produits d\'épicerie'
       : isBTP          ? 'Référencez vos matériaux, outils et prestations'
+      : isChaussures   ? 'Cataloguez vos chaussures, sacs et accessoires de mode'
       : isTextile      ? 'Cataloguez vos articles de mode, tissus et accessoires'
       : isInformatique ? 'Cataloguez vos équipements informatiques et électroniques'
       : 'Ajoutez votre article au catalogue'
@@ -508,6 +510,7 @@ function Produits({ utilisateur }) {
         fournisseur_habit:  attrs.fournisseur,
         couleurs:           attrs.couleurs,
         tailles:            attrs.tailles,
+        pointures:          attrs.pointures,
         matiere:            attrs.matiere,
         collection:         attrs.collection,
         saison:             attrs.saison
@@ -529,13 +532,14 @@ function Produits({ utilisateur }) {
 
   const sauvegarderProduit = async (values) => {
     if (!ipcRenderer) return
-    const { garantie, description_courte, fournisseur_habit, couleurs, tailles, matiere, collection, saison, ...rest } = values
+    const { garantie, description_courte, fournisseur_habit, couleurs, tailles, pointures, matiere, collection, saison, ...rest } = values
     const attrs = {}
     if (garantie)           attrs.garantie    = garantie
     if (description_courte) attrs.description = description_courte
     if (fournisseur_habit)  attrs.fournisseur = fournisseur_habit
     if (couleurs?.length)   attrs.couleurs    = couleurs
     if (tailles?.length)    attrs.tailles     = tailles
+    if (pointures?.length)  attrs.pointures   = pointures
     if (matiere?.length)    attrs.matiere     = matiere
     if (collection)         attrs.collection  = collection
     if (saison)             attrs.saison      = saison
@@ -1039,6 +1043,7 @@ function Produits({ utilisateur }) {
                   : isAlimentaire ? 'Nouveau produit alimentaire'
                   : isBTP ? 'Nouvel article / matériau'
                   : isTextile ? 'Nouvel article de mode'
+                  : isChaussures ? 'Nouvelle paire / accessoire'
                   : isInformatique ? 'Nouvel équipement'
                   : 'Nouveau produit'
                 )}
@@ -1171,7 +1176,7 @@ function Produits({ utilisateur }) {
                   </Form.Item>
                 )}
 
-                {isTextile && (
+                {(isTextile || isChaussures) && (
                   <>
                     <Row gutter={16}>
                       <Col span={12}>
@@ -1184,24 +1189,43 @@ function Produits({ utilisateur }) {
                           </Select>
                         </Form.Item>
                       </Col>
-                      <Col span={12}>
-                        <Form.Item name="tailles" label="📐 Tailles disponibles">
-                          <Select mode="tags" placeholder="Tapez ou sélectionnez..." tokenSeparators={[',']}>
-                            {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL',
-                              '36', '37', '38', '39', '40', '41', '42', '43', '44', '45',
-                              'Unique', '38/40', '42/44'].map(t => (
-                              <Option key={t} value={t}>{t}</Option>
-                            ))}
-                          </Select>
-                        </Form.Item>
-                      </Col>
+                      {isTextile && (
+                        <Col span={12}>
+                          <Form.Item name="tailles" label="📐 Tailles disponibles">
+                            <Select mode="tags" placeholder="Tapez ou sélectionnez..." tokenSeparators={[',']}>
+                              {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL',
+                                '36', '37', '38', '39', '40', '41', '42', '43', '44', '45',
+                                'Unique', '38/40', '42/44'].map(t => (
+                                <Option key={t} value={t}>{t}</Option>
+                              ))}
+                            </Select>
+                          </Form.Item>
+                        </Col>
+                      )}
+                      {isChaussures && (
+                        <Col span={12}>
+                          <Form.Item name="pointures" label="👟 Pointures disponibles">
+                            <Select mode="tags" placeholder="Tapez ou sélectionnez..." tokenSeparators={[',']}>
+                              {['28', '29', '30', '31', '32', '33', '34', '35',
+                                '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46',
+                                'Unique'].map(p => (
+                                <Option key={p} value={p}>{p}</Option>
+                              ))}
+                            </Select>
+                          </Form.Item>
+                        </Col>
+                      )}
                     </Row>
                     <Row gutter={16}>
                       <Col span={12}>
-                        <Form.Item name="matiere" label="🧵 Matière / Tissu (optionnel)">
-                          <Select mode="tags" placeholder="Ex: Coton, Wax, Bazin, Soie..." tokenSeparators={[',']}>
-                            {['Coton', 'Wax', 'Bazin', 'Soie', 'Laine', 'Lin', 'Denim',
-                              'Cuir', 'Synthétique', 'Dentelle'].map(m => (
+                        <Form.Item name="matiere" label={isChaussures ? '🧵 Matière (optionnel)' : '🧵 Matière / Tissu (optionnel)'}>
+                          <Select mode="tags"
+                            placeholder={isChaussures ? 'Ex: Cuir, Toile, Synthétique...' : 'Ex: Coton, Wax, Bazin, Soie...'}
+                            tokenSeparators={[',']}>
+                            {(isChaussures
+                              ? ['Cuir', 'Toile', 'Synthétique', 'Daim', 'Caoutchouc']
+                              : ['Coton', 'Wax', 'Bazin', 'Soie', 'Laine', 'Lin', 'Denim', 'Cuir', 'Synthétique', 'Dentelle']
+                            ).map(m => (
                               <Option key={m} value={m}>{m}</Option>
                             ))}
                           </Select>

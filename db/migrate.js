@@ -161,7 +161,7 @@ async function runMigrations() {
       const domaineParDefaut = domRows[0]?.type || 'general'
       for (const cat of catsNonTaguees) {
         let domaineTrouve = domaineParDefaut
-        for (const dom of ['informatique', 'alimentaire', 'quincaillerie', 'textile', 'restauration', 'btp', 'general']) {
+        for (const dom of ['informatique', 'alimentaire', 'quincaillerie', 'textile', 'chaussures', 'restauration', 'btp', 'general']) {
           if (getCategoriesByDomaine(dom).some(c => c.nom === cat.nom)) { domaineTrouve = dom; break }
         }
         await client.query('UPDATE categories SET domaine = $1 WHERE id = $2', [domaineTrouve, cat.id])
