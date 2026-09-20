@@ -52,6 +52,13 @@ export const DOMAINES = {
     description: 'Chaussures, sacs, ceintures, lunettes, accessoires de mode...',
     formatFacture: 'standard'
   },
+  cosmetique: {
+    type: 'cosmetique',
+    nom: 'Cosmétique & Beauté',
+    icone: '💄',
+    description: 'Soins visage, maquillage, parfumerie, capillaire, hygiène...',
+    formatFacture: 'standard'
+  },
   general: {
     type: 'general',
     nom: 'Commerce Général',
@@ -185,6 +192,28 @@ export const CATEGORIES_PAR_DOMAINE = {
       sousCategories: ['Bijoux', 'Montres', 'Lunettes', 'Foulards']
     }
   ],
+  cosmetique: [
+    {
+      nom: 'Soin du Visage', icone: '🧴', couleur: 'pink',
+      sousCategories: ['Crèmes', 'Sérums', 'Nettoyants', 'Masques', 'Contour des yeux']
+    },
+    {
+      nom: 'Maquillage', icone: '💄', couleur: 'magenta',
+      sousCategories: ['Rouge à lèvres', 'Fond de teint', 'Mascara', 'Fards à paupières', 'Vernis à ongles']
+    },
+    {
+      nom: 'Parfumerie', icone: '🌸', couleur: 'purple',
+      sousCategories: ['Parfums Homme', 'Parfums Femme', 'Eaux de toilette', 'Déodorants']
+    },
+    {
+      nom: 'Soin Capillaire', icone: '💇', couleur: 'gold',
+      sousCategories: ['Shampoings', 'Après-shampoings', 'Huiles capillaires', 'Défrisants', 'Tresses & Mèches']
+    },
+    {
+      nom: 'Hygiène & Bien-être', icone: '🧼', couleur: 'cyan',
+      sousCategories: ['Savons', 'Gels douche', 'Crèmes corporelles', 'Coton & Ouate']
+    }
+  ],
   restauration: [
     {
       nom: 'Plats & Menus', icone: '🍽️', couleur: 'red',
@@ -306,6 +335,18 @@ export const DOMAIN_THEMES = {
     produitLabel: 'Article / Paire',
     defaultUnite: 'paire',
     unitesDisponibles: ['paire', 'pièce', 'lot', 'boîte']
+  },
+  cosmetique: {
+    gradient: 'linear-gradient(135deg, #f759ab 0%, #9254de 100%)',
+    primaryColor: '#f759ab',
+    lightBg: '#fff0f6',
+    borderColor: '#ffadd2',
+    description: 'Soin visage · Maquillage · Parfumerie · Capillaire · Hygiène',
+    marqueLabel: 'Marque',
+    marquePlaceholder: 'Ex: Nivea, L\'Oréal, Dove, marque locale...',
+    produitLabel: 'Produit cosmétique',
+    defaultUnite: 'pièce',
+    unitesDisponibles: ['pièce', 'mL', 'L', 'g', 'kg', 'lot', 'boîte']
   },
   restauration: {
     gradient: 'linear-gradient(135deg, #cf1322 0%, #fa8c16 100%)',

@@ -78,6 +78,18 @@ function getCategoriesByDomaine(type) {
       { nom: 'Bijoux & Accessoires', icone: '💍', couleur: 'purple',
         sous_categories: ['Bijoux', 'Montres', 'Lunettes', 'Foulards'] }
     ],
+    cosmetique: [
+      { nom: 'Soin du Visage', icone: '🧴', couleur: 'pink',
+        sous_categories: ['Crèmes', 'Sérums', 'Nettoyants', 'Masques', 'Contour des yeux'] },
+      { nom: 'Maquillage', icone: '💄', couleur: 'magenta',
+        sous_categories: ['Rouge à lèvres', 'Fond de teint', 'Mascara', 'Fards à paupières', 'Vernis à ongles'] },
+      { nom: 'Parfumerie', icone: '🌸', couleur: 'purple',
+        sous_categories: ['Parfums Homme', 'Parfums Femme', 'Eaux de toilette', 'Déodorants'] },
+      { nom: 'Soin Capillaire', icone: '💇', couleur: 'gold',
+        sous_categories: ['Shampoings', 'Après-shampoings', 'Huiles capillaires', 'Défrisants', 'Tresses & Mèches'] },
+      { nom: 'Hygiène & Bien-être', icone: '🧼', couleur: 'cyan',
+        sous_categories: ['Savons', 'Gels douche', 'Crèmes corporelles', 'Coton & Ouate'] }
+    ],
     // Ajoutes pour corriger l'ecart avec src/utils/domainConfig.js (DOMAINES) :
     // ces deux domaines existaient deja cote frontend/selection utilisateur
     // mais tombaient sur les categories "general" ici, faute d'entree dediee.

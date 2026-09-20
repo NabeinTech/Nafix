@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
+import dayjs from 'dayjs'
 import {
   Typography, Table, Button, Modal, Form,
   Input, InputNumber, Select, AutoComplete, Space,
   Popconfirm, Tag, message, Row, Col, Card,
-  Statistic, Badge, Alert, Tabs, Slider, Drawer, Checkbox
+  Statistic, Badge, Alert, Tabs, Slider, Drawer, Checkbox, DatePicker
 } from 'antd'
 import {
   PlusOutlined, EditOutlined, DeleteOutlined,
@@ -468,14 +469,15 @@ function Produits({ utilisateur }) {
   const isInformatique = domaineActive === 'informatique'
   const isTextile      = domaineActive === 'textile'
   const isChaussures   = domaineActive === 'chaussures'
+  const isCosmetique   = domaineActive === 'cosmetique'
 
   // Config formulaire selon domaine
   const formCfg = {
     referenceLabel:    isBTP ? 'Référence article' : isInformatique ? 'Référence / Code' : isRestaurant ? 'Code plat' : isAlimentaire ? 'Code produit' : 'Référence',
     referenceRequired: isBTP || isInformatique,
     referencePlaceholder: isBTP ? 'Ex: QUINCA-001' : isInformatique ? 'Ex: INFO-001' : isRestaurant ? 'Ex: PLT-001 (optionnel)' : 'Ex: ART-001',
-    nomLabel:     isRestaurant ? 'Nom du plat / article' : isBTP ? 'Désignation de l\'article' : (isTextile || isChaussures) ? 'Désignation / Modèle' : isAlimentaire ? 'Nom du produit / denrée' : 'Nom du produit',
-    nomPlaceholder: isRestaurant ? 'Ex: Thiéboudienne, Poulet yassa, Jus bissap...' : isBTP ? 'Ex: Ciment CEM II, Fer à béton 10mm, Peinture blanche...' : isChaussures ? 'Ex: Baskets running, Sandales cuir, Sac à main...' : isTextile ? 'Ex: Wax 6 yards, Chemise slim, Robe pagne...' : isAlimentaire ? 'Ex: Riz parfumé, Huile Sundia, Concentré tomate...' : 'Ex: Laptop HP 15, Téléphone Samsung...',
+    nomLabel:     isRestaurant ? 'Nom du plat / article' : isBTP ? 'Désignation de l\'article' : (isTextile || isChaussures) ? 'Désignation / Modèle' : isAlimentaire ? 'Nom du produit / denrée' : isCosmetique ? 'Nom du produit' : 'Nom du produit',
+    nomPlaceholder: isRestaurant ? 'Ex: Thiéboudienne, Poulet yassa, Jus bissap...' : isBTP ? 'Ex: Ciment CEM II, Fer à béton 10mm, Peinture blanche...' : isChaussures ? 'Ex: Baskets running, Sandales cuir, Sac à main...' : isTextile ? 'Ex: Wax 6 yards, Chemise slim, Robe pagne...' : isCosmetique ? 'Ex: Crème hydratante, Rouge à lèvres mat, Parfum Oud...' : isAlimentaire ? 'Ex: Riz parfumé, Huile Sundia, Concentré tomate...' : 'Ex: Laptop HP 15, Téléphone Samsung...',
     prixAchatLabel: isRestaurant ? 'Prix de revient (FCFA)' : isBTP ? 'Prix unitaire achat HT (FCFA)' : 'Prix d\'achat (FCFA)',
     prixVenteLabel: isRestaurant ? 'Prix menu / vente (FCFA)' : isBTP ? 'Prix unitaire vente HT (FCFA)' : 'Prix de vente (FCFA)',
     stockLabel:    isRestaurant ? 'Quantité en stock' : isBTP ? 'Quantité en stock' : 'Stock actuel',
@@ -484,6 +486,7 @@ function Produits({ utilisateur }) {
       : isBTP          ? 'Référencez vos matériaux, outils et prestations'
       : isChaussures   ? 'Cataloguez vos chaussures, sacs et accessoires de mode'
       : isTextile      ? 'Cataloguez vos articles de mode, tissus et accessoires'
+      : isCosmetique   ? 'Cataloguez vos produits de soin, maquillage et parfumerie'
       : isInformatique ? 'Cataloguez vos équipements informatiques et électroniques'
       : 'Ajoutez votre article au catalogue'
   }
@@ -513,7 +516,11 @@ function Produits({ utilisateur }) {
         pointures:          attrs.pointures,
         matiere:            attrs.matiere,
         collection:         attrs.collection,
-        saison:             attrs.saison
+        saison:             attrs.saison,
+        gamme:              attrs.gamme,
+        parfum:             attrs.parfum,
+        lot:                attrs.lot,
+        expiration:         attrs.expiration ? dayjs(attrs.expiration) : undefined
       })
       setUnitesLocales(Array.isArray(produit.unites_multiples) ? produit.unites_multiples : [])
     } else {
@@ -532,7 +539,7 @@ function Produits({ utilisateur }) {
 
   const sauvegarderProduit = async (values) => {
     if (!ipcRenderer) return
-    const { garantie, description_courte, fournisseur_habit, couleurs, tailles, pointures, matiere, collection, saison, ...rest } = values
+    const { garantie, description_courte, fournisseur_habit, couleurs, tailles, pointures, matiere, collection, saison, gamme, parfum, lot, expiration, ...rest } = values
     const attrs = {}
     if (garantie)           attrs.garantie    = garantie
     if (description_courte) attrs.description = description_courte
@@ -543,6 +550,10 @@ function Produits({ utilisateur }) {
     if (matiere?.length)    attrs.matiere     = matiere
     if (collection)         attrs.collection  = collection
     if (saison)             attrs.saison      = saison
+    if (gamme?.length)      attrs.gamme       = gamme
+    if (parfum?.length)     attrs.parfum      = parfum
+    if (lot)                attrs.lot         = lot
+    if (expiration)         attrs.expiration  = expiration.format('YYYY-MM-DD')
     const produitData = {
       ...rest,
       attributs:       Object.keys(attrs).length ? JSON.stringify(attrs) : null,
@@ -1044,6 +1055,7 @@ function Produits({ utilisateur }) {
                   : isBTP ? 'Nouvel article / matériau'
                   : isTextile ? 'Nouvel article de mode'
                   : isChaussures ? 'Nouvelle paire / accessoire'
+                  : isCosmetique ? 'Nouveau produit cosmétique'
                   : isInformatique ? 'Nouvel équipement'
                   : 'Nouveau produit'
                 )}
@@ -1244,6 +1256,46 @@ function Produits({ utilisateur }) {
                     </Row>
                     <Form.Item name="collection" label="✨ Collection (optionnel)">
                       <Input placeholder="Ex: Collection Tabaski 2026, Nouveautés..." />
+                    </Form.Item>
+                  </>
+                )}
+
+                {isCosmetique && (
+                  <>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item name="couleurs" label="🎨 Teinte / Couleur (optionnel)">
+                          <Select mode="tags" placeholder="Ex: Rouge corail, Nude, Beige..." tokenSeparators={[',']}>
+                            {['Nude', 'Rouge', 'Corail', 'Rose', 'Beige', 'Brun', 'Doré', 'Incolore'].map(c => (
+                              <Option key={c} value={c}>{c}</Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item name="gamme" label="✨ Gamme (optionnel)">
+                          <Select mode="tags" placeholder="Ex: Nivea Men, L'Oréal Elsève..." tokenSeparators={[',']} />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item name="parfum" label="🌸 Parfum (optionnel)">
+                          <Select mode="tags" placeholder="Ex: Vanille, Rose, Musc, Sans parfum..." tokenSeparators={[',']}>
+                            {['Vanille', 'Rose', 'Musc', 'Lavande', 'Agrumes', 'Sans parfum'].map(p => (
+                              <Option key={p} value={p}>{p}</Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item name="expiration" label="📅 Date d'expiration (optionnel)">
+                          <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" placeholder="Sélectionner une date" />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Form.Item name="lot" label="🏷️ N° de lot (optionnel)">
+                      <Input placeholder="Ex: LOT-2026-0347" />
                     </Form.Item>
                   </>
                 )}
