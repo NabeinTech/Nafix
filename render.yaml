@@ -1,0 +1,45 @@
+# Déploiement Render (Blueprint) — API + web Nafix + PostgreSQL.
+# Remplace railway.json / nixpacks.toml (qui peuvent rester sans effet).
+# Plans à vérifier sur https://render.com/pricing avant de valider.
+
+databases:
+  - name: nafix-db
+    plan: basic-256mb
+    region: frankfurt
+    databaseName: nafix_db
+    user: nafix
+
+services:
+  - type: web
+    name: nafix
+    runtime: node
+    plan: starter            # PAS "free" : le plan gratuit s'endort après ~15 min
+    region: frankfurt
+    buildCommand: npm install && CI=false npm run build:web
+    startCommand: node server/api/server.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 24.15.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nafix-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true  # >= 16 caractères, l'API refuse de démarrer sinon
+      # À saisir à la main dans le tableau de bord (jamais dans ce fichier) :
+      - key: NAFIX_BASE_URL     # ex. https://nafix.onrender.com puis ton domaine
+        sync: false
+      - key: PAYDUNYA_MODE
+        sync: false
+      - key: PAYDUNYA_MASTER_KEY
+        sync: false
+      - key: PAYDUNYA_PRIVATE_KEY
+        sync: false
+      - key: PAYDUNYA_TOKEN
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        sync: false
