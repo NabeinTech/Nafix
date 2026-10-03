@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
-import { Form, Input, Button, Typography, message, Divider } from 'antd'
+import { Form, Input, Button, Typography, message, Divider, Grid } from 'antd'
 import {
   UserOutlined, LockOutlined,
   ShopOutlined, SafetyOutlined
 } from '@ant-design/icons'
 
 const { Title, Text } = Typography
+const { useBreakpoint } = Grid
 const ipcRenderer = typeof window !== 'undefined' ? window.ipcRenderer : null
 
 function Login({ onLoginSuccess }) {
@@ -13,6 +14,9 @@ function Login({ onLoginSuccess }) {
   const [mode, setMode] = useState('connexion') // 'connexion' | 'inscription'
   const [form] = Form.useForm()
   const [formInscription] = Form.useForm()
+  // Mobile : on masque le panneau de branding et le formulaire prend toute la largeur.
+  // `=== false` évite un flash de la version mobile au premier rendu (screens vaut {} au départ).
+  const estMobile = useBreakpoint().md === false
 
   const seConnecter = async (values) => {
     if (!ipcRenderer) {
@@ -64,7 +68,7 @@ function Login({ onLoginSuccess }) {
       background: '#f0f2f5'
     }}>
       {/* Panneau gauche — Branding */}
-      <div style={{
+      {!estMobile && <div style={{
         flex: 1,
         background: 'linear-gradient(135deg, #1890ff 0%, #722ed1 100%)',
         display: 'flex',
@@ -147,16 +151,16 @@ function Login({ onLoginSuccess }) {
             Version 1.0.0 — Nafix © 2025
           </Text>
         </div>
-      </div>
+      </div>}
 
       {/* Panneau droit — Formulaire */}
       <div style={{
-        width: 480,
+        width: estMobile ? '100%' : 480,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 48,
+        padding: estMobile ? '32px 20px' : 48,
         background: 'white',
         boxShadow: '-4px 0 24px rgba(0,0,0,0.08)'
       }}>
@@ -174,7 +178,7 @@ function Login({ onLoginSuccess }) {
         <Title level={2} style={{ margin: '0 0 8px', color: '#1a1a2e' }}>
           {mode === 'connexion' ? 'Connexion' : 'Créer mon organisation'}
         </Title>
-        <Text style={{ color: '#888', marginBottom: 40, display: 'block' }}>
+        <Text style={{ color: '#888', marginBottom: estMobile ? 24 : 40, display: 'block', textAlign: estMobile ? 'center' : undefined }}>
           {mode === 'connexion'
             ? 'Entrez vos identifiants pour accéder à Nafix'
             : 'Nouvelle entreprise sur Nafix — créez votre espace et votre compte administrateur'}
